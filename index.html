@@ -1206,6 +1206,9 @@ function collectCurrentAdminDraft(){
 
   const ta=document.getElementById("p_title_ar");
   if(ta) UNSAVED_DRAFT.product=Object.assign({},adminData.product||{},{title_ar:ta.value,title_fr:document.getElementById("p_title_fr").value,description_ar:document.getElementById("p_desc_ar").value,description_fr:document.getElementById("p_desc_fr").value,price:parseFloat(document.getElementById("p_price").value)||0,old_price:document.getElementById("p_old_price").value?parseFloat(document.getElementById("p_old_price").value):null,images:pendingImages.slice(),video_url:pendingVideoUrl||"",is_active:document.getElementById("p_active").checked,
+        product_type:document.getElementById("p_type")?.value || "standard",
+        sizes:document.getElementById("p_sizes")?.value || "",
+        colors:document.getElementById("p_colors")?.value || "",
         pack_enabled:document.getElementById("pack_enabled")?.checked || false,
         pack_visible:document.getElementById("pack_visible")?.checked || false,
         pack_title_ar:document.getElementById("pack_title_ar")?.value || "",
@@ -1330,8 +1333,6 @@ function renderProductTab(){
 
     <div class="field"><label>نوع المنتج</label><select id="p_type"><option value="standard" ${p.product_type!=="clothing"?'selected':''}>Standard</option><option value="clothing" ${p.product_type==="clothing"?'selected':''}>Vêtements</option></select></div>
     <div id="clothing-fields" style="display:${p.product_type==="clothing"?'block':'none'}"><div class="field-row"><div class="field"><label>المقاسات (افصل بفاصلة)</label><input id="p_sizes" value="${escHtml(p.sizes||"S, M, L, XL")}"></div><div class="field"><label>الألوان (افصل بفاصلة)</label><input id="p_colors" value="${escHtml(p.colors||"Noir, Blanc")}"></div></div></div>
-    <div class="field"><label>نوع المنتج</label><select id="p_type"><option value="standard" ${p.product_type!=="clothing"?'selected':''}>Standard</option><option value="clothing" ${p.product_type==="clothing"?'selected':''}>Vêtements</option></select></div>
-    <div id="clothing-fields" style="display:${p.product_type==="clothing"?'block':'none'}"><div class="field-row"><div class="field"><label>المقاسات (افصل بفاصلة)</label><input id="p_sizes" value="${escHtml(p.sizes||"S, M, L, XL")}"></div><div class="field"><label>الألوان (افصل بفاصلة)</label><input id="p_colors" value="${escHtml(p.colors||"Noir, Blanc")}"></div></div></div>
     <div class="toggle"><input type="checkbox" id="p_active" ${p.is_active!==false?'checked':''}><label>المنتج ظاهر فالموقع</label></div>
 
     <div class="pack-admin-box">
@@ -1357,9 +1358,6 @@ function renderProductTab(){
         <div class="pack-gallery-preview" id="pack-images-preview"></div>
         <div class="upload-status" id="pack-images-status"></div>
       </div>
-      <div class="field"><label>طريقة الـPack</label><select id="pack_mode"><option value="choice">الزبون يختار كل قطعة</option><option value="ready">تشكيلة متنوعة جاهزة</option></select></div>
-      <div class="field" id="pack-pieces-field"><label>عدد القطع</label><input id="pack_pieces" type="number" min="1" value="${p.pack_pieces||3}"></div>
-      <div id="pack-ready-items"></div>
       <div class="field"><label>طريقة الـPack</label><select id="pack_mode"><option value="choice">الزبون يختار كل قطعة</option><option value="ready">تشكيلة متنوعة جاهزة</option></select></div>
       <div class="field" id="pack-pieces-field"><label>عدد القطع</label><input id="pack_pieces" type="number" min="1" value="${p.pack_pieces||3}"></div>
       <div id="pack-ready-items"></div>
