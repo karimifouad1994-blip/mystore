@@ -179,6 +179,7 @@
   color:#2b2622 !important;
 }
 .selection-info .field label{color:var(--ink);font-weight:800}.selection-info .choice-btn{color:var(--ink)}
+.preview-overlay .choice-grid .choice-btn{display:inline-flex !important;visibility:visible !important;opacity:1 !important;pointer-events:auto !important;position:relative;z-index:3;align-items:center;justify-content:center;}
 .preview-overlay{ position:fixed; inset:0; background:var(--bg); z-index:2000; overflow-y:auto; }
   .preview-bar{ position:sticky; top:0; z-index:5; display:flex; justify-content:space-between; align-items:center; padding:12px 18px; background:var(--card); border-bottom:1px solid var(--line); }
   .preview-bar .tag{ font-size:.78rem; font-weight:800; color:var(--accent); }
@@ -848,11 +849,11 @@ function buildPackPublicMarkup(product, lang, type){
   const img=imgs[0]?`<div class="pack-gallery" id="${type}-pack-gallery"><img id="${type}-pack-gallery-img" src="${escHtml(imgs[0])}" alt="${escHtml(title)}">${imgs.length>1?`<button type="button" class="pack-gallery-btn pack-gallery-prev" data-gallery="${type}" id="${type}-pack-prev">‹</button><button type="button" class="pack-gallery-btn pack-gallery-next" data-gallery="${type}" id="${type}-pack-next">›</button>`:""}</div><div class="pack-gallery-dots" id="${type}-pack-dots">${imgs.length>1?`1 / ${imgs.length} · ${lang==='ar'?'دير السحب باش تشوف باقي الصور':'Faites glisser pour voir les autres images'}`:""}</div>`:"";
   let options="";
   if(type==='custom'){
-    const sizes=csvList(product.sizes),colors=csvList(product.colors),n=Math.max(1,Number(c.pieces)||1);
+    const sizes=csvList(c.sizes||product.sizes),colors=csvList(c.colors||product.colors),n=Math.max(1,Number(c.pieces)||1);
     const sizeBlock=sizes.length?`<div class="field"><label>${lang==='ar'?'المقاس (موحد للـPack كامل)':'Taille (unique pour tout le pack)'}</label><div class="choice-grid pack-common-size" id="pack-custom-common-size">${sizes.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:'';
     options=`<div style="margin-top:12px"><strong>${lang==='ar'?'التشكيلة المتنوعة':'Assortiment varié'}</strong>${sizeBlock}<div class="small-muted" style="margin:8px 0 12px">${lang==='ar'?'اختار اللون لكل قطعة بشكل مستقل، والمقاس يبقى موحداً للـPack كامل':'Choisissez la couleur séparément pour chaque pièce. La taille reste la même pour tout le pack.'}</div>${Array.from({length:n},(_,i)=>`<div class="pack-piece-choice"><strong>${lang==='ar'?'القطعة':'Pièce'} ${i+1}</strong><div class="field"><label>${lang==='ar'?'اللون':'Couleur'}</label><div class="choice-grid pack-colors" data-piece="${i}">${colors.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div></div>`).join('')}</div>`;
   } else {
-    const sizes=csvList(product.sizes),items=(c.items||[]);
+    const sizes=csvList(c.sizes||product.sizes),items=(c.items||[]);
     const sizeBlock=sizes.length?`<div class="field"><label>${lang==='ar'?'المقاس':'Taille'}</label><div class="choice-grid pack-common-size" id="pack-standard-common-size">${sizes.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:'';
     const colorsList=items.length?`<div class="small-muted" style="margin-top:8px">${items.map((it,i)=>`${lang==='ar'?'القطعة':'Pièce'} ${i+1}: ${escHtml(it.color||'-')}`).join(' · ')}</div>`:'';
     options=`<div style="margin-top:12px">${sizeBlock}<div class="small-muted" style="margin:8px 0 4px">${lang==='ar'?'الألوان محددة من طرف المتجر لكل قطعة، وغادي تختار غير المقاس':'Les couleurs sont fixées par la boutique pour chaque pièce, vous choisissez uniquement la taille'}</div>${colorsList}</div>`;
@@ -923,7 +924,7 @@ function initPurchaseSelector(root){
   };
   radios.forEach(r=>r.addEventListener('change',update));
   update();
-  root.querySelectorAll('#pack-custom-wrap .choice-grid').forEach(g=>g.querySelectorAll('.choice-btn').forEach(b=>b.onclick=()=>{g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')}));
+  root.querySelectorAll('#pack-custom-wrap .choice-grid, #pack-standard-wrap .choice-grid, #product-options .choice-grid').forEach(g=>g.querySelectorAll('.choice-btn').forEach(b=>{b.onclick=(e)=>{e.preventDefault();e.stopPropagation();g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');};b.style.pointerEvents='auto';b.style.position='relative';b.style.zIndex='2';}));
 }
 function initSingleQuantity(root){
   const minus=root.querySelector('#qty-minus'),plus=root.querySelector('#qty-plus'),value=root.querySelector('#qty-value');
@@ -1410,7 +1411,7 @@ function collectPackBody(){
   const type=document.getElementById('p_type')?.value||'standard';
   if(type!=='clothing') return {pack_enabled:false,pack_visible:false,pack_standard_config:null,pack_custom_config:null,pack_mode:'choice',pack_pieces:3,pack_items:[],pack_config:{mode:'choice',pieces:3,items:[]}};
   const imgs=window.__packAdminDraft?window.__packAdminDraft():{stdPending:[],cusPending:[]};
-  const read=(prefix,enabledKey,visibleKey,piecesKey,priceKey,oldKey,titleAr,titleFr,descAr,descFr,images,items)=>({enabled:!!document.getElementById(enabledKey)?.checked,visible:!!document.getElementById(visibleKey)?.checked,pieces:Math.max(1,parseInt(document.getElementById(piecesKey)?.value||'3',10)),price:document.getElementById(priceKey)?.value?parseFloat(document.getElementById(priceKey).value):null,old_price:document.getElementById(oldKey)?.value?parseFloat(document.getElementById(oldKey).value):null,title_ar:document.getElementById(titleAr)?.value||'',title_fr:document.getElementById(titleFr)?.value||'',description_ar:document.getElementById(descAr)?.value||'',description_fr:document.getElementById(descFr)?.value||'',images:images.slice(),items:items||[]});
+  const read=(prefix,enabledKey,visibleKey,piecesKey,priceKey,oldKey,titleAr,titleFr,descAr,descFr,images,items)=>({enabled:!!document.getElementById(enabledKey)?.checked,visible:!!document.getElementById(visibleKey)?.checked,pieces:Math.max(1,parseInt(document.getElementById(piecesKey)?.value||'3',10)),price:document.getElementById(priceKey)?.value?parseFloat(document.getElementById(priceKey).value):null,old_price:document.getElementById(oldKey)?.value?parseFloat(document.getElementById(oldKey).value):null,title_ar:document.getElementById(titleAr)?.value||'',title_fr:document.getElementById(titleFr)?.value||'',description_ar:document.getElementById(descAr)?.value||'',description_fr:document.getElementById(descFr)?.value||'',images:images.slice(),items:items||[],sizes:document.getElementById('p_sizes')?.value||'',colors:document.getElementById('p_colors')?.value||''});
   const stdItems=Array.from(document.querySelectorAll('#std-ready-items .pack-piece-choice')).map((el,i)=>({piece:i+1,color:el.querySelector('.std-color')?.value||''}));
   const std=read('std','std_enabled','std_visible','std_pieces','std_price','std_old_price','std_title_ar','std_title_fr','std_desc_ar','std_desc_fr',imgs.stdPending,stdItems);
   const cus=read('cus','cus_enabled','cus_visible','cus_pieces','cus_price','cus_old_price','cus_title_ar','cus_title_fr','cus_desc_ar','cus_desc_fr',imgs.cusPending,[]);
