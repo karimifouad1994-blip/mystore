@@ -279,6 +279,23 @@ async function sbInsert(table, body, auth=false){
   try{ data = await r.json(); }catch(e){}
   return { ok: r.ok, status: r.status, data };
 }
+
+/* Public order insert: do NOT request the inserted row back.
+   This avoids depending on a SELECT policy on orders when the customer is anonymous. */
+async function sbInsertPublicOrder(body){
+  try{
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
+      method:"POST",
+      headers:{ ...headers(false), "Prefer":"return=minimal" },
+      body: JSON.stringify(body)
+    });
+    let data = null;
+    try{ data = await r.json(); }catch(e){}
+    return { ok:r.ok, status:r.status, data };
+  }catch(e){
+    return { ok:false, status:0, data:null, error:e };
+  }
+}
 async function sbUpdate(table, query, body){
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
     method:"PATCH", headers: {...headers(true), "Prefer":"return=representation"}, body: JSON.stringify(body)
@@ -765,16 +782,15 @@ async function finalizeOrder(upsellAccepted, upsellId){
   const finishBtn = document.getElementById("finish-btn") || document.getElementById("submit-btn");
   if(finishBtn) finishBtn.disabled = true;
 
-  let res;
-  try{
-    res = await sbInsert("orders", body);
-  } catch(networkErr){
-    res = { ok:false, status:0, data:null };
-  }
+  // Customer orders are inserted anonymously. We only need Supabase to confirm
+  // the INSERT succeeded; requesting the inserted row back would unnecessarily
+  // require SELECT visibility on the orders table.
+  const res = await sbInsertPublicOrder(body);
+  const insertedOk = res.ok && res.status >= 200 && res.status < 300;
 
-  // Only treat as success if HTTP status confirms the row was actually created,
-  // and the API returned the inserted row back.
-  const insertedOk = res.ok && res.status >= 200 && res.status < 300 && Array.isArray(res.data) && res.data.length > 0;
+  if(!insertedOk){
+    console.error("Order insert failed:", res.status, res.data);
+  }
 
   if(insertedOk){
     STATE.step = "success";
