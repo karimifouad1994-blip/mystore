@@ -1278,6 +1278,20 @@ function renderProductTab(){
     <div class="card"><div class="section-title">التحكم فالمنتج</div><div class="toggle"><input type="checkbox" id="p_active" ${p.is_active!==false?'checked':''}><label>المنتج ظاهر فالزبون</label></div><div class="small-muted">الإظهار والإخفاء مستقلين على الحذف. الصور كذلك تقدر تحيدهم من المعاينة ديال الصور.</div><button type="button" class="upload-btn" id="delete-product">🗑️ حذف المنتج نهائياً</button></div>
     <div class="small-muted" style="margin-top:12px">💡 ضروري دير «معاينة» قبل الحفظ.</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><button class="save-btn" id="save-product" disabled>حفظ المنتج</button></div>`;
 
+  const productTypeSelect=document.getElementById('p_type');
+  const standardEditor=document.getElementById('standard-editor');
+  const clothingEditor=document.getElementById('clothing-editor');
+  const updateProductTypeUI=()=>{
+    const isClothing=productTypeSelect?.value==='clothing';
+    if(standardEditor) standardEditor.style.display=isClothing?'none':'block';
+    if(clothingEditor) clothingEditor.style.display=isClothing?'block':'none';
+    setPreviewApproval(false);
+  };
+  if(productTypeSelect){
+    productTypeSelect.addEventListener('change',updateProductTypeUI);
+    updateProductTypeUI();
+  }
+
   const stdImgs=(std.images||[]).filter(Boolean),cusImgs=(cus.images||[]).filter(Boolean);
   let stdPending=stdImgs.slice(),cusPending=cusImgs.slice();
   function previewImgs(boxId,arr){const box=document.getElementById(boxId);if(!box)return;box.innerHTML=arr.map((u,i)=>`<div class="img-thumb"><img src="${escHtml(u)}"><button type="button" class="rm-btn" data-rm="${i}">✕</button></div>`).join('');box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{arr.splice(+b.dataset.rm,1);previewImgs(boxId,arr);});}
@@ -1308,89 +1322,14 @@ async function saveProduct(){
   const type=document.getElementById('p_type').value,body={title_ar:document.getElementById('p_title_ar').value,title_fr:document.getElementById('p_title_fr').value,description_ar:document.getElementById('p_desc_ar').value,description_fr:document.getElementById('p_desc_fr').value,price:parseFloat(getProductFormValue('price'))||0,stock_quantity:Math.max(0,parseInt(getProductFormValue('stock')||'0',10)),old_price:getProductFormValue('old_price')?parseFloat(getProductFormValue('old_price')):null,video_url:pendingVideoUrl||'',images:pendingImages.slice(),is_active:document.getElementById('p_active').checked,product_type:type,sizes:document.getElementById('p_sizes')?.value||'',colors:document.getElementById('p_colors')?.value||'',...collectPackBody()};
   const msg=document.getElementById('save-msg'),btn=document.getElementById('save-product');btn.disabled=true;try{const res=adminData.product?await sbUpdate('products',`id=eq.${adminData.product.id}`,body):await sbInsert('products',body,true);const ok=res.ok&&res.status>=200&&res.status<300&&(!adminData.product?Array.isArray(res.data)&&res.data.length>0:true);msg.innerHTML=ok?'<div class="msg ok">تم الحفظ ✅</div>':'<div class="msg err">وقع مشكل، حاول مرة أخرى</div>';if(ok){UNSAVED_DRAFT.product=null;PREVIEW_APPROVED=false;await loadAdminData();renderProductTab();}}catch(e){msg.innerHTML=`<div class="msg err">وقع مشكل: ${escHtml(e?.message||'خطأ غير معروف')}</div>`}btn.disabled=false;
 }
-async function deletePack(){
-  const msg=document.getElementById('save-msg');
-  if(!adminData.product?.id){
-    if(msg) msg.innerHTML='<div class="msg err">ما كاين حتى منتج باش نحيدو منو الـPack</div>';
-    return;
-  }
-  if(!confirm('واش متأكد بغيتي تحذف الـPack نهائياً؟')) return;
-  try{
-    const body={
-      pack_enabled:false,
-      pack_visible:false,
-      pack_mode:'choice',
-      pack_pieces:3,
-      pack_items:[],
-      pack_title_ar:'',
-      pack_title_fr:'',
-      pack_description_ar:'',
-      pack_description_fr:'',
-      pack_price:null,
-      pack_old_price:null,
-      pack_images:[],
-      pack_config:{mode:'choice',pieces:3,items:[],standard:null,custom:null}
-    };
-    const res=await sbUpdate('products',`id=eq.${encodeURIComponent(adminData.product.id)}`,body);
-    if(!res.ok) throw new Error(res.data?.message||res.data?.error||res.error||`HTTP ${res.status}`);
-    if(msg) msg.innerHTML='<div class="msg ok">تم حذف الـPack نهائياً ✅</div>';
-    await loadAdminData();
-    renderProductTab();
-  }catch(e){
-    console.error('deletePack failed:',e);
-    if(msg) msg.innerHTML=`<div class="msg err">تعذر حذف الـPack: ${escHtml(e?.message||'خطأ غير معروف')}</div>`;
-  }
-}
+async function deletePack(){return;}
 async function deleteProduct(){
-  const msg = document.getElementById('save-msg');
-  const btn = document.getElementById('delete-product');
-
-  if(!adminData.product?.id){
-    if(msg) msg.innerHTML='<div class="msg err">ما كاين حتى منتج باش يتحذف</div>';
-    return;
-  }
-
-  if(!confirm('واش متأكد بغيتي تحذف المنتج نهائياً؟ هاد العملية مايمكنش التراجع عليها.')) return;
-
-  const productId = adminData.product.id;
-  if(btn) btn.disabled = true;
-  if(msg) msg.innerHTML='<div class="msg">جاري حذف المنتج...</div>';
-
-  try{
-    // The upsell belongs to the product and can safely be removed first.
-    const upRes = await sbDelete('upsells', `product_id=eq.${encodeURIComponent(productId)}`);
-    if(!upRes.ok){
-      throw new Error(upRes.data?.message || upRes.data?.error || upRes.error || `فشل حذف العرض الإضافي (HTTP ${upRes.status})`);
-    }
-
-    // Orders are intentionally NOT deleted. The SQL migration below changes
-    // orders.product_id to ON DELETE SET NULL, preserving order history.
-    const res = await sbDelete('products', `id=eq.${encodeURIComponent(productId)}`);
-
-    if(!res.ok){
-      const detail = res.data?.message || res.data?.error || res.error || `HTTP ${res.status}`;
-      throw new Error(detail);
-    }
-
-    adminData.product = null;
-    adminData.upsell = null;
-    UNSAVED_DRAFT.product = null;
-    UNSAVED_DRAFT.upsell = null;
-    PREVIEW_APPROVED = false;
-    pendingImages = [];
-    pendingPackImages = [];
-    pendingVideoUrl = '';
-
-    if(msg) msg.innerHTML='<div class="msg ok">تم حذف المنتج نهائياً ✅</div>';
-    await loadAdminData();
-    setTimeout(()=>renderProductTab(), 500);
-
-  }catch(e){
-    console.error('deleteProduct failed:', e);
-    if(msg) msg.innerHTML=`<div class="msg err">تعذر حذف المنتج: ${escHtml(e?.message || 'خطأ غير معروف')}</div>`;
-  }finally{
-    if(btn) btn.disabled = false;
-  }
+  if(!adminData.product?.id){document.getElementById('save-msg').innerHTML='<div class="msg err">ما كاين حتى منتج باش يتحذف</div>';return;}
+  if(!confirm('واش متأكد بغيتي تحذف المنتج نهائياً؟'))return;
+  const msg=document.getElementById('save-msg'),btn=document.getElementById('delete-product');if(btn)btn.disabled=true;
+  const res=await sbDelete('products',`id=eq.${adminData.product.id}`);
+  if(res.ok){adminData.product=null;UNSAVED_DRAFT.product=null;pendingImages=[];pendingVideoUrl='';msg.innerHTML='<div class="msg ok">تم حذف المنتج نهائياً ✅</div>';setTimeout(()=>renderProductTab(),600)}else{const detail=res.data?.message||res.error||`HTTP ${res.status}`;msg.innerHTML=`<div class="msg err">تعذر حذف المنتج: ${escHtml(detail)}</div>`}
+  if(btn)btn.disabled=false;
 }
 
 function renderPackImagesPreview(){
