@@ -510,6 +510,15 @@ let STATE = { settings:null, product:null, upsell:null, lang:"ar", step:"form", 
 let LANDING_QTY = 1;
 let SHOW_ADMIN_RETURN = false;
 
+/* ===== ADMIN UI LANGUAGE STATE ===== */
+const AT = { ar:{dir:"rtl"}, fr:{dir:"ltr"} };
+let ADMIN_LANG = "ar";
+try { ADMIN_LANG = localStorage.getItem("store_admin_lang") || "ar"; } catch(e) {}
+if(!AT[ADMIN_LANG]) ADMIN_LANG = "ar";
+
+/* Prevent overlapping boot calls when navigation/hash changes quickly. */
+let BOOT_SEQ = 0;
+
 /* ============ ROUTER ============ */
 function parseHashParams(hash){
   const h = (hash||"").startsWith("#") ? hash.slice(1) : (hash||"");
@@ -517,51 +526,71 @@ function parseHashParams(hash){
 }
 
 async function boot(){
+  const seq = ++BOOT_SEQ;
   const hp = parseHashParams(location.hash);
   if(hp.get("type")==="recovery" && hp.get("access_token")){
     renderResetPassword(hp.get("access_token"));
     return;
   }
-  if(location.hash.startsWith("#admin")){
-    SHOW_ADMIN_RETURN = false;
-    await initAdminSession();
-  } else if(location.hash === "#view"){
-    SHOW_ADMIN_RETURN = true;
-    STATE.step = "form";
-    await loadPublicData();
-    renderLanding();
-  } else {
-    SHOW_ADMIN_RETURN = false;
-    STATE.step = "form";
-    await loadPublicData();
-    renderLanding();
+
+  const hash = location.hash;
+  try {
+    if(hash.startsWith("#admin")){
+      SHOW_ADMIN_RETURN = false;
+      await initAdminSession(seq);
+    } else if(hash === "#view"){
+      SHOW_ADMIN_RETURN = true;
+      STATE.step = "form";
+      await loadPublicData();
+      if(seq !== BOOT_SEQ || location.hash !== hash) return;
+      renderLanding();
+    } else {
+      SHOW_ADMIN_RETURN = false;
+      STATE.step = "form";
+      await loadPublicData();
+      if(seq !== BOOT_SEQ || location.hash !== hash) return;
+      renderLanding();
+    }
+  } catch(e) {
+    console.error("Boot failed:", e);
+    if(seq === BOOT_SEQ && hash.startsWith("#admin")){
+      renderAdminLogin();
+    }
   }
 }
 
-async function initAdminSession(){
+async function initAdminSession(seq){
   const stored = loadStoredSession();
   if(!stored || !stored.access_token){
-    renderAdminLogin();
+    if(seq === BOOT_SEQ) renderAdminLogin();
     return;
   }
-  // refresh if expired or about to expire (60s buffer)
-  if(!stored.expires_at || stored.expires_at - Date.now() < 60000){
+
+  if(stored.expires_at && stored.expires_at - Date.now() >= 60000){
+    session = stored;
+    if(seq === BOOT_SEQ) await renderAdminDashboard("product");
+    return;
+  }
+
+  try {
     const refreshed = await refreshSession(stored.refresh_token);
+    if(seq !== BOOT_SEQ) return;
     if(refreshed && refreshed.access_token){
       saveSession({
         access_token: refreshed.access_token,
-        refresh_token: refreshed.refresh_token,
+        refresh_token: refreshed.refresh_token || stored.refresh_token,
         expires_at: Date.now() + (refreshed.expires_in||3600)*1000,
-        user: refreshed.user
+        user: refreshed.user || stored.user
       });
-      renderAdminDashboard("product");
+      await renderAdminDashboard("product");
     } else {
       clearSession();
       renderAdminLogin();
     }
-  } else {
-    session = stored;
-    renderAdminDashboard("product");
+  } catch(e) {
+    console.error("Admin session refresh failed:",e);
+    clearSession();
+    renderAdminLogin();
   }
 }
 window.addEventListener("hashchange", boot);
@@ -899,16 +928,28 @@ let DESIGN_SELECTED_FONT = null;
 let UNSAVED_DRAFT = { settings:null, product:null, upsell:null };
 
 async function loadAdminData(){
-  const s = await sbGet("settings","id=eq.1&select=*");
-  adminData.settings = s[0];
-  const p = await sbGet("products","select=*&order=created_at.asc&limit=1");
-  adminData.product = p[0] || null;
-  if(adminData.product){
-    const u = await sbGet("upsells", `product_id=eq.${adminData.product.id}&select=*&limit=1`);
-    adminData.upsell = u[0] || null;
-  }
-  const o = await sbGetAuth("orders","select=*&order=created_at.desc&limit=100");
+  adminData = { settings:null, product:null, upsell:null, orders:[] };
+
+  const safe = async (fn, fallback) => {
+    try { return await fn(); }
+    catch(e) { console.error("Admin data request failed:", e); return fallback; }
+  };
+
+  const [s,p,o] = await Promise.all([
+    safe(()=>sbGet("settings","id=eq.1&select=*"), []),
+    safe(()=>sbGet("products","select=*&order=created_at.asc&limit=1"), []),
+    safe(()=>sbGetAuth("orders","select=*&order=created_at.desc&limit=100"), [])
+  ]);
+
+  adminData.settings = Array.isArray(s) ? (s[0] || null) : null;
+  adminData.product = Array.isArray(p) ? (p[0] || null) : null;
   adminData.orders = Array.isArray(o) ? o : [];
+
+  if(adminData.product){
+    const u = await safe(()=>sbGet("upsells", `product_id=eq.${adminData.product.id}&select=*&limit=1`), []);
+    adminData.upsell = Array.isArray(u) ? (u[0] || null) : null;
+  }
+  return true;
 }
 
 /* Columns that exist on the settings table from day one. Anything else (font_style, primary_color, ...)
@@ -963,6 +1004,7 @@ async function renderAdminDashboard(tab){
   const app = document.getElementById("app");
   app.innerHTML = `<div class="admin-wrap" style="padding-top:60px; text-align:center; color:var(--muted)">جاري التحميل...</div>`;
   await loadAdminData();
+  if(!location.hash.startsWith("#admin") || !session.access_token) return;
 
   const app2 = document.getElementById("app");
   app2.innerHTML = `
