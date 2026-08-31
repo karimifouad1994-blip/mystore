@@ -912,7 +912,7 @@ function initPurchaseSelector(root){
     const only=Object.keys(panels).find(k=>panels[k])||'product';
     showOnly(only);
     STATE.purchaseType=only;
-    root.querySelectorAll('#pack-custom-wrap .choice-grid').forEach(g=>g.querySelectorAll('.choice-btn').forEach(b=>b.onclick=()=>{g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')}));
+    root.querySelectorAll('#pack-custom-wrap .choice-grid, #pack-standard-wrap .choice-grid, #product-options .choice-grid').forEach(g=>g.querySelectorAll('.choice-btn').forEach(b=>b.onclick=()=>{g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')}));
     return;
   }
   const update=()=>{
@@ -1961,6 +1961,7 @@ function renderPreviewOverlay(settings, product){
 
   if(hasProduct){
     initProductVideo(overlay);
+    initSingleQuantity(overlay);
     initClothingOptions(overlay);
     initPurchaseSelector(overlay);
     initCart(overlay);
