@@ -5,25 +5,44 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Store</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Cairo:wght@400;500;600;700&family=El+Messiri:wght@500;600;700&family=Amiri:wght@400;700&family=Aref+Ruqaa:wght@400;700&family=Playfair+Display:wght@600;700;800&family=Cormorant+Garamond:wght@500;600;700&family=Poppins:wght@500;600;700;800&family=Inter:wght@500;600;700&family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --radius: 14px;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
+  :root{
+    --font-heading: 'Tajawal', sans-serif;
+    --font-body: 'Tajawal', sans-serif;
+    --title-size: 1.55rem;
+    --title-weight: 800;
+    --title-lh: 1.35;
+    --desc-lh: 1.8;
+    --text-align: inherit;
+  }
   body{
-    font-family:'Tajawal', sans-serif;
+    font-family: var(--font-body);
     min-height:100vh;
     color: var(--ink);
-    background: var(--bg);
+    background: var(--bg-image, var(--bg));
+    position:relative;
     transition: background .3s ease, color .3s ease;
   }
+  body.lux-glow::before{
+    content:"";
+    position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background:
+      radial-gradient(circle at 15% -10%, var(--accent) 0%, transparent 45%),
+      radial-gradient(circle at 105% 105%, var(--secondary, var(--accent)) 0%, transparent 42%);
+    opacity:.12;
+  }
   /* ===== THEMES ===== */
-  body[data-theme="1"]{ --bg:#F6F1E9; --ink:#211D17; --accent:#B5581F; --accent-ink:#ffffff; --card:#FFFFFF; --muted:#8A8072; --line:#E7DFCF; }
-  body[data-theme="2"]{ --bg:#121417; --ink:#F2F2F0; --accent:#5B8CFF; --accent-ink:#0A0A0A; --card:#1B1E22; --muted:#8E949C; --line:#2A2E33; }
-  body[data-theme="3"]{ --bg:#FBEAE7; --ink:#2B1C24; --accent:#7A2F63; --accent-ink:#ffffff; --card:#FFFFFF; --muted:#9C7E8D; --line:#F1D3CD; }
-  body[data-theme="4"]{ --bg:#F4E9D8; --ink:#1F2E27; --accent:#1F5C4A; --accent-ink:#ffffff; --card:#FFFCF6; --muted:#7C8A80; --line:#E3D3B4; }
-  body[data-theme="5"]{ --bg:#FFFFFF; --ink:#15181B; --accent:#E4572E; --accent-ink:#ffffff; --card:#F7F7F8; --muted:#767C82; --line:#E9EAEC; }
+  body[data-theme="1"]{ --bg:#F6F1E9; --ink:#211D17; --accent:#B5581F; --secondary:#D9A15E; --accent-ink:#ffffff; --card:#FFFFFF; --muted:#8A8072; --line:#E7DFCF; }
+  body[data-theme="2"]{ --bg:#121417; --ink:#F2F2F0; --accent:#5B8CFF; --secondary:#8E6BFF; --accent-ink:#0A0A0A; --card:#1B1E22; --muted:#8E949C; --line:#2A2E33; }
+  body[data-theme="3"]{ --bg:#FBEAE7; --ink:#2B1C24; --accent:#7A2F63; --secondary:#C97B8E; --accent-ink:#ffffff; --card:#FFFFFF; --muted:#9C7E8D; --line:#F1D3CD; }
+  body[data-theme="4"]{ --bg:#F4E9D8; --ink:#1F2E27; --accent:#1F5C4A; --secondary:#B79A5C; --accent-ink:#ffffff; --card:#FFFCF6; --muted:#7C8A80; --line:#E3D3B4; }
+  body[data-theme="5"]{ --bg:#FFFFFF; --ink:#15181B; --accent:#E4572E; --secondary:#E48A2E; --accent-ink:#ffffff; --card:#F7F7F8; --muted:#767C82; --line:#E9EAEC; }
 
   a{color:inherit; text-decoration:none;}
   button{font-family:inherit; cursor:pointer; border:none;}
@@ -34,7 +53,7 @@
     display:flex; align-items:center; justify-content:space-between;
     padding:16px 18px; max-width:520px; margin:0 auto;
   }
-  .brand{font-weight:800; font-size:1.15rem; letter-spacing:.2px;}
+  .brand{font-weight:800; font-size:1.15rem; letter-spacing:.2px; font-family:var(--font-heading);}
   .lang-switch{
     display:flex; background:var(--card); border:1px solid var(--line); border-radius:999px; overflow:hidden;
   }
@@ -59,17 +78,19 @@
   .thumbs{display:flex; gap:8px; margin-top:8px; overflow-x:auto;}
   .thumbs img{ width:64px; height:64px; object-fit:cover; border-radius:10px; border:1px solid var(--line); flex-shrink:0; }
 
-  h1.title{ font-size:1.55rem; font-weight:800; line-height:1.35; margin-bottom:10px; }
-  .desc{ color:var(--muted); font-size:.98rem; line-height:1.8; margin-bottom:18px; white-space:pre-line; }
+  h1.title{ font-family:var(--font-heading); font-size:var(--title-size); font-weight:var(--title-weight); line-height:var(--title-lh); text-align:var(--text-align); letter-spacing:.1px; margin-bottom:10px; }
+  .desc{ font-family:var(--font-body); color:var(--muted); font-size:.98rem; line-height:var(--desc-lh); text-align:var(--text-align); margin-bottom:18px; white-space:pre-line; }
 
   .price-row{ display:flex; align-items:baseline; gap:10px; margin-bottom:22px; }
-  .price{ font-size:1.7rem; font-weight:800; color:var(--accent); }
+  .price{ font-family:var(--font-heading); font-size:1.7rem; font-weight:800; color:var(--accent); }
   .old-price{ font-size:1.05rem; color:var(--muted); text-decoration:line-through; }
 
   .cta{
-    width:100%; padding:16px; border-radius:12px; background:var(--accent); color:var(--accent-ink);
-    font-size:1.02rem; font-weight:800; margin-bottom:14px;
+    width:100%; padding:16px; border-radius:12px; background:var(--btn-color, var(--accent)); color:var(--accent-ink);
+    font-family:var(--font-body); font-size:1.02rem; font-weight:800; margin-bottom:14px;
+    transition: transform .12s ease, filter .12s ease;
   }
+  .cta:active{ transform:scale(.97); filter:brightness(.94); }
   .cta.secondary{ background:transparent; color:var(--ink); border:1.5px solid var(--line); }
   .wa-btn{ display:flex; align-items:center; justify-content:center; gap:8px; }
 
@@ -125,9 +146,14 @@
   .msg.err{ background:#FBDCDC; color:#B02A2A; }
 
   /* ===== NEW: quantity stepper ===== */
-  .qty-stepper{ display:flex; align-items:center; justify-content:space-between; border:1.5px solid var(--line); border-radius:10px; overflow:hidden; background:var(--bg); height:46px; }
-  .qty-stepper button{ background:var(--card); color:var(--ink); font-size:1.15rem; font-weight:800; width:42px; height:100%; display:flex; align-items:center; justify-content:center; }
-  .qty-stepper span{ flex:1; text-align:center; font-weight:700; font-size:1rem; }
+  .qty-stepper{ display:flex; align-items:center; justify-content:space-between; border:1.5px solid var(--line); border-radius:10px; overflow:hidden; background:var(--card); height:46px; }
+  .qty-stepper button{
+    background:var(--btn-color, var(--accent)); color:var(--accent-ink); font-size:1.3rem; font-weight:800;
+    width:46px; height:100%; display:flex; align-items:center; justify-content:center;
+    transition: transform .1s ease, filter .1s ease; flex-shrink:0;
+  }
+  .qty-stepper button:active{ transform:scale(.92); filter:brightness(.92); }
+  .qty-stepper span{ flex:1; text-align:center; font-weight:800; font-size:1.05rem; font-family:var(--font-heading); }
 
   /* ===== NEW: admin nav links (preview / view site / logout) ===== */
   .admin-nav-links{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
@@ -155,6 +181,24 @@
 
   /* ===== NEW: auto-contrast demo swatch ===== */
   .contrast-demo{ padding:12px 14px; border-radius:10px; margin-top:8px; margin-bottom:14px; font-size:.85rem; font-weight:700; text-align:center; border:1px solid var(--line); }
+
+  /* ===== NEW: Design / Typography tab ===== */
+  .font-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .font-card{ border:1.5px solid var(--line); border-radius:12px; padding:12px 10px; cursor:pointer; background:var(--card); text-align:center; }
+  .font-card.selected{ border-color:var(--accent); box-shadow:0 0 0 1.5px var(--accent) inset; }
+  .font-card .fc-sample{ font-size:1.15rem; font-weight:700; margin-bottom:4px; }
+  .font-card .fc-name{ font-size:.75rem; color:var(--muted); font-weight:700; }
+  .color-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+  .color-field{ }
+  .color-field label{ display:block; font-size:.8rem; font-weight:700; margin-bottom:6px; color:var(--muted); }
+  .color-field input[type=color]{ width:100%; height:42px; padding:2px; border-radius:8px; border:1.5px solid var(--line); background:var(--bg); }
+  .seg-select{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+  .seg-select button{ padding:8px 14px; border-radius:999px; background:var(--card); border:1.5px solid var(--line); font-size:.82rem; font-weight:700; color:var(--muted); }
+  .seg-select button.selected{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+  .schema-note{ font-size:.78rem; color:var(--muted); background:var(--card); border:1px dashed var(--line); border-radius:10px; padding:10px 12px; margin-bottom:14px; line-height:1.7; }
+  .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:3000; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .modal-box{ background:var(--card); color:var(--ink); border-radius:16px; padding:22px; max-width:380px; width:100%; max-height:88vh; overflow-y:auto; }
+  .modal-box .close-x{ float:left; background:none; color:var(--muted); font-size:1.1rem; }
 </style>
 </head>
 <body data-theme="1">
@@ -254,6 +298,26 @@ async function sbLogin(email, password){
   });
   return r.json();
 }
+/* Sends a real Supabase Auth recovery email. The link inside redirects back to THIS page,
+   with the recovery tokens appended by Supabase itself as a URL hash (#access_token=...&type=recovery). */
+async function sbSendRecoveryEmail(email){
+  const redirectTo = location.origin + location.pathname;
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`, {
+    method:"POST", headers:{ "apikey":SUPABASE_ANON_KEY, "Content-Type":"application/json" },
+    body: JSON.stringify({ email })
+  });
+  return r.ok;
+}
+/* Updates the logged-in (or recovery-token) user's password via Supabase Auth. */
+async function sbUpdateUserPassword(accessToken, newPassword){
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    method:"PUT",
+    headers:{ "apikey":SUPABASE_ANON_KEY, "Authorization":"Bearer "+accessToken, "Content-Type":"application/json" },
+    body: JSON.stringify({ password:newPassword })
+  });
+  let data=null; try{ data = await r.json(); }catch(e){}
+  return { ok:r.ok, data };
+}
 
 /* ============ NEW: STORAGE UPLOAD HELPER ============ */
 const MAX_IMAGE_MB = 8;
@@ -286,6 +350,38 @@ async function sbUploadFile(file, folder){
   }
 }
 
+/* ============ NEW: TYPOGRAPHY / DESIGN SYSTEM ============ */
+const FONT_STYLES = {
+  elegant:        { name:"Elegant",        heading:"'Playfair Display','El Messiri',serif", body:"'Cairo',sans-serif" },
+  luxury:         { name:"Luxury",         heading:"'Cormorant Garamond','Amiri',serif",     body:"'Cairo',sans-serif" },
+  modern:         { name:"Modern",         heading:"'Poppins','Cairo',sans-serif",           body:"'Cairo',sans-serif" },
+  minimal:        { name:"Minimal",        heading:"'Inter','Tajawal',sans-serif",           body:"'Tajawal',sans-serif" },
+  classic:        { name:"Classic",        heading:"'Montserrat','Cairo',sans-serif",        body:"'Cairo',sans-serif" },
+  arabic_elegant: { name:"Arabic Elegant", heading:"'El Messiri',serif",                      body:"'El Messiri','Cairo',sans-serif" },
+  arabic_luxury:  { name:"Arabic Luxury",  heading:"'Aref Ruqaa',serif",                      body:"'Amiri',serif" }
+};
+const FONT_STYLE_ORDER = ["elegant","luxury","modern","minimal","classic","arabic_elegant","arabic_luxury"];
+const TITLE_SIZES = { small:"1.25rem", medium:"1.55rem", large:"1.9rem", luxury:"2.25rem" };
+const TITLE_SIZE_LABELS = { small:"صغير", medium:"متوسط", large:"كبير", luxury:"فاخر" };
+const FONT_WEIGHTS = { light:"500", medium:"700", bold:"800" };
+const FONT_WEIGHT_LABELS = { light:"خفيف", medium:"متوسط", bold:"Bold" };
+const LINE_HEIGHTS = { compact:"1.5", comfortable:"1.8", spacious:"2.1" };
+const LINE_HEIGHT_LABELS = { compact:"مضغوط", comfortable:"مريح", spacious:"واسع" };
+const TEXT_ALIGNS = { auto:"inherit", right:"right", center:"center", left:"left" };
+const TEXT_ALIGN_LABELS = { auto:"افتراضي", right:"يمين", center:"توسيط", left:"يسار" };
+
+function shadeColor(hex, percent){
+  const h = (hex||"#888888").replace("#","");
+  const full = h.length===3 ? h.split("").map(c=>c+c).join("") : h;
+  let r = parseInt(full.substr(0,2),16); let g = parseInt(full.substr(2,2),16); let b = parseInt(full.substr(4,2),16);
+  if(isNaN(r)||isNaN(g)||isNaN(b)){ r=g=b=136; }
+  const t = percent<0 ? 0 : 255;
+  const p = Math.abs(percent);
+  r = Math.round((t-r)*p)+r; g = Math.round((t-g)*p)+g; b = Math.round((t-b)*p)+b;
+  const toHex = v => v.toString(16).padStart(2,"0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
 /* ============ NEW: AUTO CONTRAST ============ */
 function getReadableTextColor(hexBg){
   const hex = (hexBg||"#ffffff").replace("#","");
@@ -302,12 +398,54 @@ function getMutedColor(hexBg){
 }
 const THEME_DEFAULT_BG = {1:"#F6F1E9",2:"#121417",3:"#FBEAE7",4:"#F4E9D8",5:"#FFFFFF"};
 function applyThemeAndContrast(settings){
-  const themeId = (settings && settings.theme_id) || 1;
+  settings = settings || {};
+  const themeId = settings.theme_id || 1;
   document.body.setAttribute("data-theme", themeId);
-  const bg = (settings && settings.bg_color) || THEME_DEFAULT_BG[themeId] || "#FFFFFF";
+  const bg = settings.bg_color || THEME_DEFAULT_BG[themeId] || "#FFFFFF";
+  const ink = getReadableTextColor(bg);
   document.body.style.setProperty("--bg", bg);
-  document.body.style.setProperty("--ink", getReadableTextColor(bg));
+  document.body.style.setProperty("--ink", ink);
   document.body.style.setProperty("--muted", getMutedColor(bg));
+
+  /* custom luxury color overrides (fallback to theme defaults when empty) */
+  if(settings.primary_color) document.body.style.setProperty("--accent", settings.primary_color);
+  else document.body.style.removeProperty("--accent");
+  if(settings.secondary_color) document.body.style.setProperty("--secondary", settings.secondary_color);
+  else document.body.style.removeProperty("--secondary");
+  if(settings.button_color) document.body.style.setProperty("--btn-color", settings.button_color);
+  else document.body.style.removeProperty("--btn-color");
+  if(settings.border_color) document.body.style.setProperty("--line", settings.border_color);
+  else document.body.style.removeProperty("--line");
+
+  /* luxury gradient background + soft glow */
+  const useGradient = settings.bg_style !== "flat";
+  if(useGradient){
+    const light = shadeColor(bg, 0.06);
+    const dark = shadeColor(bg, -0.05);
+    document.body.style.setProperty("--bg-image", `linear-gradient(160deg, ${light} 0%, ${bg} 45%, ${dark} 100%)`);
+    document.body.classList.add("lux-glow");
+  } else {
+    document.body.style.removeProperty("--bg-image");
+    document.body.classList.remove("lux-glow");
+  }
+
+  /* typography */
+  const style = FONT_STYLES[settings.font_style] || null;
+  document.body.style.setProperty("--font-heading", style ? style.heading : "'Tajawal',sans-serif");
+  document.body.style.setProperty("--font-body", style ? style.body : "'Tajawal',sans-serif");
+  document.body.style.setProperty("--title-size", TITLE_SIZES[settings.title_size] || TITLE_SIZES.medium);
+  document.body.style.setProperty("--title-weight", FONT_WEIGHTS[settings.font_weight] || FONT_WEIGHTS.bold);
+  document.body.style.setProperty("--desc-lh", LINE_HEIGHTS[settings.line_height] || LINE_HEIGHTS.comfortable);
+  document.body.style.setProperty("--title-lh", "1.3");
+  document.body.style.setProperty("--text-align", TEXT_ALIGNS[settings.text_align] || TEXT_ALIGNS.auto);
+}
+
+function resetAdminChrome(){
+  document.body.setAttribute("data-theme","5");
+  document.body.classList.remove("lux-glow");
+  ["--bg","--ink","--muted","--bg-image","--accent","--secondary","--btn-color","--line",
+   "--font-heading","--font-body","--title-size","--title-weight","--title-lh","--desc-lh","--text-align"]
+   .forEach(p=>document.body.style.removeProperty(p));
 }
 
 function initProductVideo(root=document){
@@ -317,6 +455,8 @@ function initProductVideo(root=document){
 
   video.muted = false;
   video.volume = 1;
+  video.loop = true;
+  video.controls = false;
 
   const tryPlay = async ()=>{
     try{
@@ -356,7 +496,17 @@ let LANDING_QTY = 1;
 let SHOW_ADMIN_RETURN = false;
 
 /* ============ ROUTER ============ */
+function parseHashParams(hash){
+  const h = (hash||"").startsWith("#") ? hash.slice(1) : (hash||"");
+  return new URLSearchParams(h);
+}
+
 async function boot(){
+  const hp = parseHashParams(location.hash);
+  if(hp.get("type")==="recovery" && hp.get("access_token")){
+    renderResetPassword(hp.get("access_token"));
+    return;
+  }
   if(location.hash.startsWith("#admin")){
     SHOW_ADMIN_RETURN = false;
     await initAdminSession();
@@ -432,7 +582,7 @@ function buildFormMarkup(settings, product, lang, qty){
   if(product.video_url){
     mediaHtml = `
       <div class="video-wrap">
-        <video class="product-video" src="${product.video_url}" autoplay playsinline preload="auto"></video>
+        <video class="product-video" src="${product.video_url}" autoplay playsinline loop preload="auto" controlslist="nodownload noplaybackrate" disablepictureinpicture></video>
         <button type="button" class="video-sound-btn" aria-label="الصوت">🔊</button>
       </div>`;
   } else if(images[0]){
@@ -639,10 +789,7 @@ async function finalizeOrder(upsellAccepted, upsellId){
 
 /* ================= ADMIN ================= */
 function renderAdminLogin(){
-  document.body.setAttribute("data-theme","5");
-  document.body.style.removeProperty("--bg");
-  document.body.style.removeProperty("--ink");
-  document.body.style.removeProperty("--muted");
+  resetAdminChrome();
   const app = document.getElementById("app");
   app.innerHTML = `
     <div class="admin-login">
@@ -651,6 +798,12 @@ function renderAdminLogin(){
       <div class="field"><label>Password</label><input id="a_pass" type="password"></div>
       <div id="login-msg"></div>
       <button class="cta" id="login-btn">دخول</button>
+      <div style="text-align:center; margin-top:10px;"><a href="#" id="forgot-pass-link" style="font-size:.84rem; color:var(--muted); text-decoration:underline;">نسيت كلمة السر؟</a></div>
+      <div id="forgot-box" style="margin-top:14px; display:none;">
+        <div class="field"><label>Email باش نرسلو ليه رابط استرجاع كلمة السر</label><input id="fp_email" type="email"></div>
+        <div id="forgot-msg"></div>
+        <button class="cta secondary" id="send-recovery-btn" type="button">إرسال رابط الاسترجاع</button>
+      </div>
     </div>
   `;
   document.getElementById("login-btn").onclick = async ()=>{
@@ -669,6 +822,55 @@ function renderAdminLogin(){
       document.getElementById("login-msg").innerHTML = `<div class="msg err">Email ولا Password غلط</div>`;
     }
   };
+  document.getElementById("forgot-pass-link").onclick = (e)=>{
+    e.preventDefault();
+    const box = document.getElementById("forgot-box");
+    box.style.display = box.style.display==="none" ? "block" : "none";
+  };
+  document.getElementById("send-recovery-btn").onclick = async ()=>{
+    const email = document.getElementById("fp_email").value.trim();
+    const msg = document.getElementById("forgot-msg");
+    if(!email){ msg.innerHTML = `<div class="msg err">دخل Email</div>`; return; }
+    const btn = document.getElementById("send-recovery-btn");
+    btn.disabled = true;
+    const ok = await sbSendRecoveryEmail(email);
+    msg.innerHTML = ok
+      ? `<div class="msg ok">تصيفط ليك Email فيه رابط استرجاع كلمة السر، تحقق من صندوق البريد ✅</div>`
+      : `<div class="msg err">وقع مشكل، تأكد من Email وعاود المحاولة</div>`;
+    btn.disabled = false;
+  };
+}
+
+function renderResetPassword(accessToken){
+  resetAdminChrome();
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <div class="admin-login">
+      <h2 class="section-title" style="text-align:center; margin-bottom:20px;">إعادة تعيين كلمة السر</h2>
+      <div class="field"><label>كلمة السر الجديدة</label><input id="rp_new" type="password"></div>
+      <div class="field"><label>تأكيد كلمة السر الجديدة</label><input id="rp_confirm" type="password"></div>
+      <div id="rp-msg"></div>
+      <button class="cta" id="rp-save-btn">حفظ كلمة السر الجديدة</button>
+    </div>
+  `;
+  document.getElementById("rp-save-btn").onclick = async ()=>{
+    const p1 = document.getElementById("rp_new").value;
+    const p2 = document.getElementById("rp_confirm").value;
+    const msg = document.getElementById("rp-msg");
+    if(!p1 || p1.length<6){ msg.innerHTML = `<div class="msg err">كلمة السر خاصها 6 حروف/أرقام على الأقل</div>`; return; }
+    if(p1 !== p2){ msg.innerHTML = `<div class="msg err">كلمتا السر الجديدة غير متطابقتين</div>`; return; }
+    const btn = document.getElementById("rp-save-btn");
+    btn.disabled = true;
+    const res = await sbUpdateUserPassword(accessToken, p1);
+    if(res.ok){
+      msg.innerHTML = `<div class="msg ok">Password changed successfully ✅ تقدر دابا تدخل بكلمة السر الجديدة</div>`;
+      clearSession();
+      setTimeout(()=>{ location.hash = "#admin"; }, 1600);
+    } else {
+      msg.innerHTML = `<div class="msg err">الرابط انتهت صلاحيته أو وقع مشكل، اطلب رابط جديد</div>`;
+      btn.disabled = false;
+    }
+  };
 }
 
 let ADMIN_TAB = "product";
@@ -678,6 +880,7 @@ let adminData = { settings:null, product:null, upsell:null, orders:[] };
 let pendingImages = [];
 let pendingVideoUrl = "";
 let SETTINGS_SELECTED_THEME = null;
+let DESIGN_SELECTED_FONT = null;
 let UNSAVED_DRAFT = { settings:null, product:null, upsell:null };
 
 async function loadAdminData(){
@@ -693,19 +896,54 @@ async function loadAdminData(){
   adminData.orders = Array.isArray(o) ? o : [];
 }
 
+/* Columns that exist on the settings table from day one. Anything else (font_style, primary_color, ...)
+   only saves once the admin has run the ALTER TABLE statements for the Design tab (see project notes). */
+const SAFE_SETTINGS_FIELDS = ["store_name","theme_id","bg_color","default_language","whatsapp_enabled","whatsapp_number","whatsapp_timing"];
+async function saveSettingsSmart(body){
+  let res = await sbUpdate("settings","id=eq.1", body);
+  let success = res.ok && res.status>=200 && res.status<300 && Array.isArray(res.data) && res.data.length>0;
+  if(success) return { success:true, fallback:false };
+  const safeBody = {};
+  SAFE_SETTINGS_FIELDS.forEach(k=>{ if(k in body) safeBody[k]=body[k]; });
+  if(Object.keys(safeBody).length === Object.keys(body).length){
+    return { success:false, fallback:false };
+  }
+  res = await sbUpdate("settings","id=eq.1", safeBody);
+  success = res.ok && res.status>=200 && res.status<300 && Array.isArray(res.data) && res.data.length>0;
+  return { success, fallback:true };
+}
+
 function collectCurrentAdminDraft(){
+  const base = Object.assign({}, adminData.settings||{}, UNSAVED_DRAFT.settings||{});
   const bg=document.getElementById("s_bg");
-  if(bg) UNSAVED_DRAFT.settings=Object.assign({},adminData.settings||{},{store_name:document.getElementById("s_store").value,theme_id:SETTINGS_SELECTED_THEME||1,bg_color:bg.value,default_language:document.getElementById("s_lang").value,whatsapp_enabled:document.getElementById("s_wa_enabled").checked,whatsapp_number:document.getElementById("s_wa_number").value,whatsapp_timing:document.getElementById("s_wa_timing").value});
+  if(bg) Object.assign(base,{store_name:document.getElementById("s_store").value,theme_id:SETTINGS_SELECTED_THEME||1,bg_color:bg.value,default_language:document.getElementById("s_lang").value,whatsapp_enabled:document.getElementById("s_wa_enabled").checked,whatsapp_number:document.getElementById("s_wa_number").value,whatsapp_timing:document.getElementById("s_wa_timing").value});
+  const fs=document.getElementById("d_bg_style");
+  if(fs) Object.assign(base, readDesignFields());
+  if(bg || fs) UNSAVED_DRAFT.settings = base;
+
   const ta=document.getElementById("p_title_ar");
   if(ta) UNSAVED_DRAFT.product=Object.assign({},adminData.product||{},{title_ar:ta.value,title_fr:document.getElementById("p_title_fr").value,description_ar:document.getElementById("p_desc_ar").value,description_fr:document.getElementById("p_desc_fr").value,price:parseFloat(document.getElementById("p_price").value)||0,old_price:document.getElementById("p_old_price").value?parseFloat(document.getElementById("p_old_price").value):null,images:pendingImages.slice(),video_url:pendingVideoUrl||"",is_active:document.getElementById("p_active").checked});
 }
 
+/* reads the Design tab form fields into a settings-shaped partial object (only when that tab is on screen) */
+function readDesignFields(){
+  return {
+    font_style: DESIGN_SELECTED_FONT || "elegant",
+    title_size: document.getElementById("d_title_size").value,
+    font_weight: document.getElementById("d_font_weight").value,
+    line_height: document.getElementById("d_line_height").value,
+    text_align: document.getElementById("d_text_align").value,
+    bg_style: document.getElementById("d_bg_style").checked ? "gradient" : "flat",
+    primary_color: document.getElementById("d_primary").value,
+    secondary_color: document.getElementById("d_secondary").value,
+    button_color: document.getElementById("d_button").value,
+    border_color: document.getElementById("d_border").value
+  };
+}
+
 async function renderAdminDashboard(tab){
   ADMIN_TAB = tab;
-  document.body.setAttribute("data-theme","5");
-  document.body.style.removeProperty("--bg");
-  document.body.style.removeProperty("--ink");
-  document.body.style.removeProperty("--muted");
+  resetAdminChrome();
   const app = document.getElementById("app");
   app.innerHTML = `<div class="admin-wrap" style="padding-top:60px; text-align:center; color:var(--muted)">جاري التحميل...</div>`;
   await loadAdminData();
@@ -718,6 +956,7 @@ async function renderAdminDashboard(tab){
         <div class="admin-nav-links">
           <button type="button" id="btn-preview">👁 معاينة</button>
           <a href="#view" id="view-site-link">🌐 مشاهدة الموقع</a>
+          <button type="button" id="btn-change-pass">🔒 كلمة السر</button>
           <a href="#" id="logout-link">خروج</a>
         </div>
       </div>
@@ -725,6 +964,7 @@ async function renderAdminDashboard(tab){
         <button data-tab="product" class="${tab==='product'?'active':''}">المنتج</button>
         <button data-tab="upsell" class="${tab==='upsell'?'active':''}">العرض الإضافي</button>
         <button data-tab="settings" class="${tab==='settings'?'active':''}">الإعدادات</button>
+        <button data-tab="design" class="${tab==='design'?'active':''}">التصميم والخط</button>
         <button data-tab="orders" class="${tab==='orders'?'active':''}">الطلبات (${adminData.orders.length})</button>
       </div>
       <div id="tab-content"></div>
@@ -735,10 +975,12 @@ async function renderAdminDashboard(tab){
   });
   document.getElementById("logout-link").onclick = (e)=>{ e.preventDefault(); clearSession(); location.hash=""; };
   document.getElementById("btn-preview").onclick = openPreview;
+  document.getElementById("btn-change-pass").onclick = openChangePasswordModal;
 
   if(tab==="product") renderProductTab();
   if(tab==="upsell") renderUpsellTab();
   if(tab==="settings") renderSettingsTab();
+  if(tab==="design") renderDesignTab();
   if(tab==="orders") renderOrdersTab();
 }
 
@@ -837,7 +1079,7 @@ function renderVideoPreview(){
   const box = document.getElementById("video-preview");
   if(!box) return;
   box.innerHTML = pendingVideoUrl
-    ? `<video src="${pendingVideoUrl}" controls playsinline style="width:100%; border-radius:10px; margin-top:8px;"></video>`
+    ? `<video src="${pendingVideoUrl}" autoplay muted playsinline loop controlslist="nodownload noplaybackrate" disablepictureinpicture style="width:100%; border-radius:10px; margin-top:8px;"></video>`
     : "";
 }
 
@@ -1034,7 +1276,7 @@ function renderSettingsTab(){
   document.getElementById("s_bg").oninput = (e)=> updateContrastDemo(e.target.value);
 
   document.getElementById("save-settings").onclick = async ()=>{
-    const body = {
+    const body = Object.assign({}, adminData.settings||{}, UNSAVED_DRAFT.settings||{}, {
       store_name: document.getElementById("s_store").value,
       theme_id: SETTINGS_SELECTED_THEME,
       bg_color: document.getElementById("s_bg").value,
@@ -1042,15 +1284,17 @@ function renderSettingsTab(){
       whatsapp_enabled: document.getElementById("s_wa_enabled").checked,
       whatsapp_number: document.getElementById("s_wa_number").value,
       whatsapp_timing: document.getElementById("s_wa_timing").value
-    };
+    });
+    delete body.id; delete body.created_at;
     const msg = document.getElementById("save-msg");
     const btn = document.getElementById("save-settings");
     if(btn) btn.disabled = true;
     try{
-      const res = await sbUpdate("settings","id=eq.1", body);
-      const success = res.ok && res.status>=200 && res.status<300 && Array.isArray(res.data) && res.data.length>0;
+      const { success, fallback } = await saveSettingsSmart(body);
       if(success){
-        msg.innerHTML = `<div class="msg ok">تم الحفظ ✅</div>`;
+        msg.innerHTML = fallback
+          ? `<div class="msg ok">تم حفظ الإعدادات الأساسية ✅ (إعدادات التصميم خاصها تفعيل قاعدة البيانات، شوف الملاحظة فتاب "التصميم والخط")</div>`
+          : `<div class="msg ok">تم الحفظ ✅</div>`;
         UNSAVED_DRAFT.settings=null;
         await loadAdminData();
       } else {
@@ -1068,6 +1312,107 @@ function updateContrastDemo(bgHex){
   if(!demo) return;
   demo.style.background = bgHex;
   demo.style.color = getReadableTextColor(bgHex);
+}
+
+function renderDesignTab(){
+  const s = Object.assign({}, adminData.settings||{}, UNSAVED_DRAFT.settings||{});
+  const themeId = s.theme_id || 1;
+  DESIGN_SELECTED_FONT = s.font_style || "elegant";
+  const titleSize = s.title_size || "medium";
+  const fontWeight = s.font_weight || "bold";
+  const lineHeight = s.line_height || "comfortable";
+  const textAlign = s.text_align || "auto";
+  const useGradient = s.bg_style !== "flat";
+  const primary = s.primary_color || document.body.style.getPropertyValue("--accent") || "#B5581F";
+  const secondary = s.secondary_color || document.body.style.getPropertyValue("--secondary") || "#D9A15E";
+  const button = s.button_color || primary;
+  const border = s.border_color || "#E7DFCF";
+
+  const c = document.getElementById("tab-content");
+  c.innerHTML = `
+    <div id="save-msg"></div>
+    <div class="schema-note">ℹ️ إعدادات هاد التاب (الخط، الألوان المخصصة، الخلفية الفاخرة) خاصها أعمدة إضافية فجدول settings فـ Supabase. إلا ظهر ليك تحذير ملي دير حفظ، سول المطور يزيد الأعمدة (SQL جاهز فالتوثيق).</div>
+
+    <label class="section-title" style="font-size:.95rem; display:block; margin-bottom:10px;">اختيار نمط الكتابة</label>
+    <div class="font-grid" id="font-grid">
+      ${FONT_STYLE_ORDER.map(key=>{
+        const f = FONT_STYLES[key];
+        return `<div class="font-card ${DESIGN_SELECTED_FONT===key?'selected':''}" data-font="${key}">
+          <div class="fc-sample" style="font-family:${f.heading}">Aa عنوان</div>
+          <div class="fc-name">${f.name}</div>
+        </div>`;
+      }).join("")}
+    </div>
+
+    <div class="field">
+      <label>حجم عنوان المنتوج</label>
+      <select id="d_title_size">
+        ${Object.keys(TITLE_SIZES).map(k=>`<option value="${k}" ${titleSize===k?'selected':''}>${TITLE_SIZE_LABELS[k]}</option>`).join("")}
+      </select>
+    </div>
+    <div class="field">
+      <label>وزن الخط</label>
+      <select id="d_font_weight">
+        ${Object.keys(FONT_WEIGHTS).map(k=>`<option value="${k}" ${fontWeight===k?'selected':''}>${FONT_WEIGHT_LABELS[k]}</option>`).join("")}
+      </select>
+    </div>
+    <div class="field">
+      <label>تباعد الأسطر (الوصف)</label>
+      <select id="d_line_height">
+        ${Object.keys(LINE_HEIGHTS).map(k=>`<option value="${k}" ${lineHeight===k?'selected':''}>${LINE_HEIGHT_LABELS[k]}</option>`).join("")}
+      </select>
+    </div>
+    <div class="field">
+      <label>محاذاة النص (العنوان والوصف)</label>
+      <select id="d_text_align">
+        ${Object.keys(TEXT_ALIGNS).map(k=>`<option value="${k}" ${textAlign===k?'selected':''}>${TEXT_ALIGN_LABELS[k]}</option>`).join("")}
+      </select>
+    </div>
+
+    <label class="section-title" style="font-size:.95rem; display:block; margin:20px 0 10px;">ألوان مخصصة (Luxury Theme)</label>
+    <div class="color-grid">
+      <div class="color-field"><label>اللون الرئيسي</label><input type="color" id="d_primary" value="${primary}"></div>
+      <div class="color-field"><label>اللون الثانوي</label><input type="color" id="d_secondary" value="${secondary}"></div>
+      <div class="color-field"><label>لون الأزرار</label><input type="color" id="d_button" value="${button}"></div>
+      <div class="color-field"><label>لون الحدود</label><input type="color" id="d_border" value="${border}"></div>
+    </div>
+
+    <div class="toggle"><input type="checkbox" id="d_bg_style" ${useGradient?'checked':''}><label>خلفية متدرجة فاخرة (Luxury Gradient)</label></div>
+    <div class="contrast-demo" id="design-preview" style="font-family:${FONT_STYLES[DESIGN_SELECTED_FONT].heading}">نموذج Aa 123 — العنوان والسعر</div>
+
+    <button class="save-btn" id="save-design">حفظ التصميم</button>
+  `;
+
+  document.querySelectorAll("#font-grid [data-font]").forEach(el=>{
+    el.onclick = ()=>{
+      DESIGN_SELECTED_FONT = el.dataset.font;
+      document.querySelectorAll("#font-grid [data-font]").forEach(x=>x.classList.remove("selected"));
+      el.classList.add("selected");
+      document.getElementById("design-preview").style.fontFamily = FONT_STYLES[DESIGN_SELECTED_FONT].heading;
+    };
+  });
+
+  document.getElementById("save-design").onclick = async ()=>{
+    const body = Object.assign({}, adminData.settings||{}, UNSAVED_DRAFT.settings||{}, readDesignFields());
+    delete body.id; delete body.created_at;
+    const msg = document.getElementById("save-msg");
+    const btn = document.getElementById("save-design");
+    if(btn) btn.disabled = true;
+    try{
+      const { success, fallback } = await saveSettingsSmart(body);
+      if(success){
+        msg.innerHTML = fallback
+          ? `<div class="msg err">قاعدة البيانات ماعندهاش أعمدة التصميم بعد، سول المطور يزيد الأعمدة باش يتحفظ التصميم بشكل دائم.</div>`
+          : `<div class="msg ok">تم حفظ التصميم ✅</div>`;
+        if(!fallback){ UNSAVED_DRAFT.settings=null; await loadAdminData(); }
+      } else {
+        msg.innerHTML = `<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;
+      }
+    } catch(e){
+      msg.innerHTML = `<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;
+    }
+    if(btn) btn.disabled = false;
+  };
 }
 
 function renderOrdersTab(){
@@ -1107,6 +1452,63 @@ function renderOrdersTab(){
   });
 }
 
+/* ================= ADMIN: CHANGE PASSWORD ================= */
+function openChangePasswordModal(){
+  const old = document.getElementById("change-pass-modal");
+  if(old) old.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "change-pass-modal";
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal-box">
+      <button type="button" class="close-x" id="cp-close">✕</button>
+      <h2 class="section-title" style="margin-top:6px;">تغيير كلمة السر</h2>
+      <div class="field"><label>كلمة السر القديمة</label><input id="cp_old" type="password"></div>
+      <div class="field"><label>كلمة السر الجديدة</label><input id="cp_new" type="password"></div>
+      <div class="field"><label>تأكيد كلمة السر الجديدة</label><input id="cp_confirm" type="password"></div>
+      <div id="cp-msg"></div>
+      <button class="cta" id="cp-save-btn" type="button">حفظ</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById("cp-close").onclick = ()=> overlay.remove();
+  overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+  document.getElementById("cp-save-btn").onclick = async ()=>{
+    const oldPass = document.getElementById("cp_old").value;
+    const p1 = document.getElementById("cp_new").value;
+    const p2 = document.getElementById("cp_confirm").value;
+    const msg = document.getElementById("cp-msg");
+    const email = session.user && session.user.email;
+    if(!email){ msg.innerHTML = `<div class="msg err">وقع مشكل بالجلسة، عاود دخول من جديد</div>`; return; }
+    if(!oldPass){ msg.innerHTML = `<div class="msg err">دخل كلمة السر القديمة</div>`; return; }
+    if(!p1 || p1.length<6){ msg.innerHTML = `<div class="msg err">كلمة السر الجديدة خاصها 6 حروف/أرقام على الأقل</div>`; return; }
+    if(p1 !== p2){ msg.innerHTML = `<div class="msg err">كلمتا السر الجديدة غير متطابقتين</div>`; return; }
+    const btn = document.getElementById("cp-save-btn");
+    btn.disabled = true;
+    msg.innerHTML = `<div class="small-muted">جاري التحقق...</div>`;
+    const verify = await sbLogin(email, oldPass);
+    if(!verify.access_token){
+      msg.innerHTML = `<div class="msg err">كلمة السر القديمة غير صحيحة</div>`;
+      btn.disabled = false;
+      return;
+    }
+    const res = await sbUpdateUserPassword(verify.access_token, p1);
+    if(res.ok){
+      msg.innerHTML = `<div class="msg ok">Password changed successfully ✅</div>`;
+      saveSession({
+        access_token: verify.access_token,
+        refresh_token: verify.refresh_token,
+        expires_at: Date.now() + (verify.expires_in||3600)*1000,
+        user: verify.user
+      });
+      setTimeout(()=> overlay.remove(), 1400);
+    } else {
+      msg.innerHTML = `<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;
+      btn.disabled = false;
+    }
+  };
+}
+
 /* ================= ADMIN: PREVIEW (no DB writes) ================= */
 let PREVIEW_LANG = "ar";
 
@@ -1115,6 +1517,10 @@ function collectPreviewData(){
   if(document.getElementById("s_bg")){
     s.bg_color=document.getElementById("s_bg").value; s.store_name=document.getElementById("s_store").value; s.default_language=document.getElementById("s_lang").value;
     s.whatsapp_enabled=document.getElementById("s_wa_enabled").checked; s.whatsapp_number=document.getElementById("s_wa_number").value; s.whatsapp_timing=document.getElementById("s_wa_timing").value; s.theme_id=SETTINGS_SELECTED_THEME||s.theme_id;
+    UNSAVED_DRAFT.settings=Object.assign({},s);
+  }
+  if(document.getElementById("d_bg_style")){
+    Object.assign(s, readDesignFields());
     UNSAVED_DRAFT.settings=Object.assign({},s);
   }
   const p=Object.assign({},adminData.product||{},UNSAVED_DRAFT.product||{});
@@ -1185,10 +1591,7 @@ function renderPreviewOverlay(settings, product){
 function closePreview(){
   const overlay = document.getElementById("preview-overlay");
   if(overlay) overlay.remove();
-  document.body.style.removeProperty("--bg");
-  document.body.style.removeProperty("--ink");
-  document.body.style.removeProperty("--muted");
-  document.body.setAttribute("data-theme","5");
+  resetAdminChrome();
   document.documentElement.dir = "rtl";
 }
 </script>
