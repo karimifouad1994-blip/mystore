@@ -160,7 +160,25 @@
   .admin-nav-links button, .admin-nav-links a{ font-size:.82rem; color:var(--muted); text-decoration:underline; background:none; padding:0; }
 
   /* ===== NEW: preview overlay ===== */
-  .video-section{margin:18px 0}.section-mini-title{font-weight:900;margin-bottom:10px}.cart-bar{display:flex;justify-content:flex-end;margin:10px 0 14px}.cart-button{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px;border-radius:999px;font-weight:800}.cart-button b{min-width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;font-size:.75rem}.purchase-selector{margin:20px 0}.purchase-selector .section-mini-title{font-size:1.12rem;color:var(--ink);margin-bottom:12px}.purchase-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.purchase-option{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;padding:13px 12px;border:1.5px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink)!important;font-weight:800;cursor:pointer;text-align:center}.purchase-option span{color:var(--ink)!important}.purchase-option.selected{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 15%,transparent)}.purchase-option input{accent-color:var(--accent);width:18px;height:18px}.variety-choice-wrap{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}.variety-choice-wrap .small-muted{color:var(--ink);font-weight:800;margin:0 0 10px}.variety-grid{grid-template-columns:1fr}.selection-info{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--card)}.selection-info-title{font-weight:900;color:var(--ink);font-size:1rem;margin-bottom:12px}.selection-info .field label{color:var(--ink);font-weight:800}.selection-info .choice-btn{color:var(--ink)}
+  .video-section{margin:18px 0}.section-mini-title{font-weight:900;margin-bottom:10px}.cart-bar{display:flex;justify-content:flex-end;margin:10px 0 14px}.cart-button{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px;border-radius:999px;font-weight:800}.cart-button b{min-width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;font-size:.75rem}.purchase-selector{margin:20px 0}.purchase-selector .section-mini-title{font-size:1.12rem;color:var(--ink);margin-bottom:12px}.purchase-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.purchase-option{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;padding:13px 12px;border:1.5px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink)!important;font-weight:800;cursor:pointer;text-align:center}.purchase-option span{color:var(--ink)!important}.purchase-option.selected{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 15%,transparent)}.purchase-option input{accent-color:var(--accent);width:18px;height:18px}.variety-choice-wrap{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}.variety-choice-wrap .small-muted{color:var(--ink);font-weight:800;margin:0 0 10px}.variety-grid{grid-template-columns:1fr}.selection-info{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--card)}.selection-info-title{font-weight:900;color:var(--ink);font-size:1rem;margin-bottom:12px}
+.preview-overlay .purchase-option,
+.preview-overlay .purchase-option span,
+.preview-overlay .selection-info,
+.preview-overlay .selection-info-title,
+.preview-overlay .selection-info .field label,
+.preview-overlay .card .field label,
+.preview-overlay .cart-button,
+.preview-overlay .pack-public,
+.preview-overlay .pack-public-title{
+  color:#2b2622 !important;
+}
+.preview-overlay .pack-public-desc{
+  color:#6d645c !important;
+}
+.preview-overlay .purchase-selector .section-mini-title{
+  color:#2b2622 !important;
+}
+.selection-info .field label{color:var(--ink);font-weight:800}.selection-info .choice-btn{color:var(--ink)}
 .preview-overlay{ position:fixed; inset:0; background:var(--bg); z-index:2000; overflow-y:auto; }
   .preview-bar{ position:sticky; top:0; z-index:5; display:flex; justify-content:space-between; align-items:center; padding:12px 18px; background:var(--card); border-bottom:1px solid var(--line); }
   .preview-bar .tag{ font-size:.78rem; font-weight:800; color:var(--accent); }
@@ -495,6 +513,9 @@ function initProductVideo(root=document){
 
   video.muted = false;
   video.volume = 1;
+  video.loop = true;
+  video.autoplay = true;
+  video.playsInline = true;
 
   const tryPlay = async ()=>{
     try{
@@ -844,13 +865,13 @@ function initPackGallery(){
 function buildFormMarkup(settings, product, lang, qty){
   const t=T[lang]||T.ar,title=lang==='ar'?product.title_ar:product.title_fr,desc=lang==='ar'?product.description_ar:product.description_fr;
   const images=(product.images||[]).filter(Boolean),mediaHtml=images[0]?`<img src="${escHtml(images[0])}" alt="${escHtml(title||'')}">`:"",thumbsHtml=images.length>1?`<div class="thumbs">${images.map(i=>`<img src="${escHtml(i)}">`).join('')}</div>`:"";
-  const videoHtml=product.video_url?`<div class="video-section"><div class="section-mini-title">${lang==='ar'?'🎥 فيديو المنتج':'🎥 Vidéo du produit'}</div><div class="video-wrap"><video class="product-video" src="${escHtml(product.video_url)}" playsinline preload="metadata"></video><button type="button" class="video-sound-btn">🔊</button></div></div>`:"";
+  const videoHtml=product.video_url?`<div class="video-section"><div class="video-wrap"><video class="product-video" src="${escHtml(product.video_url)}" playsinline autoplay loop preload="auto"></video><button type="button" class="video-sound-btn">🔊</button></div></div>`:"";
   const std=getStandardPackConfig(product),cus=getCustomPackConfig(product);
   const hasPacks=product.product_type==='clothing' && ((std.enabled&&std.visible)||(cus.enabled&&cus.visible));
   const hasStandardPack=std.enabled&&std.visible,hasCustomPack=cus.enabled&&cus.visible;
   const varietyChoices=hasStandardPack||hasCustomPack ? `<div class="variety-choice-wrap" id="variety-choice-wrap" style="display:none"><div class="small-muted">${lang==='ar'?'اختار نوع التشكيلة':'Choisissez le type de sélection'}</div><div class="purchase-grid variety-grid">${hasStandardPack?`<label class="purchase-option variety-option"><input type="radio" name="variety-choice" value="pack_standard"><span>${lang==='ar'?'تشكيلة محددة':'Assortiment fixe'}</span></label>`:''}${hasCustomPack?`<label class="purchase-option variety-option"><input type="radio" name="variety-choice" value="pack_custom"><span>${lang==='ar'?'تشكيلة مخصصة':'Assortiment personnalisé'}</span></label>`:''}</div></div>` : `<div class="variety-choice-wrap" id="variety-choice-wrap" style="display:none"><div class="small-muted">${lang==='ar'?'ما كايناش تشكيلة مفعلة حاليا':'Aucune sélection multiple n’est activée actuellement'}</div></div>`;
   const purchaseOptions=product.product_type==='clothing' ? `<div class="purchase-selector" id="purchase-selector"><div class="section-mini-title">${lang==='ar'?'🛒 اختار شنو بغيتي تشري':'🛒 Choisissez ce que vous voulez acheter'}</div><div class="purchase-grid"><label class="purchase-option selected"><input type="radio" name="purchase-choice" value="product" checked><span>${lang==='ar'?'قطعة واحدة':'Une pièce'}</span></label><label class="purchase-option"><input type="radio" name="purchase-choice" value="variety"><span>${lang==='ar'?'تشكيلة متنوعة':'Assortiment varié'}</span></label></div>${varietyChoices}</div>`:"";
-  return `<div class="topbar"><div class="brand">${escHtml(settings.store_name||'')}</div><div class="lang-switch"><button data-lang="ar" class="${lang==='ar'?'active':''}">AR</button><button data-lang="fr" class="${lang==='fr'?'active':''}">FR</button></div></div><div class="wrap"><div class="hero-media">${mediaHtml}</div>${thumbsHtml}<h1 class="title">${escHtml(title||'')}</h1><p class="desc">${escHtml(desc||'')}</p><div class="price-row"><span class="price">${product.price||0} ${t.currency}</span>${product.old_price?`<span class="old-price">${product.old_price} ${t.currency}</span>`:''}</div>${purchaseOptions}<div id="product-options-wrap">${buildClothingOptions(product,lang)}</div>${hasPacks?`<div id="pack-standard-wrap" style="display:none"><div class="selection-info-title">${lang==='ar'?'معلومات الاختيار':'Informations du choix'}</div>${std.enabled&&std.visible?buildPackPublicMarkup(product,lang,'standard'):''}</div><div id="pack-custom-wrap" style="display:none"><div class="selection-info-title">${lang==='ar'?'معلومات الاختيار':'Informations du choix'}</div>${cus.enabled&&cus.visible?buildPackPublicMarkup(product,lang,'custom'):''}</div>`:''}${videoHtml}<div class="cart-bar"><button type="button" class="cart-button" id="cart-button">🛒 <span>${lang==='ar'?'السلة':'Panier'}</span><b id="cart-count">0</b></button></div><div class="card"><div class="field"><label>${t.full_name}</label><input id="f_name" type="text"></div><div class="field"><label>${t.phone}</label><input id="f_phone" type="tel"></div><div class="field-row"><div class="field"><label>${t.city}</label><input id="f_city" type="text"></div><div class="field"><label>${t.qty}</label><div class="qty-stepper"><button type="button" id="qty-minus">−</button><span id="qty-value">${qty}</span><button type="button" id="qty-plus">+</button></div></div></div><div class="field"><label>${t.address}</label><textarea id="f_address"></textarea></div><div id="order-msg"></div><button class="cta" id="submit-btn">${t.place_order}</button></div><div class="footer-note">${escHtml(settings.store_name||'')}</div></div>`;
+  return `<div class="topbar"><div class="brand">${escHtml(settings.store_name||'')}</div><div class="lang-switch"><button data-lang="ar" class="${lang==='ar'?'active':''}">AR</button><button data-lang="fr" class="${lang==='fr'?'active':''}">FR</button></div></div><div class="wrap"><div class="hero-media">${mediaHtml}</div>${thumbsHtml}<h1 class="title">${escHtml(title||'')}</h1><p class="desc">${escHtml(desc||'')}</p><div class="price-row"><span class="price">${product.price||0} ${t.currency}</span>${product.old_price?`<span class="old-price">${product.old_price} ${t.currency}</span>`:''}</div>${purchaseOptions}<div id="product-options-wrap">${buildClothingOptions(product,lang)}</div>${hasPacks?`<div id="pack-standard-wrap" style="display:none"><div class="selection-info-title">${lang==='ar'?'معلومات الاختيار':'Informations du choix'}</div>${std.enabled&&std.visible?buildPackPublicMarkup(product,lang,'standard'):''}</div><div id="pack-custom-wrap" style="display:none"><div class="selection-info-title">${lang==='ar'?'معلومات الاختيار':'Informations du choix'}</div>${cus.enabled&&cus.visible?buildPackPublicMarkup(product,lang,'custom'):''}</div>`:''}${videoHtml}<div class="cart-bar"><button type="button" class="cart-button" id="cart-button">🛒 <span>${lang==='ar'?'السلة':'Panier'}</span><b id="cart-count">0</b></button></div><div class="card"><div class="field"><label>${t.full_name}</label><input id="f_name" type="text"></div><div class="field"><label>${t.phone}</label><input id="f_phone" type="tel"></div><div class="field"><label>${t.city}</label><input id="f_city" type="text"></div><div class="field"><label>${t.address}</label><textarea id="f_address"></textarea></div><div id="order-msg"></div><button class="cta" id="submit-btn">${t.place_order}</button></div><div class="footer-note">${escHtml(settings.store_name||'')}</div></div>`;
 }
 
 function initPurchaseSelector(root){
@@ -1877,15 +1898,13 @@ function renderPreviewOverlay(settings, product){
 
   if(hasProduct){
     initProductVideo(overlay);
+    initClothingOptions(overlay);
+    initPurchaseSelector(overlay);
+    initCart(overlay);
     overlay.querySelectorAll("[data-lang]").forEach(b=>{
       b.onclick = ()=>{ PREVIEW_LANG = b.dataset.lang; renderPreviewOverlay(settings, product); };
     });
-    let qty = 1;
-    const qtyMinus = overlay.querySelector("#qty-minus");
-    const qtyPlus = overlay.querySelector("#qty-plus");
-    const qtyValue = overlay.querySelector("#qty-value");
-    if(qtyMinus) qtyMinus.onclick = ()=>{ if(qty>1){ qty--; qtyValue.textContent = qty; } };
-    if(qtyPlus) qtyPlus.onclick = ()=>{ qty++; qtyValue.textContent = qty; };
+
     const submitBtn = overlay.querySelector("#submit-btn");
     if(submitBtn) submitBtn.onclick = (e)=>{
       e.preventDefault();
