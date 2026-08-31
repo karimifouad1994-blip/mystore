@@ -616,6 +616,14 @@ const ADMIN_I18N = {
 function translateAdminDom(root=document.getElementById("app")){
   if(!root) return;
   const dict=ADMIN_I18N[ADMIN_LANG]||ADMIN_I18N.ar;
+  // Build reverse maps so switching Arabic <-> Français is always reversible.
+  const otherLang = ADMIN_LANG === "fr" ? "ar" : "fr";
+  const reverse = {};
+  const otherDict = ADMIN_I18N[otherLang] || {};
+  Object.keys(otherDict).forEach(k=>{
+    const v = otherDict[k];
+    if(v && v !== k && reverse[v] == null) reverse[v] = k;
+  });
 
   // Translate only UI/static elements. Do not touch user-entered product/order content.
   const selectors = [
@@ -633,8 +641,10 @@ function translateAdminDom(root=document.getElementById("app")){
     while(walker.nextNode()) nodes.push(walker.currentNode);
     nodes.forEach(n=>{
       const trimmed=n.nodeValue.trim();
-      if(!trimmed || !dict[trimmed]) return;
-      n.nodeValue=n.nodeValue.replace(trimmed,dict[trimmed]);
+      if(!trimmed) return;
+      const translated = dict[trimmed] ?? reverse[trimmed];
+      if(translated == null || translated === trimmed) return;
+      n.nodeValue=n.nodeValue.replace(trimmed,translated);
     });
   });
 
@@ -649,14 +659,16 @@ function translateAdminDom(root=document.getElementById("app")){
   });
 }
 
-function setAdminLanguage(lang){
+async function setAdminLanguage(lang){
   if(!AT[lang]) return;
   try { collectCurrentAdminDraft(); } catch(e) {}
   ADMIN_LANG=lang;
   try { localStorage.setItem("store_admin_lang",lang); } catch(e) {}
   document.documentElement.dir=AT[lang].dir;
   document.documentElement.lang=lang;
-  if(location.hash.startsWith("#admin")) renderAdminDashboard(ADMIN_TAB||"product");
+  if(location.hash.startsWith("#admin")){
+    await renderAdminDashboard(ADMIN_TAB||"product");
+  }
 }
 let ADMIN_LANG_OBSERVER = null;
 function watchAdminTranslations(){
