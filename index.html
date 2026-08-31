@@ -186,6 +186,9 @@
   .pack-public-badge{font-size:.72rem;font-weight:800;color:var(--accent)}
   .pack-public-title{font-weight:900;font-size:1.05rem}
   .pack-public-desc{color:var(--muted);font-size:.86rem;line-height:1.7;margin:6px 0 10px}
+  .choice-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px}.choice-btn{padding:8px 13px;border:1.5px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font-weight:700}.choice-btn.selected{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .pack-piece-choice{border:1px solid var(--line);border-radius:10px;padding:11px;margin-top:9px;background:var(--bg)}
+
   .pack-gallery{position:relative;overflow:hidden;border-radius:12px;background:var(--bg);touch-action:pan-y}
   .pack-gallery img{width:100%;display:block;aspect-ratio:1/1;object-fit:cover}
   .pack-gallery-btn{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
@@ -571,7 +574,7 @@ const ADMIN_I18N = {
     "كلمة السر القديمة غير صحيحة":"كلمة السر القديمة غير صحيحة","جاري التحقق...":"جاري التحقق...","وقع مشكل بالجلسة، عاود دخول من جديد":"وقع مشكل بالجلسة، عاود دخول من جديد",
     "Password changed successfully ✅":"Password changed successfully ✅","الرابط انتهت صلاحيته أو وقع مشكل، اطلب رابط جديد":"الرابط انتهت صلاحيته أو وقع مشكل، اطلب رابط جديد",
     "تم حفظ التصميم ✅":"تم حفظ التصميم ✅","تم حفظ الإعدادات الأساسية ✅":"تم حفظ الإعدادات الأساسية ✅",
-    "صغير":"صغير","متوسط":"متوسط","كبير":"كبير","فاخر":"فاخر","خفيف":"خفيف","مضغوط":"مضغوط","مريح":"مريح","واسع":"واسع","افتراضي":"افتراضي","يمين":"يمين","توسيط":"توسيط","يسار":"يسار",
+    "صغير":"صغير","متوسط":"متوسط","كبير":"كبير","فاخر":"فاخر","خفيف":"خفيف","مضغوط":"مضغوط","مريح":"مريح","واسع":"واسع","افتراضي":"افتراضي","يمين":"يمين","توسيط":"توسيط","يسار":"يسار","نوع المنتج":"نوع المنتج","المقاسات (افصل بفاصلة)":"المقاسات (افصل بفاصلة)","الألوان (افصل بفاصلة)":"الألوان (افصل بفاصلة)","حذف المنتج نهائياً":"حذف المنتج نهائياً","طريقة الـPack":"طريقة الـPack","الزبون يختار كل قطعة":"الزبون يختار كل قطعة","تشكيلة متنوعة جاهزة":"تشكيلة متنوعة جاهزة","عدد القطع":"عدد القطع","تم حذف المنتج":"تم حذف المنتج","نوع المنتج":"نوع المنتج","المقاسات (افصل بفاصلة)":"المقاسات (افصل بفاصلة)","الألوان (افصل بفاصلة)":"الألوان (افصل بفاصلة)","تفعيل الـPack":"تفعيل الـPack","إظهار الـPack للزبون":"إظهار الـPack للزبون","طريقة الـPack":"طريقة الـPack","الزبون يختار كل قطعة":"الزبون يختار كل قطعة","تشكيلة متنوعة جاهزة":"تشكيلة متنوعة جاهزة","عدد القطع":"عدد القطع",
     "Pack":"Pack","إضافة Pack":"إضافة Pack","تفعيل الـPack":"تفعيل الـPack","الـPack ظاهر للزبون":"الـPack ظاهر للزبون","عنوان الـPack (عربي)":"عنوان الـPack (عربي)","Titre du Pack (français)":"Titre du Pack (français)","وصف الـPack (عربي)":"وصف الـPack (عربي)","Description du Pack (français)":"Description du Pack (français)","ثمن الـPack":"ثمن الـPack","الثمن القديم للـPack (اختياري)":"الثمن القديم للـPack (اختياري)","صور الـPack":"صور الـPack","📷 إضافة صور الـPack":"📷 إضافة صور الـPack","حفظ الـPack":"حفظ الـPack","حذف الـPack":"حذف الـPack","إخفاء الـPack":"إخفاء الـPack","إظهار الـPack":"إظهار الـPack","الـPack غير مفعل":"الـPack غير مفعل","اختيار الـPack":"اختيار الـPack","الباقة":"الباقة","الصور":"الصور","دير السحب باش تشوف باقي الصور":"اسحب لرؤية باقي الصور","تم حفظ الـPack ✅":"تم حفظ الـPack ✅","تم حذف الـPack":"تم حذف الـPack","ماكاينش Pack حالياً":"لا يوجد Pack حالياً"
   },
   fr: {
@@ -609,7 +612,7 @@ const ADMIN_I18N = {
     "تغيير كلمة السر":"Changer le mot de passe","كلمة السر القديمة":"Ancien mot de passe","دخل كلمة السر القديمة":"Entrez l’ancien mot de passe","كلمة السر الجديدة خاصها 6 حروف/أرقام على الأقل":"Le nouveau mot de passe doit contenir au moins 6 caractères",
     "كلمة السر القديمة غير صحيحة":"Ancien mot de passe incorrect","جاري التحقق...":"Vérification...","وقع مشكل بالجلسة، عاود دخول من جديد":"Problème de session, reconnectez-vous",
     "Password changed successfully ✅":"Mot de passe modifié avec succès ✅","تم حفظ التصميم ✅":"Design enregistré ✅","تم حفظ الإعدادات الأساسية ✅":"Paramètres de base enregistrés ✅",
-    "صغير":"Petit","متوسط":"Moyen","كبير":"Grand","فاخر":"Premium","خفيف":"Léger","مضغوط":"Compact","مريح":"Confortable","واسع":"Spacieux","افتراضي":"Par défaut","يمين":"Droite","توسيط":"Centré","يسار":"Gauche",
+    "صغير":"Petit","متوسط":"Moyen","كبير":"Grand","فاخر":"Premium","خفيف":"Léger","مضغوط":"Compact","مريح":"Confortable","واسع":"Spacieux","افتراضي":"Par défaut","يمين":"Droite","توسيط":"Centré","يسار":"Gauche","نوع المنتج":"Type de produit","المقاسات (افصل بفاصلة)":"Tailles (séparées par virgule)","الألوان (افصل بفاصلة)":"Couleurs (séparées par virgule)","حذف المنتج نهائياً":"Supprimer définitivement le produit","طريقة الـPack":"Mode du Pack","الزبون يختار كل قطعة":"Le client choisit chaque pièce","تشكيلة متنوعة جاهزة":"Assortiment varié prêt","عدد القطع":"Nombre de pièces","تم حذف المنتج":"Produit supprimé","نوع المنتج":"Type de produit","المقاسات (افصل بفاصلة)":"Tailles (séparées par virgule)","الألوان (افصل بفاصلة)":"Couleurs (séparées par virgule)","تفعيل الـPack":"Activer le Pack","إظهار الـPack للزبون":"Afficher le Pack au client","طريقة الـPack":"Mode du Pack","الزبون يختار كل قطعة":"Le client choisit chaque pièce","تشكيلة متنوعة جاهزة":"Assortiment varié prêt","عدد القطع":"Nombre de pièces",
     "Pack":"Pack","إضافة Pack":"Ajouter un Pack","ضيف Pack للمنتج، تقدر تخليه ظاهر، تخبيه مؤقتاً، أو تمسحو نهائياً.":"Ajoutez un Pack au produit. Vous pouvez l’afficher, le masquer temporairement ou le supprimer définitivement.","حذف الـPack نهائياً؟":"Supprimer définitivement le Pack ?","تفعيل الـPack":"Activer le Pack","الـPack ظاهر للزبون":"Pack visible pour le client","عنوان الـPack (عربي)":"Titre du Pack (arabe)","Titre du Pack (français)":"Titre du Pack (français)","وصف الـPack (عربي)":"Description du Pack (arabe)","Description du Pack (français)":"Description du Pack (français)","ثمن الـPack":"Prix du Pack","الثمن القديم للـPack (اختياري)":"Ancien prix du Pack (optionnel)","صور الـPack":"Images du Pack","📷 إضافة صور الـPack":"📷 Ajouter des images du Pack","حفظ الـPack":"Enregistrer le Pack","حذف الـPack":"Supprimer le Pack","إخفاء الـPack":"Masquer le Pack","إظهار الـPack":"Afficher le Pack","الـPack غير مفعل":"Pack désactivé","اختيار الـPack":"Choisir le Pack","الباقة":"Pack","الصور":"images","دير السحب باش تشوف باقي الصور":"Faites glisser pour voir les autres images","تم حفظ الـPack ✅":"Pack enregistré ✅","تم حذف الـPack":"Pack supprimé","ماكاينش Pack حالياً":"Aucun Pack pour le moment"
   }
 };
@@ -818,6 +821,7 @@ function buildFormMarkup(settings, product, lang, qty){
         <span class="price">${product.price||0} ${t.currency}</span>
         ${product.old_price ? `<span class="old-price">${product.old_price} ${t.currency}</span>` : ""}
       </div>
+      ${buildClothingOptions(product, lang)}
       ${product.pack_enabled && product.pack_visible ? buildPackPublicMarkup(product, lang) : ""}
 
       ${showWaBefore ? `<a class="cta secondary wa-btn" href="${waHref((lang==='ar'?'مرحبا، عندي سؤال على ':'Bonjour, j\'ai une question sur ')+(title||''))}" target="_blank">💬 ${t.contact_whatsapp}</a>` : ""}
@@ -857,13 +861,36 @@ function buildFormMarkup(settings, product, lang, qty){
   `;
 }
 
+function csvList(v){return String(v||"").split(/[,\n;]+/).map(x=>x.trim()).filter(Boolean)}
+function escHtml(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;")}
+function getPackConfig(p){let c=p&&p.pack_config;if(typeof c==="string"){try{c=JSON.parse(c)}catch(e){c=null}};return c||{mode:p?.pack_mode||"choice",pieces:p?.pack_pieces||3,items:p?.pack_items||[]}}
+function buildClothingOptions(product,lang){
+  if(product.product_type!=="clothing") return "";
+  const sizes=csvList(product.sizes), colors=csvList(product.colors); if(!sizes.length&&!colors.length)return "";
+  return `<div class="card" style="margin-top:14px" id="product-options"><div class="field"><label>${lang==="ar"?'المقاس':'Taille'}</label><div class="choice-grid" id="product-sizes">${sizes.map((x,i)=>`<button type="button" class="choice-btn ${i===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div><div class="field"><label>${lang==="ar"?'اللون':'Couleur'}</label><div class="choice-grid" id="product-colors">${colors.map((x,i)=>`<button type="button" class="choice-btn ${i===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div></div>`;
+}
+function initClothingOptions(root){if(!root)return;root.querySelectorAll('#product-options .choice-grid').forEach(g=>g.querySelectorAll('.choice-btn').forEach(b=>b.onclick=()=>{g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')}))}
+function selectedValue(root,id){const b=root?.querySelector(`#${id} .choice-btn.selected`);return b?b.dataset.value:""}
+function csvList(v){return String(v||"").split(/[,\n;]+/).map(x=>x.trim()).filter(Boolean)}
+function escHtml(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;")}
+function buildClothingOptions(product,lang){
+  if(product.product_type!=="clothing") return "";
+  const sizes=csvList(product.sizes), colors=csvList(product.colors);
+  if(!sizes.length && !colors.length) return "";
+  return `<div class="card" id="product-options"><div class="field"><label>${lang==="ar"?'المقاس':'Taille'}</label><div class="choice-grid" id="product-sizes">${sizes.map((x,i)=>`<button type="button" class="choice-btn ${i===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div><div class="field"><label>${lang==="ar"?'اللون':'Couleur'}</label><div class="choice-grid" id="product-colors">${colors.map((x,i)=>`<button type="button" class="choice-btn ${i===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div></div>`;
+}
+function initClothingOptions(root){if(!root)return;root.querySelectorAll('#product-options .choice-grid').forEach(g=>g.querySelectorAll('.choice-btn').forEach(b=>b.onclick=()=>{g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')}))}
+function selectedChoice(root,id){const b=root?.querySelector(`#${id} .choice-btn.selected`);return b?b.dataset.value:""}
+
 function buildPackPublicMarkup(product, lang){
-  const title=lang==="ar"?(product.pack_title_ar||"Pack"):(product.pack_title_fr||"Pack");
-  const desc=lang==="ar"?(product.pack_description_ar||""):(product.pack_description_fr||"");
-  const imgs=(product.pack_images||[]).filter(Boolean);
-  const old=product.pack_old_price?`<span class="old-price">${product.pack_old_price} DH</span>`:"";
-  const img=imgs[0]?`<div class="pack-gallery" id="pack-gallery"><img id="pack-gallery-img" src="${imgs[0]}" alt="${title}">${imgs.length>1?`<button type="button" class="pack-gallery-btn pack-gallery-prev" id="pack-gallery-prev">‹</button><button type="button" class="pack-gallery-btn pack-gallery-next" id="pack-gallery-next">›</button>`:""}</div><div class="pack-gallery-dots">${imgs.length>1?`1 / ${imgs.length} · ${lang==="ar"?"دير السحب باش تشوف باقي الصور":"Faites glisser pour voir les autres images"}`:""}</div>`:"";
-  return `<div class="pack-public"><div class="pack-public-head"><div class="pack-public-title">${title}</div><div class="pack-public-badge">PACK</div></div>${img}<div class="pack-public-desc">${desc}</div><div class="price-row"><span class="price">${product.pack_price||0} DH</span>${old}</div><label class="pack-choice"><input type="radio" name="purchase-choice" id="pack-choice" value="pack"> <span>${lang==="ar"?"اختيار الـPack":"Choisir le Pack"}</span></label></div>`;
+  const title=lang==="ar"?(product.pack_title_ar||"Pack"):(product.pack_title_fr||product.pack_title_ar||"Pack");
+  const desc=lang==="ar"?(product.pack_description_ar||""):(product.pack_description_fr||product.pack_description_ar||"");
+  const imgs=(product.pack_images||[]).filter(Boolean); const old=product.pack_old_price?`<span class="old-price">${product.pack_old_price} DH</span>`:""; const c=getPackConfig(product);
+  const img=imgs[0]?`<div class="pack-gallery" id="pack-gallery"><img id="pack-gallery-img" src="${escHtml(imgs[0])}" alt="${escHtml(title)}">${imgs.length>1?`<button type="button" class="pack-gallery-btn pack-gallery-prev" id="pack-gallery-prev">‹</button><button type="button" class="pack-gallery-btn pack-gallery-next" id="pack-gallery-next">›</button>`:""}</div><div class="pack-gallery-dots">${imgs.length>1?`1 / ${imgs.length} · ${lang==="ar"?"دير السحب باش تشوف باقي الصور":"Faites glisser pour voir les autres images"}`:""}</div>`:"";
+  let options="";
+  if(product.product_type==="clothing" && c.mode==="choice"){const sizes=csvList(product.sizes),colors=csvList(product.colors);options=`<div style="margin-top:12px"><strong>${lang==="ar"?'اختيارات كل قطعة':'Choix de chaque pièce'}</strong>${Array.from({length:Math.max(1,Number(c.pieces)||1)},(_,i)=>`<div class="pack-piece-choice"><strong>${lang==="ar"?'القطعة':'Pièce'} ${i+1}</strong><div class="field" style="margin-top:8px"><label>${lang==="ar"?'المقاس':'Taille'}</label><div class="choice-grid pack-sizes" data-piece="${i}">${sizes.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div><div class="field"><label>${lang==="ar"?'اللون':'Couleur'}</label><div class="choice-grid pack-colors" data-piece="${i}">${colors.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div></div>`).join("")}</div>`;}
+  if(product.product_type==="clothing" && c.mode==="ready"){options=`<div class="small-muted" style="margin-top:10px">${lang==="ar"?'تشكيلة متنوعة جاهزة — ما كاين حتى اختيار للزبون':'Assortiment varié prêt — aucun choix pour le client'}</div>`;}
+  return `<div class="pack-public"><div class="pack-public-head"><div class="pack-public-title">${escHtml(title)}</div><div class="pack-public-badge">PACK</div></div>${img}<div class="pack-public-desc">${escHtml(desc)}</div><div class="price-row"><span class="price">${product.pack_price||0} DH</span>${old}</div>${options}<label class="pack-choice"><input type="radio" name="purchase-choice" id="pack-choice" value="pack"> <span>${lang==="ar"?"اختيار الـPack":"Choisir le Pack"}</span></label></div>`;
 }
 function initPackGallery(){
   const p=STATE.product, imgs=(p&&p.pack_images||[]).filter(Boolean); if(imgs.length<2)return;
@@ -923,6 +950,7 @@ function renderLanding(){
     };
     document.getElementById("submit-btn").onclick = onSubmitOrder;
     initProductVideo(document);
+    initClothingOptions(document);
     initPackGallery();
   }
 
@@ -944,7 +972,12 @@ async function onSubmitOrder(){
   }
   const packChoice = document.getElementById("pack-choice");
   STATE.purchaseType = (packChoice && packChoice.checked) ? "pack" : "product";
-  STATE.order = { customer_name:name, phone, city, address, quantity:qty };
+  const packSelected = !!document.getElementById("pack-choice")?.checked;
+  const productOptions = {size:selectedValue(document,"product-sizes"),color:selectedValue(document,"product-colors")};
+  let packOptions=[];
+  if(packSelected && STATE.product.product_type==="clothing"){ const c=getPackConfig(STATE.product); if(c.mode==="choice"){ const pieces=Math.max(1,Number(c.pieces)||1); for(let i=0;i<pieces;i++){ const sg=document.querySelector(`.pack-sizes[data-piece=\"${i}\"] .selected`), cg=document.querySelector(`.pack-colors[data-piece=\"${i}\"] .selected`); packOptions.push({piece:i+1,size:sg?sg.dataset.value:"",color:cg?cg.dataset.value:""}); }} else { packOptions=c.items||[]; }}
+  STATE.purchaseType = packSelected ? "pack" : "product";
+  STATE.order = { customer_name:name, phone, city, address, quantity:qty, product_options:productOptions, pack_options:packOptions };
 
   if(STATE.upsell){
     renderUpsellStep();
@@ -991,6 +1024,8 @@ async function finalizeOrder(upsellAccepted, upsellId){
     pack_selected: STATE.purchaseType === "pack",
     pack_price: STATE.purchaseType === "pack" ? (STATE.product.pack_price||0) : null,
     pack_title: STATE.purchaseType === "pack" ? (STATE.lang === "ar" ? STATE.product.pack_title_ar : STATE.product.pack_title_fr) : null,
+    pack_options: STATE.order.pack_options || [],
+    product_options: STATE.order.product_options || {},
     upsell_accepted: upsellAccepted,
     upsell_id: upsellId
   };
@@ -1293,6 +1328,10 @@ function renderProductTab(){
       <div class="upload-status" id="video-status"></div>
     </div>
 
+    <div class="field"><label>نوع المنتج</label><select id="p_type"><option value="standard" ${p.product_type!=="clothing"?'selected':''}>Standard</option><option value="clothing" ${p.product_type==="clothing"?'selected':''}>Vêtements</option></select></div>
+    <div id="clothing-fields" style="display:${p.product_type==="clothing"?'block':'none'}"><div class="field-row"><div class="field"><label>المقاسات (افصل بفاصلة)</label><input id="p_sizes" value="${escHtml(p.sizes||"S, M, L, XL")}"></div><div class="field"><label>الألوان (افصل بفاصلة)</label><input id="p_colors" value="${escHtml(p.colors||"Noir, Blanc")}"></div></div></div>
+    <div class="field"><label>نوع المنتج</label><select id="p_type"><option value="standard" ${p.product_type!=="clothing"?'selected':''}>Standard</option><option value="clothing" ${p.product_type==="clothing"?'selected':''}>Vêtements</option></select></div>
+    <div id="clothing-fields" style="display:${p.product_type==="clothing"?'block':'none'}"><div class="field-row"><div class="field"><label>المقاسات (افصل بفاصلة)</label><input id="p_sizes" value="${escHtml(p.sizes||"S, M, L, XL")}"></div><div class="field"><label>الألوان (افصل بفاصلة)</label><input id="p_colors" value="${escHtml(p.colors||"Noir, Blanc")}"></div></div></div>
     <div class="toggle"><input type="checkbox" id="p_active" ${p.is_active!==false?'checked':''}><label>المنتج ظاهر فالموقع</label></div>
 
     <div class="pack-admin-box">
@@ -1318,12 +1357,18 @@ function renderProductTab(){
         <div class="pack-gallery-preview" id="pack-images-preview"></div>
         <div class="upload-status" id="pack-images-status"></div>
       </div>
+      <div class="field"><label>طريقة الـPack</label><select id="pack_mode"><option value="choice">الزبون يختار كل قطعة</option><option value="ready">تشكيلة متنوعة جاهزة</option></select></div>
+      <div class="field" id="pack-pieces-field"><label>عدد القطع</label><input id="pack_pieces" type="number" min="1" value="${p.pack_pieces||3}"></div>
+      <div id="pack-ready-items"></div>
+      <div class="field"><label>طريقة الـPack</label><select id="pack_mode"><option value="choice">الزبون يختار كل قطعة</option><option value="ready">تشكيلة متنوعة جاهزة</option></select></div>
+      <div class="field" id="pack-pieces-field"><label>عدد القطع</label><input id="pack_pieces" type="number" min="1" value="${p.pack_pieces||3}"></div>
+      <div id="pack-ready-items"></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button type="button" class="save-btn" id="save-pack">حفظ الـPack</button>
         <button type="button" class="upload-btn" id="delete-pack">حذف الـPack</button>
       </div>
     </div>
-    <button class="save-btn" id="save-product">حفظ المنتج</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="save-btn" id="save-product">حفظ المنتج</button><button type="button" class="upload-btn" id="delete-product">حذف المنتج نهائياً</button></div>
   `;
 
   renderImagesPreview();
@@ -1340,9 +1385,13 @@ function renderProductTab(){
   };
 
   document.getElementById("save-product").onclick = saveProduct;
+  document.getElementById("delete-product").onclick = deleteProduct;
   document.getElementById("btn-add-pack-images").onclick = ()=>document.getElementById("input-pack-images").click();
   document.getElementById("input-pack-images").onchange = onPackImagesSelected;
   document.getElementById("save-pack").onclick = savePack;
+  const pc=getPackConfig(p); document.getElementById("pack_mode").value=pc.mode||"choice";
+  function renderReadyItems(){ const box=document.getElementById("pack-ready-items"); if(!box)return; if(document.getElementById("pack_mode").value!=="ready"){box.innerHTML="";return;} const sizes=csvList(document.getElementById("p_sizes")?.value||p.sizes),colors=csvList(document.getElementById("p_colors")?.value||p.colors),items=pc.items||[]; const n=Math.max(1,parseInt(document.getElementById("pack_pieces")?.value||"3",10)); box.innerHTML=Array.from({length:n},(_,i)=>{const it=items[i]||{};return `<div class="pack-piece-choice"><strong>القطعة ${i+1}</strong><div class="field"><label>المقاس</label><select class="ready-size">${sizes.map(x=>`<option ${x===it.size?'selected':''}>${escHtml(x)}</option>`).join("")}</select></div><div class="field"><label>اللون</label><select class="ready-color">${colors.map(x=>`<option ${x===it.color?'selected':''}>${escHtml(x)}</option>`).join("")}</select></div></div>`}).join(""); }
+  renderReadyItems(); document.getElementById("pack_mode").onchange=renderReadyItems; document.getElementById("pack_pieces").oninput=renderReadyItems; document.getElementById("p_type").onchange=()=>{document.getElementById("clothing-fields").style.display=document.getElementById("p_type").value==="clothing"?"block":"none";renderReadyItems();};
   document.getElementById("delete-pack").onclick = deletePack;
   renderPackImagesPreview();
 }
@@ -1365,9 +1414,10 @@ async function onPackImagesSelected(e){
   }
 }
 function collectPackBody(){
-  const enabled=document.getElementById("pack_enabled")?.checked||false;
-  const visible=document.getElementById("pack_visible")?.checked||false;
-  return {pack_enabled:enabled,pack_visible:enabled&&visible,pack_title_ar:document.getElementById("pack_title_ar")?.value||"",pack_title_fr:document.getElementById("pack_title_fr")?.value||"",pack_description_ar:document.getElementById("pack_desc_ar")?.value||"",pack_description_fr:document.getElementById("pack_desc_fr")?.value||"",pack_price:document.getElementById("pack_price")?.value?parseFloat(document.getElementById("pack_price").value):null,pack_old_price:document.getElementById("pack_old_price")?.value?parseFloat(document.getElementById("pack_old_price").value):null,pack_images:pendingPackImages.slice()};
+  const enabled=document.getElementById("pack_enabled")?.checked||false, visible=document.getElementById("pack_visible")?.checked||false;
+  const mode=document.getElementById("pack_mode")?.value||"choice", pieces=Math.max(1,parseInt(document.getElementById("pack_pieces")?.value||"3",10));
+  const items=Array.from(document.querySelectorAll("#pack-ready-items .pack-piece-choice")).map((el,i)=>({piece:i+1,size:el.querySelector(".ready-size")?.value||"",color:el.querySelector(".ready-color")?.value||""}));
+  return {pack_enabled:enabled,pack_visible:enabled&&visible,pack_title_ar:document.getElementById("pack_title_ar")?.value||"",pack_title_fr:document.getElementById("pack_title_fr")?.value||"",pack_description_ar:document.getElementById("pack_desc_ar")?.value||"",pack_description_fr:document.getElementById("pack_desc_fr")?.value||"",pack_price:document.getElementById("pack_price")?.value?parseFloat(document.getElementById("pack_price").value):null,pack_old_price:document.getElementById("pack_old_price")?.value?parseFloat(document.getElementById("pack_old_price").value):null,pack_images:pendingPackImages.slice(),pack_mode:mode,pack_pieces:pieces,pack_items:items,pack_config:{mode,pieces,items}};
 }
 async function savePack(){
   if(!adminData.product)return; const msg=document.getElementById("save-msg"),btn=document.getElementById("save-pack"); if(btn)btn.disabled=true;
@@ -1376,10 +1426,16 @@ async function savePack(){
 }
 async function deletePack(){
   if(!adminData.product)return; if(!confirm("حذف الـPack نهائياً؟"))return;
-  const body={pack_enabled:false,pack_visible:false,pack_title_ar:"",pack_title_fr:"",pack_description_ar:"",pack_description_fr:"",pack_price:null,pack_old_price:null,pack_images:[]};
+  const body={pack_enabled:false,pack_visible:false,pack_title_ar:"",pack_title_fr:"",pack_description_ar:"",pack_description_fr:"",pack_price:null,pack_old_price:null,pack_images:[],pack_mode:"choice",pack_pieces:3,pack_items:[],pack_config:{mode:"choice",pieces:3,items:[]}};
   const res=await sbUpdate("products",`id=eq.${adminData.product.id}`,body);
   const msg=document.getElementById("save-msg"); msg.innerHTML=res.ok?`<div class="msg ok">تم حذف الـPack</div>`:`<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;
   if(res.ok){UNSAVED_DRAFT.product=null;await loadAdminData();renderProductTab();}
+}
+
+async function deleteProduct(){
+  if(!adminData.product)return;
+  if(!confirm(ADMIN_LANG==='fr'?"Supprimer définitivement le produit ?":"حذف المنتج نهائياً؟"))return;
+  try{ await sbDelete("upsells",`product_id=eq.${adminData.product.id}`); const ok=await sbDelete("products",`id=eq.${adminData.product.id}`); const msg=document.getElementById("save-msg"); if(ok){msg.innerHTML=`<div class="msg ok">${ADMIN_LANG==='fr'?"Produit supprimé":"تم حذف المنتج"} ✅</div>`;await loadAdminData();renderProductTab();}else msg.innerHTML=`<div class="msg err">${ADMIN_LANG==='fr'?"Suppression impossible":"تعذر حذف المنتج"}</div>`;}catch(e){console.error(e);}
 }
 
 function renderImagesPreview(){
@@ -1482,6 +1538,9 @@ async function saveProduct(){
     video_url: pendingVideoUrl || "",
     images: pendingImages.slice(),
     is_active: document.getElementById("p_active").checked,
+    product_type: document.getElementById("p_type")?.value||"standard",
+    sizes: document.getElementById("p_sizes")?.value||"",
+    colors: document.getElementById("p_colors")?.value||"",
     ...collectPackBody()
   };
   const msg = document.getElementById("save-msg");
