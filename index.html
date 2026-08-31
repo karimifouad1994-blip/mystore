@@ -803,6 +803,7 @@ async function finalizeOrder(upsellAccepted, upsellId){
 
 /* ================= ADMIN ================= */
 function renderAdminLogin(){
+  document.documentElement.dir=AT[ADMIN_LANG].dir; document.documentElement.lang=ADMIN_LANG;
   resetAdminChrome();
   const app = document.getElementById("app");
   app.innerHTML = `
@@ -956,6 +957,7 @@ function readDesignFields(){
 }
 
 async function renderAdminDashboard(tab){
+  document.documentElement.dir=AT[ADMIN_LANG].dir; document.documentElement.lang=ADMIN_LANG;
   ADMIN_TAB = tab;
   resetAdminChrome();
   const app = document.getElementById("app");
