@@ -1419,8 +1419,31 @@ function collectPackBody(){
 }
 async function saveProduct(){
   if(!PREVIEW_APPROVED){document.getElementById('save-msg').innerHTML='<div class="msg err">خاصك تدير المعاينة قبل الحفظ</div>';return;}
-  const type=document.getElementById('p_type').value,body={title_ar:document.getElementById('p_title_ar').value,title_fr:document.getElementById('p_title_fr').value,description_ar:document.getElementById('p_desc_ar').value,description_fr:document.getElementById('p_desc_fr').value,price:parseFloat(getProductFormValue('price'))||0,stock_quantity:Math.max(0,parseInt(getProductFormValue('stock')||'0',10)),old_price:getProductFormValue('old_price')?parseFloat(getProductFormValue('old_price')):null,video_url:pendingVideoUrl||'',images:pendingImages.slice(),is_active:document.getElementById('p_active').checked,product_type:type,sizes:document.getElementById('p_sizes')?.value||'',colors:document.getElementById('p_colors')?.value||'',...collectPackBody()};
-  const msg=document.getElementById('save-msg'),btn=document.getElementById('save-product');btn.disabled=true;try{const res=adminData.product?await sbUpdate('products',`id=eq.${adminData.product.id}`,body):await sbInsert('products',body,true);const ok=res.ok&&res.status>=200&&res.status<300&&(!adminData.product?Array.isArray(res.data)&&res.data.length>0:true);msg.innerHTML=ok?'<div class="msg ok">تم الحفظ ✅</div>':'<div class="msg err">وقع مشكل، حاول مرة أخرى</div>';if(ok){UNSAVED_DRAFT.product=null;PREVIEW_APPROVED=false;await loadAdminData();renderProductTab();}}catch(e){msg.innerHTML=`<div class="msg err">وقع مشكل: ${escHtml(e?.message||'خطأ غير معروف')}</div>`}btn.disabled=false;
+  const type=document.getElementById('p_type').value;
+  const baseBody={title_ar:document.getElementById('p_title_ar').value,title_fr:document.getElementById('p_title_fr').value,description_ar:document.getElementById('p_desc_ar').value,description_fr:document.getElementById('p_desc_fr').value,price:parseFloat(getProductFormValue('price'))||0,stock_quantity:Math.max(0,parseInt(getProductFormValue('stock')||'0',10)),old_price:getProductFormValue('old_price')?parseFloat(getProductFormValue('old_price')):null,video_url:pendingVideoUrl||'',images:pendingImages.slice(),is_active:document.getElementById('p_active').checked,product_type:type,sizes:document.getElementById('p_sizes')?.value||'',colors:document.getElementById('p_colors')?.value||''};
+  const body={...baseBody,...collectPackBody()};
+  const msg=document.getElementById('save-msg'),btn=document.getElementById('save-product');btn.disabled=true;
+  try{
+    let res=adminData.product?await sbUpdate('products',`id=eq.${adminData.product.id}`,body):await sbInsert('products',body,true);
+    let ok=res.ok&&res.status>=200&&res.status<300&&(!adminData.product?Array.isArray(res.data)&&res.data.length>0:true);
+    if(!ok && adminData.product){
+      const fallback=await sbUpdate('products',`id=eq.${adminData.product.id}`,baseBody);
+      ok=fallback.ok&&fallback.status>=200&&fallback.status<300;
+      if(ok){
+        msg.innerHTML='<div class="msg ok">تم الحفظ ✅</div>';
+        UNSAVED_DRAFT.product=null;PREVIEW_APPROVED=false;await loadAdminData();renderProductTab();btn.disabled=false;return;
+      }
+      res=fallback;
+    }
+    if(ok){
+      msg.innerHTML='<div class="msg ok">تم الحفظ ✅</div>';
+      UNSAVED_DRAFT.product=null;PREVIEW_APPROVED=false;await loadAdminData();renderProductTab();
+    }else{
+      const detail=res.data?.message||res.data?.hint||res.data?.details||res.error||`HTTP ${res.status}`;
+      msg.innerHTML=`<div class="msg err">وقع مشكل فالحفظ: ${escHtml(detail)}</div>`;
+    }
+  }catch(e){msg.innerHTML=`<div class="msg err">وقع مشكل: ${escHtml(e?.message||'خطأ غير معروف')}</div>`}
+  btn.disabled=false;
 }
 async function deletePack(){return;}
 async function deleteProduct(){
