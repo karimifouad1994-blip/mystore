@@ -325,8 +325,11 @@ async function sbUpdate(table, query, body){
   return { ok: r.ok, status: r.status, data };
 }
 async function sbDelete(table, query){
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, { method:"DELETE", headers: headers(true) });
-  return r.ok;
+  try{
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, { method:"DELETE", headers: headers(true) });
+    let data=null; try{ data=await r.json(); }catch(e){}
+    return {ok:r.ok,status:r.status,data};
+  }catch(e){ return {ok:false,status:0,data:null,error:e?.message||String(e)}; }
 }
 async function sbLogin(email, password){
   const r = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
@@ -784,116 +787,83 @@ function waLink(prefText){
 }
 
 /* Shared markup builder used by both the real landing page and the admin Preview. */
-function buildFormMarkup(settings, product, lang, qty){
-  const t = T[lang] || T.ar;
-  const title = lang==="ar" ? product.title_ar : product.title_fr;
-  const desc = lang==="ar" ? product.description_ar : product.description_fr;
-  const images = (product.images||[]).filter(Boolean);
-
-  const mediaHtml = images[0] ? `<img src="${images[0]}" alt="${title||''}">` : "";
-  const thumbsHtml = images.length>1 ? `<div class="thumbs">${images.map(i=>`<img src="${i}">`).join("")}</div>` : "";
-  const videoHtml = product.video_url ? `<div class="video-section"><div class="section-mini-title">${lang==='ar'?'🎥 فيديو المنتج':'🎥 Vidéo du produit'}</div><div class="video-wrap"><video class="product-video" src="${product.video_url}" playsinline preload="metadata"></video><button type="button" class="video-sound-btn" aria-label="${lang==='ar'?'الصوت':'Son'}">🔊</button></div></div>` : "";
-  const num = (settings.whatsapp_number||"").replace(/\D/g,"");
-  const showWaBefore = settings.whatsapp_enabled && settings.whatsapp_timing === "before";
-  const waHref = (txt)=> `https://wa.me/${num}?text=${encodeURIComponent(txt)}`;
-
-  return `
-    <div class="topbar">
-      <div class="brand">${settings.store_name||""}</div>
-      <div class="lang-switch">
-        <button data-lang="ar" class="${lang==='ar'?'active':''}">AR</button>
-        <button data-lang="fr" class="${lang==='fr'?'active':''}">FR</button>
-      </div>
-    </div>
-    <div class="wrap">
-      <div class="hero-media">${mediaHtml}</div>
-      ${thumbsHtml}
-      <h1 class="title">${title||""}</h1>
-      <p class="desc">${desc||""}</p>
-      <div class="price-row">
-        <span class="price">${product.price||0} ${t.currency}</span>
-        ${product.old_price ? `<span class="old-price">${product.old_price} ${t.currency}</span>` : ""}
-      </div>
-      ${product.pack_enabled && product.pack_visible ? `<div class="purchase-selector" id="purchase-selector"><div class="section-mini-title">${lang==='ar'?'🛒 اختار طريقة الشراء':'🛒 Choisissez votre achat'}</div><div class="purchase-grid"><label class="purchase-option selected"><input type="radio" name="purchase-choice" id="product-choice" value="product" checked><span>${lang==='ar'?'قطعة واحدة':'Une pièce'}</span></label><label class="purchase-option"><input type="radio" name="purchase-choice" id="pack-choice" value="pack"><span>${lang==='ar'?'Pack':'Pack'}</span></label></div></div>` : `<div class="purchase-selector" id="purchase-selector"><div class="section-mini-title">${lang==='ar'?'🛒 الشراء':'🛒 Achat'}</div><div class="purchase-grid"><label class="purchase-option selected"><input type="radio" name="purchase-choice" id="product-choice" value="product" checked><span>${lang==='ar'?'قطعة واحدة':'Une pièce'}</span></label></div></div>`}
-      <div id="product-options-wrap">${buildClothingOptions(product, lang)}</div>
-      ${product.pack_enabled && product.pack_visible ? `<div id="pack-options-wrap">${buildPackPublicMarkup(product, lang)}</div>` : ""}
-      ${videoHtml}
-      ${showWaBefore ? `<a class="cta secondary wa-btn" href="${waHref((lang==='ar'?'مرحبا، عندي سؤال على ':'Bonjour, j\'ai une question sur ')+(title||''))}" target="_blank">💬 ${t.contact_whatsapp}</a>` : ""}
-      <div class="cart-bar"><button type="button" class="cart-button" id="cart-button">🛒 <span>${lang==='ar'?'السلة':'Panier'}</span><b id="cart-count">0</b></button></div>
-
-      <div class="card">
-        <div class="field">
-          <label>${t.full_name}</label>
-          <input id="f_name" type="text">
-        </div>
-        <div class="field">
-          <label>${t.phone}</label>
-          <input id="f_phone" type="tel">
-        </div>
-        <div class="field-row">
-          <div class="field">
-            <label>${t.city}</label>
-            <input id="f_city" type="text">
-          </div>
-          <div class="field">
-            <label>${t.qty}</label>
-            <div class="qty-stepper">
-              <button type="button" id="qty-minus" aria-label="minus">−</button>
-              <span id="qty-value">${qty}</span>
-              <button type="button" id="qty-plus" aria-label="plus">+</button>
-            </div>
-          </div>
-        </div>
-        <div class="field">
-          <label>${t.address}</label>
-          <textarea id="f_address"></textarea>
-        </div>
-        <div id="order-msg"></div>
-        <button class="cta" id="submit-btn">${t.place_order}</button>
-      </div>
-      <div class="footer-note">${settings.store_name||""}</div>
-    </div>
-  `;
-}
-
 function csvList(v){return String(v||"").split(/[,\n;]+/).map(x=>x.trim()).filter(Boolean)}
 function escHtml(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;")}
-function getPackConfig(p){let c=p&&p.pack_config;if(typeof c==="string"){try{c=JSON.parse(c)}catch(e){c=null}};return c||{mode:p?.pack_mode||"choice",pieces:p?.pack_pieces||3,items:p?.pack_items||[]}}
-function buildClothingOptions(product,lang){
-  if(product.product_type!=="clothing") return "";
-  const sizes=csvList(product.sizes), colors=csvList(product.colors); if(!sizes.length&&!colors.length)return "";
-  return `<div class="card" style="margin-top:14px" id="product-options"><div class="field"><label>${lang==="ar"?'المقاس':'Taille'}</label><div class="choice-grid" id="product-sizes">${sizes.map((x,i)=>`<button type="button" class="choice-btn ${i===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div><div class="field"><label>${lang==="ar"?'اللون':'Couleur'}</label><div class="choice-grid" id="product-colors">${colors.map((x,i)=>`<button type="button" class="choice-btn ${i===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div></div>`;
+function parseJsonObj(v,fallback={}){if(v&&typeof v==='object')return v;try{return JSON.parse(v)}catch(e){return fallback}}
+function getPackConfig(p){
+  let c=parseJsonObj(p?.pack_config,null);
+  if(c)return c;
+  return {mode:p?.pack_mode||"choice",pieces:p?.pack_pieces||3,items:p?.pack_items||[]};
 }
-function initClothingOptions(root){if(!root)return;root.querySelectorAll('#product-options .choice-grid').forEach(g=>g.querySelectorAll('.choice-btn').forEach(b=>b.onclick=()=>{g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')}))}
-function selectedValue(root,id){const b=root?.querySelector(`#${id} .choice-btn.selected`);return b?b.dataset.value:""}
-function csvList(v){return String(v||"").split(/[,\n;]+/).map(x=>x.trim()).filter(Boolean)}
-function escHtml(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#039;")}
+function getStandardPackConfig(p){
+  const c=parseJsonObj(p?.pack_config,{});
+  if(c&&c.standard) return c.standard;
+  return {enabled:false,visible:false,pieces:3,title_ar:p?.pack_title_ar||"",title_fr:p?.pack_title_fr||"",description_ar:p?.pack_description_ar||"",description_fr:p?.pack_description_fr||"",price:p?.pack_price??null,old_price:p?.pack_old_price??null,images:p?.pack_images||[],items:p?.pack_items||[]};
+}
+function getCustomPackConfig(p){
+  const c=parseJsonObj(p?.pack_config,{});
+  if(c&&c.custom) return c.custom;
+  return {enabled:false,visible:false,pieces:3,title_ar:"",title_fr:"",description_ar:"",description_fr:"",price:null,old_price:null,images:[]};
+}
 function buildClothingOptions(product,lang){
   if(product.product_type!=="clothing") return "";
   const sizes=csvList(product.sizes), colors=csvList(product.colors);
-  if(!sizes.length && !colors.length) return "";
-  return `<div class="card" id="product-options"><div class="field"><label>${lang==="ar"?'المقاس':'Taille'}</label><div class="choice-grid" id="product-sizes">${sizes.map((x,i)=>`<button type="button" class="choice-btn ${i===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div><div class="field"><label>${lang==="ar"?'اللون':'Couleur'}</label><div class="choice-grid" id="product-colors">${colors.map((x,i)=>`<button type="button" class="choice-btn ${i===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div></div>`;
+  return `<div class="card" style="margin-top:14px" id="product-options"><div class="field"><label>${lang==="ar"?'المقاس':'Taille'}</label><div class="choice-grid" id="product-sizes">${sizes.map((x,i)=>`<button type="button" class="choice-btn ${i===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div><div class="field"><label>${lang==="ar"?'اللون':'Couleur'}</label><div class="choice-grid" id="product-colors">${colors.map((x,i)=>`<button type="button" class="choice-btn ${i===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div></div>`;
 }
 function initClothingOptions(root){if(!root)return;root.querySelectorAll('#product-options .choice-grid').forEach(g=>g.querySelectorAll('.choice-btn').forEach(b=>b.onclick=()=>{g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')}))}
 function selectedChoice(root,id){const b=root?.querySelector(`#${id} .choice-btn.selected`);return b?b.dataset.value:""}
 
-function buildPackPublicMarkup(product, lang){
-  const title=lang==="ar"?(product.pack_title_ar||"Pack"):(product.pack_title_fr||product.pack_title_ar||"Pack");
-  const desc=lang==="ar"?(product.pack_description_ar||""):(product.pack_description_fr||product.pack_description_ar||"");
-  const imgs=(product.pack_images||[]).filter(Boolean); const old=product.pack_old_price?`<span class="old-price">${product.pack_old_price} DH</span>`:""; const c=getPackConfig(product);
-  const img=imgs[0]?`<div class="pack-gallery" id="pack-gallery"><img id="pack-gallery-img" src="${escHtml(imgs[0])}" alt="${escHtml(title)}">${imgs.length>1?`<button type="button" class="pack-gallery-btn pack-gallery-prev" id="pack-gallery-prev">‹</button><button type="button" class="pack-gallery-btn pack-gallery-next" id="pack-gallery-next">›</button>`:""}</div><div class="pack-gallery-dots">${imgs.length>1?`1 / ${imgs.length} · ${lang==="ar"?"دير السحب باش تشوف باقي الصور":"Faites glisser pour voir les autres images"}`:""}</div>`:"";
+function buildPackPublicMarkup(product, lang, type){
+  const c=type==='standard'?getStandardPackConfig(product):getCustomPackConfig(product);
+  const title=lang==='ar'?(c.title_ar||'Pack'):(c.title_fr||c.title_ar||'Pack');
+  const desc=lang==='ar'?(c.description_ar||''):(c.description_fr||c.description_ar||'');
+  const imgs=(c.images||[]).filter(Boolean);
+  const old=c.old_price?`<span class="old-price">${c.old_price} DH</span>`:"";
+  const img=imgs[0]?`<div class="pack-gallery" id="${type}-pack-gallery"><img id="${type}-pack-gallery-img" src="${escHtml(imgs[0])}" alt="${escHtml(title)}">${imgs.length>1?`<button type="button" class="pack-gallery-btn pack-gallery-prev" data-gallery="${type}" id="${type}-pack-prev">‹</button><button type="button" class="pack-gallery-btn pack-gallery-next" data-gallery="${type}" id="${type}-pack-next">›</button>`:""}</div><div class="pack-gallery-dots" id="${type}-pack-dots">${imgs.length>1?`1 / ${imgs.length} · ${lang==='ar'?'دير السحب باش تشوف باقي الصور':'Faites glisser pour voir les autres images'}`:""}</div>`:"";
   let options="";
-  if(product.product_type==="clothing" && c.mode==="choice"){const sizes=csvList(product.sizes),colors=csvList(product.colors);options=`<div style="margin-top:12px"><strong>${lang==="ar"?'اختيارات كل قطعة':'Choix de chaque pièce'}</strong>${Array.from({length:Math.max(1,Number(c.pieces)||1)},(_,i)=>`<div class="pack-piece-choice"><strong>${lang==="ar"?'القطعة':'Pièce'} ${i+1}</strong><div class="field" style="margin-top:8px"><label>${lang==="ar"?'المقاس':'Taille'}</label><div class="choice-grid pack-sizes" data-piece="${i}">${sizes.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div><div class="field"><label>${lang==="ar"?'اللون':'Couleur'}</label><div class="choice-grid pack-colors" data-piece="${i}">${colors.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div></div>`).join("")}</div>`;}
-  if(product.product_type==="clothing" && c.mode==="ready"){options=`<div class="small-muted" style="margin-top:10px">${lang==="ar"?'تشكيلة متنوعة جاهزة — ما كاين حتى اختيار للزبون':'Assortiment varié prêt — aucun choix pour le client'}</div>`;}
-  return `<div class="pack-public"><div class="pack-public-head"><div class="pack-public-title">${escHtml(title)}</div><div class="pack-public-badge">PACK</div></div>${img}<div class="pack-public-desc">${escHtml(desc)}</div><div class="price-row"><span class="price">${product.pack_price||0} DH</span>${old}</div>${options}</div>`;
+  if(type==='custom'){
+    const sizes=csvList(product.sizes),colors=csvList(product.colors),n=Math.max(1,Number(c.pieces)||1);
+    options=`<div style="margin-top:12px"><strong>${lang==='ar'?'اختيار كل قطعة':'Choix de chaque pièce'}</strong>${Array.from({length:n},(_,i)=>`<div class="pack-piece-choice"><strong>${lang==='ar'?'القطعة':'Pièce'} ${i+1}</strong><div class="field"><label>${lang==='ar'?'المقاس':'Taille'}</label><div class="choice-grid pack-sizes" data-piece="${i}">${sizes.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div><div class="field"><label>${lang==='ar'?'اللون':'Couleur'}</label><div class="choice-grid pack-colors" data-piece="${i}">${colors.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div></div>`).join('')}</div>`;
+  } else {
+    options=`<div class="small-muted" style="margin-top:10px">${lang==='ar'?'Pack Standard — التشكيلة محددة من المتجر':'Pack Standard — assortiment défini par le magasin'}</div>`;
+  }
+  return `<div class="pack-public"><div class="pack-public-head"><div class="pack-public-title">${escHtml(title)}</div><div class="pack-public-badge">${type==='custom'?'PACK PERSONNALISÉ':'PACK STANDARD'}</div></div>${img}<div class="pack-public-desc">${escHtml(desc)}</div><div class="price-row"><span class="price">${c.price||0} DH</span>${old}</div>${options}</div>`;
 }
+
 function initPackGallery(){
-  const p=STATE.product, imgs=(p&&p.pack_images||[]).filter(Boolean); if(imgs.length<2)return;
-  const img=document.getElementById("pack-gallery-img"),dots=document.querySelector(".pack-gallery-dots"); let i=0;
-  const go=n=>{i=(n+imgs.length)%imgs.length;img.src=imgs[i];if(dots)dots.textContent=`${i+1} / ${imgs.length} · ${STATE.lang==="ar"?"دير السحب باش تشوف باقي الصور":"Faites glisser pour voir les autres images"}`;};
-  document.getElementById("pack-gallery-prev")?.addEventListener("click",()=>go(i-1)); document.getElementById("pack-gallery-next")?.addEventListener("click",()=>go(i+1));
-  let sx=0;const g=document.getElementById("pack-gallery");g?.addEventListener("touchstart",e=>sx=e.changedTouches[0].clientX,{passive:true});g?.addEventListener("touchend",e=>{const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>35)go(i+(dx<0?1:-1));},{passive:true});
+  const p=STATE.product;if(!p)return;
+  ['standard','custom'].forEach(type=>{
+    const c=type==='standard'?getStandardPackConfig(p):getCustomPackConfig(p),imgs=(c.images||[]).filter(Boolean);if(imgs.length<2)return;
+    const img=document.getElementById(`${type}-pack-gallery-img`),dots=document.getElementById(`${type}-pack-dots`);let i=0;
+    const go=n=>{i=(n+imgs.length)%imgs.length;if(img)img.src=imgs[i];if(dots)dots.textContent=`${i+1} / ${imgs.length} · ${STATE.lang==='ar'?'دير السحب باش تشوف باقي الصور':'Faites glisser pour voir les autres images'}`};
+    document.getElementById(`${type}-pack-prev`)?.addEventListener('click',()=>go(i-1));document.getElementById(`${type}-pack-next`)?.addEventListener('click',()=>go(i+1));
+    let sx=0;document.getElementById(`${type}-pack-gallery`)?.addEventListener('touchstart',e=>sx=e.changedTouches[0].clientX,{passive:true});document.getElementById(`${type}-pack-gallery`)?.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>35)go(i+(dx<0?1:-1))},{passive:true});
+  });
 }
+
+function buildFormMarkup(settings, product, lang, qty){
+  const t=T[lang]||T.ar,title=lang==='ar'?product.title_ar:product.title_fr,desc=lang==='ar'?product.description_ar:product.description_fr;
+  const images=(product.images||[]).filter(Boolean),mediaHtml=images[0]?`<img src="${escHtml(images[0])}" alt="${escHtml(title||'')}">`:"",thumbsHtml=images.length>1?`<div class="thumbs">${images.map(i=>`<img src="${escHtml(i)}">`).join('')}</div>`:"";
+  const videoHtml=product.video_url?`<div class="video-section"><div class="section-mini-title">${lang==='ar'?'🎥 فيديو المنتج':'🎥 Vidéo du produit'}</div><div class="video-wrap"><video class="product-video" src="${escHtml(product.video_url)}" playsinline preload="metadata"></video><button type="button" class="video-sound-btn">🔊</button></div></div>`:"";
+  const std=getStandardPackConfig(product),cus=getCustomPackConfig(product);
+  const hasPacks=product.product_type==='clothing' && ((std.enabled&&std.visible)||(cus.enabled&&cus.visible));
+  const purchaseOptions=product.product_type==='clothing' ? `<div class="purchase-selector" id="purchase-selector"><div class="section-mini-title">${lang==='ar'?'🛒 اختار شنو بغيتي تشري':'🛒 Choisissez ce que vous voulez acheter'}</div><div class="purchase-grid"><label class="purchase-option selected"><input type="radio" name="purchase-choice" value="product" checked><span>${lang==='ar'?'قطعة واحدة':'Une pièce'}</span></label>${std.enabled&&std.visible?`<label class="purchase-option"><input type="radio" name="purchase-choice" value="pack_standard"><span>${lang==='ar'?'Pack Standard':'Pack Standard'}</span></label>`:''}${cus.enabled&&cus.visible?`<label class="purchase-option"><input type="radio" name="purchase-choice" value="pack_custom"><span>${lang==='ar'?'Pack personnalisé':'Pack personnalisé'}</span></label>`:''}</div></div>`:"";
+  return `<div class="topbar"><div class="brand">${escHtml(settings.store_name||'')}</div><div class="lang-switch"><button data-lang="ar" class="${lang==='ar'?'active':''}">AR</button><button data-lang="fr" class="${lang==='fr'?'active':''}">FR</button></div></div><div class="wrap"><div class="hero-media">${mediaHtml}</div>${thumbsHtml}<h1 class="title">${escHtml(title||'')}</h1><p class="desc">${escHtml(desc||'')}</p><div class="price-row"><span class="price">${product.price||0} ${t.currency}</span>${product.old_price?`<span class="old-price">${product.old_price} ${t.currency}</span>`:''}</div>${purchaseOptions}<div id="product-options-wrap">${buildClothingOptions(product,lang)}</div>${hasPacks?`<div id="pack-standard-wrap" style="display:none">${std.enabled&&std.visible?buildPackPublicMarkup(product,lang,'standard'):''}</div><div id="pack-custom-wrap" style="display:none">${cus.enabled&&cus.visible?buildPackPublicMarkup(product,lang,'custom'):''}</div>`:''}${videoHtml}<div class="cart-bar"><button type="button" class="cart-button" id="cart-button">🛒 <span>${lang==='ar'?'السلة':'Panier'}</span><b id="cart-count">0</b></button></div><div class="card"><div class="field"><label>${t.full_name}</label><input id="f_name" type="text"></div><div class="field"><label>${t.phone}</label><input id="f_phone" type="tel"></div><div class="field-row"><div class="field"><label>${t.city}</label><input id="f_city" type="text"></div><div class="field"><label>${t.qty}</label><div class="qty-stepper"><button type="button" id="qty-minus">−</button><span id="qty-value">${qty}</span><button type="button" id="qty-plus">+</button></div></div></div><div class="field"><label>${t.address}</label><textarea id="f_address"></textarea></div><div id="order-msg"></div><button class="cta" id="submit-btn">${t.place_order}</button></div><div class="footer-note">${escHtml(settings.store_name||'')}</div></div>`;
+}
+
+function initPurchaseSelector(root){
+  const radios=root.querySelectorAll('input[name="purchase-choice"]');if(!radios.length){STATE.purchaseType='product';return;}
+  const productWrap=root.querySelector('#product-options-wrap'),stdWrap=root.querySelector('#pack-standard-wrap'),cusWrap=root.querySelector('#pack-custom-wrap');
+  const update=()=>{const selected=root.querySelector('input[name="purchase-choice"]:checked')?.value||'product';root.querySelectorAll('.purchase-option').forEach(x=>x.classList.toggle('selected',x.querySelector('input')?.checked));if(productWrap)productWrap.style.display=selected==='product'?'block':'none';if(stdWrap)stdWrap.style.display=selected==='pack_standard'?'block':'none';if(cusWrap)cusWrap.style.display=selected==='pack_custom'?'block':'none';STATE.purchaseType=selected};radios.forEach(r=>r.addEventListener('change',update));update();
+  root.querySelectorAll('#pack-custom-wrap .choice-grid').forEach(g=>g.querySelectorAll('.choice-btn').forEach(b=>b.onclick=()=>{g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')}));
+}
+function getCurrentCartItem(){
+  const root=document,purchase=root.querySelector('input[name="purchase-choice"]:checked')?.value||'product',qty=LANDING_QTY,productOptions={size:selectedChoice(root,'product-sizes'),color:selectedChoice(root,'product-colors')};let packOptions=[];
+  if(purchase==='pack_custom'){const c=getCustomPackConfig(STATE.product),n=Math.max(1,Number(c.pieces)||1);for(let i=0;i<n;i++){const sg=root.querySelector(`#pack-custom-wrap .pack-sizes[data-piece="${i}"] .selected`),cg=root.querySelector(`#pack-custom-wrap .pack-colors[data-piece="${i}"] .selected`);packOptions.push({piece:i+1,size:sg?.dataset.value||'',color:cg?.dataset.value||''})}}
+  if(purchase==='pack_standard')packOptions=getStandardPackConfig(STATE.product).items||[];
+  return {purchaseType:purchase,quantity:qty,productOptions,packOptions};
+}
+function initCart(root){const btn=root.querySelector('#cart-button');if(!btn)return;btn.onclick=()=>{STATE.cartItem=getCurrentCartItem();const count=root.querySelector('#cart-count');if(count)count.textContent='1';const msg=root.querySelector('#order-msg');if(msg)msg.innerHTML=`<div class="msg ok">${STATE.lang==='ar'?'تمت إضافة الاختيار للسلة ✅':'Ajouté au panier ✅'}`;}}
 
 function maybeShowAdminReturn(show){
   const old = document.getElementById("admin-return-btn");
@@ -954,84 +924,18 @@ function renderLanding(){
   maybeShowAdminReturn(SHOW_ADMIN_RETURN);
 }
 
-async function initPurchaseSelector(root){
-  const radios=root.querySelectorAll('input[name="purchase-choice"]');
-  const productWrap=root.querySelector('#product-options-wrap');
-  const packWrap=root.querySelector('#pack-options-wrap');
-  const update=()=>{
-    const selected=root.querySelector('input[name="purchase-choice"]:checked')?.value || 'product';
-    root.querySelectorAll('.purchase-option').forEach(x=>x.classList.toggle('selected', x.querySelector('input')?.checked));
-    if(productWrap) productWrap.style.display=selected==='product'?'block':'none';
-    if(packWrap) packWrap.style.display=selected==='pack'?'block':'none';
-    STATE.purchaseType=selected;
-  };
-  radios.forEach(r=>r.addEventListener('change',update));
-  update();
-}
-
-function getCurrentCartItem(){
-  const root=document;
-  const purchase=root.querySelector('input[name="purchase-choice"]:checked')?.value || 'product';
-  const qty=LANDING_QTY;
-  const productOptions={size:selectedValue(root,'product-sizes'),color:selectedValue(root,'product-colors')};
-  let packOptions=[];
-  if(purchase==='pack' && STATE.product?.product_type==='clothing'){
-    const c=getPackConfig(STATE.product);
-    if(c.mode==='choice'){
-      const pieces=Math.max(1,Number(c.pieces)||1);
-      for(let i=0;i<pieces;i++){
-        const sg=root.querySelector(`.pack-sizes[data-piece="${i}"] .selected`);
-        const cg=root.querySelector(`.pack-colors[data-piece="${i}"] .selected`);
-        packOptions.push({piece:i+1,size:sg?.dataset.value||'',color:cg?.dataset.value||''});
-      }
-    } else packOptions=c.items||[];
-  }
-  return {purchaseType:purchase,quantity:qty,productOptions,packOptions};
-}
-
-function initCart(root){
-  const btn=root.querySelector('#cart-button'); if(!btn)return;
-  let cartCount=0;
-  btn.onclick=()=>{
-    const item=getCurrentCartItem();
-    cartCount=Math.max(1,cartCount);
-    const msg=root.querySelector('#order-msg');
-    if(msg) msg.innerHTML=`<div class="msg ok">${STATE.lang==='ar'?'تمت إضافة الاختيار للسلة ✅':'Ajouté au panier ✅'}</div>`;
-    const count=root.querySelector('#cart-count'); if(count) count.textContent=cartCount;
-    STATE.cartItem=item;
-  };
-}
-
 async function onSubmitOrder(){
-  const t = T[STATE.lang];
-  const name = document.getElementById("f_name").value.trim();
-  const phone = document.getElementById("f_phone").value.trim();
-  const city = document.getElementById("f_city").value.trim();
-  const qty = LANDING_QTY;
-  const address = document.getElementById("f_address").value.trim();
-  const msgBox = document.getElementById("order-msg");
-
-  if(!name || !phone){
-    msgBox.innerHTML = `<div class="msg err">${t.required}</div>`;
-    return;
-  }
-  const selectedPurchase = document.querySelector('input[name="purchase-choice"]:checked');
-  STATE.purchaseType = selectedPurchase?.value === "pack" ? "pack" : "product";
-  const packSelected = STATE.purchaseType === "pack";
-  const productOptions = {size:selectedValue(document,"product-sizes"),color:selectedValue(document,"product-colors")};
-  let packOptions=[];
-  if(packSelected && STATE.product.product_type==="clothing"){ const c=getPackConfig(STATE.product); if(c.mode==="choice"){ const pieces=Math.max(1,Number(c.pieces)||1); for(let i=0;i<pieces;i++){ const sg=document.querySelector(`.pack-sizes[data-piece=\"${i}\"] .selected`), cg=document.querySelector(`.pack-colors[data-piece=\"${i}\"] .selected`); packOptions.push({piece:i+1,size:sg?sg.dataset.value:"",color:cg?cg.dataset.value:""}); }} else { packOptions=c.items||[]; }}
-  STATE.purchaseType = packSelected ? "pack" : "product";
-  if(STATE.purchaseType==='product' && STATE.product.product_type==='clothing'){
-    if(!productOptions.size || !productOptions.color){ msgBox.innerHTML=`<div class="msg err">${STATE.lang==='ar'?'اختار المقاس واللون من فضلك':'Veuillez choisir la taille et la couleur'}</div>`; return; }
-  }
-  STATE.order = { customer_name:name, phone, city, address, quantity:qty, product_options:productOptions, pack_options:packOptions };
-
-  if(STATE.upsell){
-    renderUpsellStep();
-  } else {
-    await finalizeOrder(false, null);
-  }
+  const t=T[STATE.lang],name=document.getElementById("f_name").value.trim(),phone=document.getElementById("f_phone").value.trim(),city=document.getElementById("f_city").value.trim(),address=document.getElementById("f_address").value.trim(),msgBox=document.getElementById("order-msg");
+  if(!name||!phone){msgBox.innerHTML=`<div class="msg err">${t.required}</div>`;return;}
+  const selected=document.querySelector('input[name="purchase-choice"]:checked')?.value||'product';
+  STATE.purchaseType=selected;
+  const item=getCurrentCartItem();
+  if(!STATE.cartItem) STATE.cartItem=item;
+  const productOptions=item.productOptions||{};
+  if(selected==='product'&&STATE.product.product_type==='clothing'&&(!productOptions.size||!productOptions.color)){msgBox.innerHTML=`<div class="msg err">${STATE.lang==='ar'?'اختار المقاس واللون من فضلك':'Veuillez choisir la taille et la couleur'}</div>`;return;}
+  if((selected==='pack_standard'||selected==='pack_custom') && !STATE.cartItem){msgBox.innerHTML=`<div class="msg err">${STATE.lang==='ar'?'اختار الـPack من فضلك':'Veuillez choisir le pack'}</div>`;return;}
+  STATE.order={customer_name:name,phone,city,address,quantity:item.quantity,product_options:productOptions,pack_options:item.packOptions||[]};
+  if(STATE.upsell) renderUpsellStep(); else await finalizeOrder(false,null);
 }
 
 function renderUpsellStep(){
@@ -1069,9 +973,9 @@ async function finalizeOrder(upsellAccepted, upsellId){
     address: STATE.order.address,
     city: STATE.order.city,
     quantity: STATE.order.quantity,
-    pack_selected: STATE.purchaseType === "pack",
-    pack_price: STATE.purchaseType === "pack" ? (STATE.product.pack_price||0) : null,
-    pack_title: STATE.purchaseType === "pack" ? (STATE.lang === "ar" ? STATE.product.pack_title_ar : STATE.product.pack_title_fr) : null,
+    pack_selected: STATE.purchaseType !== "product",
+    pack_price: STATE.purchaseType === "pack_standard" ? (getStandardPackConfig(STATE.product).price||0) : STATE.purchaseType === "pack_custom" ? (getCustomPackConfig(STATE.product).price||0) : null,
+    pack_title: STATE.purchaseType === "pack_standard" ? (STATE.lang === "ar" ? getStandardPackConfig(STATE.product).title_ar : getStandardPackConfig(STATE.product).title_fr) : STATE.purchaseType === "pack_custom" ? (STATE.lang === "ar" ? getCustomPackConfig(STATE.product).title_ar : getCustomPackConfig(STATE.product).title_fr) : null,
     pack_options: STATE.order.pack_options || [],
     product_options: STATE.order.product_options || {},
     upsell_accepted: upsellAccepted,
@@ -1346,172 +1250,147 @@ async function renderAdminDashboard(tab){
 }
 
 function renderProductTab(){
-  const p = UNSAVED_DRAFT.product || adminData.product || {};
-  pendingImages = (p.images||[]).filter(Boolean).slice();
-  pendingVideoUrl = p.video_url || "";
-  pendingPackImages = (p.pack_images||[]).filter(Boolean).slice();
-  const isClothing = p.product_type === "clothing";
-  const c = document.getElementById("tab-content");
-  c.innerHTML = `
+  const p=UNSAVED_DRAFT.product||adminData.product||{};
+  pendingImages=(p.images||[]).filter(Boolean).slice();pendingVideoUrl=p.video_url||"";
+  const std=getStandardPackConfig(p),cus=getCustomPackConfig(p);
+  pendingPackImages=[];
+  const c=document.getElementById("tab-content");
+  c.innerHTML=`
     <div id="save-msg"></div>
+    <div class="card" style="margin-bottom:16px"><div class="section-title">نوع المنتج</div><div class="small-muted">اختار النوع قبل ما تعمر المعلومات. كل واجهة غادي تبان غير حسب اختيارك.</div><div class="field"><select id="p_type"><option value="standard" ${p.product_type!=='clothing'?'selected':''}>Standard</option><option value="clothing" ${p.product_type==='clothing'?'selected':''}>Vêtements</option></select></div></div>
 
-    <!-- 1) PRODUCT TYPE FIRST -->
-    <div class="card" style="margin-bottom:16px">
-      <div class="section-title" style="font-size:1rem;margin-bottom:10px">نوع المنتج</div>
-      <div class="field">
-        <label>اختار نوع المنتج قبل ما تعمر المعلومات</label>
-        <select id="p_type">
-          <option value="standard" ${!isClothing?'selected':''}>Standard</option>
-          <option value="clothing" ${isClothing?'selected':''}>Vêtements</option>
-        </select>
-      </div>
+    <div id="standard-editor" style="display:${p.product_type==='clothing'?'none':'block'}">
+      <div class="card" style="margin-bottom:16px"><div class="section-title">منتج Standard</div><div class="field-row"><div class="field"><label>الكمية</label><input id="p_stock_standard" type="number" min="0" value="${p.stock_quantity??''}"></div><div class="field"><label>الثمن</label><input id="p_price_standard" type="number" min="0" value="${p.price??''}"></div></div><div class="field"><label>الثمن القديم (اختياري)</label><input id="p_old_price_standard" type="number" min="0" value="${p.old_price??''}"></div></div>
     </div>
 
-    <!-- STANDARD -->
-    <div id="standard-fields" style="display:${!isClothing?'block':'none'}">
-      <div class="card" style="margin-bottom:16px">
-        <div class="section-title" style="font-size:1rem;margin-bottom:10px">منتج Standard</div>
-        <div class="field-row">
-          <div class="field"><label>الكمية</label><input id="p_stock_standard" type="number" min="0" value="${p.stock_quantity??''}"></div>
-          <div class="field"><label>الثمن</label><input id="p_price_standard" type="number" min="0" value="${p.price??''}"></div>
-        </div>
-        <div class="field"><label>الثمن القديم (اختياري)</label><input id="p_old_price_standard" type="number" min="0" value="${p.old_price??''}"></div>
-      </div>
+    <div id="clothing-editor" style="display:${p.product_type==='clothing'?'block':'none'}">
+      <div class="card" style="margin-bottom:16px"><div class="section-title">قطعة Vêtements</div><div class="field-row"><div class="field"><label>الكمية</label><input id="p_stock_clothing" type="number" min="0" value="${p.stock_quantity??''}"></div><div class="field"><label>الثمن</label><input id="p_price_clothing" type="number" min="0" value="${p.price??''}"></div></div><div class="field"><label>الثمن القديم (اختياري)</label><input id="p_old_price_clothing" type="number" min="0" value="${p.old_price??''}"></div><div class="field-row"><div class="field"><label>المقاسات</label><input id="p_sizes" value="${escHtml(p.sizes||'')}" placeholder="S, M, L, XL"></div><div class="field"><label>الألوان</label><input id="p_colors" value="${escHtml(p.colors||'')}" placeholder="Noir, Blanc, Beige"></div></div></div>
+
+      <div class="card" style="margin-bottom:16px"><div class="section-title">Pack Standard</div><div class="small-muted">التشكيلة والثمن والصور كيتحكمو فيهم نتا. الزبون ما كيختارش القطع.</div><div class="toggle"><input type="checkbox" id="std_enabled" ${std.enabled?'checked':''}><label>إظهار/تفعيل Pack Standard</label></div><div id="std-fields"><div class="toggle"><input type="checkbox" id="std_visible" ${std.visible?'checked':''}><label>ظاهر للزبون</label></div><div class="field-row"><div class="field"><label>عدد القطع</label><input id="std_pieces" type="number" min="1" value="${std.pieces||3}"></div><div class="field"><label>الثمن</label><input id="std_price" type="number" min="0" value="${std.price??''}"></div></div><div class="field"><label>الثمن القديم (اختياري)</label><input id="std_old_price" type="number" min="0" value="${std.old_price??''}"></div><div class="field-row"><div class="field"><label>عنوان Pack (عربي)</label><input id="std_title_ar" value="${escHtml(std.title_ar||'')}"></div><div class="field"><label>Titre du Pack (français)</label><input id="std_title_fr" value="${escHtml(std.title_fr||'')}"></div></div><div class="field-row"><div class="field"><label>وصف Pack (عربي)</label><textarea id="std_desc_ar">${escHtml(std.description_ar||'')}</textarea></div><div class="field"><label>Description du Pack</label><textarea id="std_desc_fr">${escHtml(std.description_fr||'')}</textarea></div></div><div class="field"><label>صور Pack Standard</label><div class="upload-row"><button type="button" class="upload-btn" id="std-add-images">📷 إضافة الصور</button><input type="file" id="std-images" accept="image/*" multiple style="display:none"></div><div class="thumbs" id="std-images-preview"></div><button type="button" class="upload-btn" id="std-delete">🗑️ حذف Pack Standard</button></div><div id="std-ready-items"></div></div></div>
+
+      <div class="card" style="margin-bottom:16px"><div class="section-title">Pack personnalisé</div><div class="small-muted">الزبون هو اللي كيختار المقاس واللون ديال كل قطعة.</div><div class="toggle"><input type="checkbox" id="cus_enabled" ${cus.enabled?'checked':''}><label>إظهار/تفعيل Pack personnalisé</label></div><div id="cus-fields"><div class="toggle"><input type="checkbox" id="cus_visible" ${cus.visible?'checked':''}><label>ظاهر للزبون</label></div><div class="field-row"><div class="field"><label>عدد القطع</label><input id="cus_pieces" type="number" min="1" value="${cus.pieces||3}"></div><div class="field"><label>الثمن</label><input id="cus_price" type="number" min="0" value="${cus.price??''}"></div></div><div class="field"><label>الثمن القديم (اختياري)</label><input id="cus_old_price" type="number" min="0" value="${cus.old_price??''}"></div><div class="field-row"><div class="field"><label>عنوان Pack (عربي)</label><input id="cus_title_ar" value="${escHtml(cus.title_ar||'')}"></div><div class="field"><label>Titre du Pack (français)</label><input id="cus_title_fr" value="${escHtml(cus.title_fr||'')}"></div></div><div class="field-row"><div class="field"><label>وصف Pack (عربي)</label><textarea id="cus_desc_ar">${escHtml(cus.description_ar||'')}</textarea></div><div class="field"><label>Description du Pack</label><textarea id="cus_desc_fr">${escHtml(cus.description_fr||'')}</textarea></div></div><div class="field"><label>صور Pack personnalisé</label><div class="upload-row"><button type="button" class="upload-btn" id="cus-add-images">📷 إضافة الصور</button><input type="file" id="cus-images" accept="image/*" multiple style="display:none"></div><div class="thumbs" id="cus-images-preview"></div><button type="button" class="upload-btn" id="cus-delete">🗑️ حذف Pack personnalisé</button></div></div></div>
     </div>
 
-    <!-- CLOTHING -->
-    <div id="clothing-fields" style="display:${isClothing?'block':'none'}">
-      <div class="card" style="margin-bottom:16px">
-        <div class="section-title" style="font-size:1rem;margin-bottom:10px">منتج Vêtements</div>
-        <div class="field-row">
-          <div class="field"><label>الكمية</label><input id="p_stock_clothing" type="number" min="0" value="${p.stock_quantity??''}"></div>
-          <div class="field"><label>الثمن</label><input id="p_price_clothing" type="number" min="0" value="${p.price??''}"></div>
-        </div>
-        <div class="field"><label>الثمن القديم (اختياري)</label><input id="p_old_price_clothing" type="number" min="0" value="${p.old_price??''}"></div>
-        <div class="field-row">
-          <div class="field"><label>المقاسات</label><input id="p_sizes" value="${escHtml(p.sizes||"")}" placeholder="S, M, L, XL"></div>
-          <div class="field"><label>الألوان</label><input id="p_colors" value="${escHtml(p.colors||"")}" placeholder="Noir, Blanc, Beige"></div>
-        </div>
-        <div class="small-muted">كتب غير الاختيارات اللي متوفرين عندك، مفصولين بفاصلة.</div>
-      </div>
-    </div>
+    <div class="card" style="margin-bottom:16px"><div class="section-title">معلومات المنتج</div><div class="field-row"><div class="field"><label>عنوان المنتج (عربي)</label><input id="p_title_ar" value="${escHtml(p.title_ar||'')}"></div><div class="field"><label>Titre (français)</label><input id="p_title_fr" value="${escHtml(p.title_fr||'')}"></div></div><div class="field-row"><div class="field"><label>الوصف (عربي)</label><textarea id="p_desc_ar">${escHtml(p.description_ar||'')}</textarea></div><div class="field"><label>Description (français)</label><textarea id="p_desc_fr">${escHtml(p.description_fr||'')}</textarea></div></div></div>
 
-    <!-- COMMON PRODUCT CONTENT -->
-    <div class="card" style="margin-bottom:16px">
-      <div class="section-title" style="font-size:1rem;margin-bottom:10px">معلومات المنتج</div>
-      <div class="field-row">
-        <div class="field"><label>عنوان المنتج (عربي)</label><input id="p_title_ar" value="${escHtml(p.title_ar||'')}"></div>
-        <div class="field"><label>Titre (français)</label><input id="p_title_fr" value="${escHtml(p.title_fr||'')}"></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>الوصف (عربي)</label><textarea id="p_desc_ar">${escHtml(p.description_ar||'')}</textarea></div>
-        <div class="field"><label>Description (français)</label><textarea id="p_desc_fr">${escHtml(p.description_fr||'')}</textarea></div>
-      </div>
-    </div>
+    <div class="card" style="margin-bottom:16px"><div class="section-title">الصور والفيديو</div><div class="field"><label>صور المنتج</label><div class="upload-row"><button type="button" class="upload-btn" id="btn-add-images">📷 إضافة الصور</button><input type="file" id="input-images" accept="image/*" multiple style="display:none"></div><div class="thumbs" id="images-preview"></div><div id="images-status"></div></div><div class="field"><label>فيديو المنتج (اختياري)</label><div class="upload-row"><button type="button" class="upload-btn" id="btn-add-video">🎥 إضافة فيديو</button><input type="file" id="input-video" accept="video/*" style="display:none"><button type="button" class="upload-btn" id="btn-remove-video" style="display:${pendingVideoUrl?'inline-block':'none'}">✕ حذف الفيديو</button></div><div id="video-preview"></div><div id="video-status"></div></div></div>
 
-    <div class="card" style="margin-bottom:16px">
-      <div class="field">
-        <label>صور المنتج</label>
-        <div class="upload-row"><button type="button" class="upload-btn" id="btn-add-images">📷 إضافة الصور</button><input type="file" id="input-images" accept="image/*" multiple style="display:none"></div>
-        <div class="thumbs" id="images-preview" style="margin-top:0;"></div>
-        <div class="upload-status" id="images-status"></div>
-      </div>
-      <div class="field">
-        <label>فيديو المنتج (اختياري)</label>
-        <div class="upload-row"><button type="button" class="upload-btn" id="btn-add-video">🎥 إضافة فيديو</button><input type="file" id="input-video" accept="video/*" style="display:none"><button type="button" class="upload-btn" id="btn-remove-video" style="display:${pendingVideoUrl?'inline-block':'none'}">✕ حذف الفيديو</button></div>
-        <div id="video-preview"></div><div class="upload-status" id="video-status"></div>
-      </div>
-      <div class="toggle"><input type="checkbox" id="p_active" ${p.is_active!==false?'checked':''}><label>المنتج ظاهر فالموقع</label></div>
-    </div>
+    <div class="card"><div class="section-title">التحكم فالمنتج</div><div class="toggle"><input type="checkbox" id="p_active" ${p.is_active!==false?'checked':''}><label>المنتج ظاهر فالزبون</label></div><div class="small-muted">الإظهار والإخفاء مستقلين على الحذف. الصور كذلك تقدر تحيدهم من المعاينة ديال الصور.</div><button type="button" class="upload-btn" id="delete-product">🗑️ حذف المنتج نهائياً</button></div>
+    <div class="small-muted" style="margin-top:12px">💡 ضروري دير «معاينة» قبل الحفظ.</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><button class="save-btn" id="save-product" disabled>حفظ المنتج</button></div>`;
 
-    <!-- PACK -->
-    <div class="pack-admin-box">
-      <div class="pack-admin-title">Pack</div>
-      <div class="small-muted">الـPack مستقل على المنتج. تقدر تفعّلو، تخليه ظاهر، تخبيه مؤقتاً، أو تمسحو نهائياً.</div>
-      <div class="toggle"><input type="checkbox" id="pack_enabled" ${p.pack_enabled?'checked':''}><label>تفعيل الـPack</label></div>
-      <div class="toggle"><input type="checkbox" id="pack_visible" ${p.pack_visible!==false && p.pack_enabled?'checked':''}><label>الـPack ظاهر للزبون</label></div>
-      <div class="field-row">
-        <div class="field"><label>عنوان الـPack (عربي)</label><input id="pack_title_ar" value="${escHtml(p.pack_title_ar||'')}"></div>
-        <div class="field"><label>Titre du Pack (français)</label><input id="pack_title_fr" value="${escHtml(p.pack_title_fr||'')}"></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>وصف الـPack (عربي)</label><textarea id="pack_desc_ar">${escHtml(p.pack_description_ar||'')}</textarea></div>
-        <div class="field"><label>Description du Pack (français)</label><textarea id="pack_desc_fr">${escHtml(p.pack_description_fr||'')}</textarea></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>ثمن الـPack</label><input id="pack_price" type="number" min="0" value="${p.pack_price??''}"></div>
-        <div class="field"><label>الثمن القديم للـPack (اختياري)</label><input id="pack_old_price" type="number" min="0" value="${p.pack_old_price??''}"></div>
-      </div>
-      <div class="field">
-        <label>صور الـPack</label>
-        <div class="upload-row"><button type="button" class="upload-btn" id="btn-add-pack-images">📷 إضافة صور الـPack</button><input type="file" id="input-pack-images" accept="image/*" multiple style="display:none"></div>
-        <div class="pack-gallery-preview" id="pack-images-preview"></div><div class="upload-status" id="pack-images-status"></div>
-      </div>
-
-      <div id="pack-standard-options" style="display:${!isClothing?'block':'none'}">
-        <div class="section-title" style="font-size:1rem;margin:12px 0 8px">Pack Standard</div>
-        <div class="small-muted">فـ Pack Standard ما كاين حتى اختيار للزبون. نتا اللي كتتحكم فالمحتوى ديال الـPack.</div>
-        <div class="field"><label>عدد القطع</label><input id="pack_pieces" type="number" min="1" value="${p.pack_pieces||3}"></div>
-      </div>
-
-      <div id="pack-clothing-options" style="display:${isClothing?'block':'none'}">
-        <div class="section-title" style="font-size:1rem;margin:12px 0 8px">Pack Vêtements</div>
-        <div class="field"><label>طريقة الـPack</label><select id="pack_mode"><option value="choice">الزبون يختار كل قطعة</option><option value="ready">تشكيلة متنوعة جاهزة</option></select></div>
-        <div class="field" id="pack-pieces-field"><label>عدد القطع</label><input id="pack_pieces_clothing" type="number" min="1" value="${p.pack_pieces||3}"></div>
-        <div id="pack-ready-items"></div>
-      </div>
-
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-        <button type="button" class="save-btn" id="save-pack">حفظ الـPack</button>
-        <button type="button" class="upload-btn" id="delete-pack">حذف الـPack</button>
-      </div>
-    </div>
-
-    <div class="small-muted" style="margin-top:12px">💡 دير «معاينة» قبل الحفظ باش تشوف بالضبط شنو غادي يشوف الزبون. المعاينة ما كتسجل والو فقاعدة البيانات.</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><button class="save-btn" id="save-product">حفظ المنتج</button><button type="button" class="upload-btn" id="delete-product">حذف المنتج نهائياً</button></div>
-  `;
-
-  renderImagesPreview(); renderVideoPreview(); renderPackImagesPreview();
-  document.getElementById("btn-add-images").onclick=()=>document.getElementById("input-images").click();
-  document.getElementById("input-images").onchange=onImagesSelected;
-  document.getElementById("btn-add-video").onclick=()=>document.getElementById("input-video").click();
-  document.getElementById("input-video").onchange=onVideoSelected;
-  document.getElementById("btn-remove-video").onclick=()=>{pendingVideoUrl="";document.getElementById("btn-remove-video").style.display="none";renderVideoPreview();};
-  document.getElementById("save-product").onclick=saveProduct;
-  document.getElementById("delete-product").onclick=deleteProduct;
-  document.getElementById("btn-add-pack-images").onclick=()=>document.getElementById("input-pack-images").click();
-  document.getElementById("input-pack-images").onchange=onPackImagesSelected;
-  document.getElementById("save-pack").onclick=savePack;
-  document.getElementById("delete-pack").onclick=deletePack;
-
-  const pc=getPackConfig(p);
-  const typeEl=document.getElementById("p_type");
-  const standardEl=document.getElementById("standard-fields");
-  const clothingEl=document.getElementById("clothing-fields");
-  const psEl=document.getElementById("pack-standard-options");
-  const pcEl=document.getElementById("pack-clothing-options");
-  function renderReadyItems(){
-    const box=document.getElementById("pack-ready-items"); if(!box)return;
-    if(typeEl.value!=="clothing" || document.getElementById("pack_mode")?.value!=="ready"){box.innerHTML="";return;}
-    const sizes=csvList(document.getElementById("p_sizes")?.value||p.sizes), colors=csvList(document.getElementById("p_colors")?.value||p.colors), items=pc.items||[];
-    const n=Math.max(1,parseInt(document.getElementById("pack_pieces_clothing")?.value||"3",10));
-    box.innerHTML=Array.from({length:n},(_,i)=>{const it=items[i]||{};return `<div class="pack-piece-choice"><strong>القطعة ${i+1}</strong><div class="field"><label>المقاس</label><select class="ready-size">${sizes.map(x=>`<option value="${escHtml(x)}" ${x===it.size?'selected':''}>${escHtml(x)}</option>`).join("")}</select></div><div class="field"><label>اللون</label><select class="ready-color">${colors.map(x=>`<option value="${escHtml(x)}" ${x===it.color?'selected':''}>${escHtml(x)}</option>`).join("")}</select></div></div>`}).join("");
+  const stdImgs=(std.images||[]).filter(Boolean),cusImgs=(cus.images||[]).filter(Boolean);
+  let stdPending=stdImgs.slice(),cusPending=cusImgs.slice();
+  function previewImgs(boxId,arr){const box=document.getElementById(boxId);if(!box)return;box.innerHTML=arr.map((u,i)=>`<div class="img-thumb"><img src="${escHtml(u)}"><button type="button" class="rm-btn" data-rm="${i}">✕</button></div>`).join('');box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{arr.splice(+b.dataset.rm,1);previewImgs(boxId,arr);});}
+  previewImgs('std-images-preview',stdPending);previewImgs('cus-images-preview',cusPending);renderImagesPreview();renderVideoPreview();
+  document.getElementById('btn-add-images').onclick=()=>document.getElementById('input-images').click();document.getElementById('input-images').onchange=onImagesSelected;document.getElementById('btn-add-video').onclick=()=>document.getElementById('input-video').click();document.getElementById('input-video').onchange=onVideoSelected;document.getElementById('btn-remove-video').onclick=()=>{pendingVideoUrl='';document.getElementById('btn-remove-video').style.display='none';renderVideoPreview();};
+  document.getElementById('std-add-images').onclick=()=>document.getElementById('std-images').click();document.getElementById('cus-add-images').onclick=()=>document.getElementById('cus-images').click();
+  async function uploadPackImages(input,arr,boxId){const files=Array.from(input.files||[]);input.value='';for(const file of files){if(!file.type.startsWith('image/')||file.size>MAX_IMAGE_MB*1024*1024)continue;const res=await sbUploadFile(file,'images');if(res.ok){arr.push(res.url);previewImgs(boxId,arr)}}}
+  document.getElementById('std-images').onchange=e=>uploadPackImages(e.target,stdPending,'std-images-preview');document.getElementById('cus-images').onchange=e=>uploadPackImages(e.target,cusPending,'cus-images-preview');
+  function renderStdItems(){const box=document.getElementById('std-ready-items');if(!box)return;const n=Math.max(1,parseInt(document.getElementById('std_pieces')?.value||'3',10)),sizes=csvList(document.getElementById('p_sizes')?.value||p.sizes),colors=csvList(document.getElementById('p_colors')?.value||p.colors),items=std.items||[];box.innerHTML=Array.from({length:n},(_,i)=>{const it=items[i]||{};return `<div class="pack-piece-choice"><strong>القطعة ${i+1}</strong><div class="field"><label>المقاس</label><select class="std-size">${sizes.map(x=>`<option ${x===it.size?'selected':''}>${escHtml(x)}</option>`).join('')}</select></div><div class="field"><label>اللون</label><select class="std-color">${colors.map(x=>`<option ${x===it.color?'selected':''}>${escHtml(x)}</option>`).join('')}</select></div></div>`}).join('')}
+  document.getElementById('std_pieces').oninput=renderStdItems;document.getElementById('p_sizes')?.addEventListener('input',renderStdItems);document.getElementById('p_colors')?.addEventListener('input',renderStdItems);renderStdItems();
+  const toggleFields=(id,box)=>{document.getElementById(id)?.addEventListener('change',()=>{box.style.display=document.getElementById(id).checked?'block':'none';setPreviewApproval(false)});box.style.display=document.getElementById(id).checked?'block':'none'};toggleFields('std_enabled',document.getElementById('std-fields'));toggleFields('cus_enabled',document.getElementById('cus-fields'));
+  document.getElementById('std-delete').onclick=()=>{stdPending=[];document.getElementById('std_enabled').checked=false;document.getElementById('std_visible').checked=false;setPreviewApproval(false);previewImgs('std-images-preview',stdPending)};document.getElementById('cus-delete').onclick=()=>{cusPending=[];document.getElementById('cus_enabled').checked=false;document.getElementById('cus_visible').checked=false;setPreviewApproval(false);previewImgs('cus-images-preview',cusPending)};
+  document.getElementById('save-product').onclick=saveProduct;document.getElementById('delete-product').onclick=deleteProduct;bindPreviewRequired();
+  window.__packAdminDraft=()=>({stdPending:stdPending.slice(),cusPending:cusPending.slice()});
+}
+function collectPackBody(){
+  const type=document.getElementById('p_type')?.value||'standard';
+  if(type!=='clothing') return {pack_enabled:false,pack_visible:false,pack_standard_config:null,pack_custom_config:null,pack_mode:'choice',pack_pieces:3,pack_items:[],pack_config:{mode:'choice',pieces:3,items:[]}};
+  const imgs=window.__packAdminDraft?window.__packAdminDraft():{stdPending:[],cusPending:[]};
+  const read=(prefix,enabledKey,visibleKey,piecesKey,priceKey,oldKey,titleAr,titleFr,descAr,descFr,images,items)=>({enabled:!!document.getElementById(enabledKey)?.checked,visible:!!document.getElementById(visibleKey)?.checked,pieces:Math.max(1,parseInt(document.getElementById(piecesKey)?.value||'3',10)),price:document.getElementById(priceKey)?.value?parseFloat(document.getElementById(priceKey).value):null,old_price:document.getElementById(oldKey)?.value?parseFloat(document.getElementById(oldKey).value):null,title_ar:document.getElementById(titleAr)?.value||'',title_fr:document.getElementById(titleFr)?.value||'',description_ar:document.getElementById(descAr)?.value||'',description_fr:document.getElementById(descFr)?.value||'',images:images.slice(),items:items||[]});
+  const stdItems=Array.from(document.querySelectorAll('#std-ready-items .pack-piece-choice')).map((el,i)=>({piece:i+1,size:el.querySelector('.std-size')?.value||'',color:el.querySelector('.std-color')?.value||''}));
+  const std=read('std','std_enabled','std_visible','std_pieces','std_price','std_old_price','std_title_ar','std_title_fr','std_desc_ar','std_desc_fr',imgs.stdPending,stdItems);
+  const cus=read('cus','cus_enabled','cus_visible','cus_pieces','cus_price','cus_old_price','cus_title_ar','cus_title_fr','cus_desc_ar','cus_desc_fr',imgs.cusPending,[]);
+  return {pack_enabled:std.enabled||cus.enabled,pack_visible:(std.enabled&&std.visible)||(cus.enabled&&cus.visible),pack_mode:cus.enabled?'choice':'ready',pack_pieces:cus.pieces,pack_items:[],pack_title_ar:std.title_ar||cus.title_ar||'',pack_title_fr:std.title_fr||cus.title_fr||'',pack_description_ar:std.description_ar||cus.description_ar||'',pack_description_fr:std.description_fr||cus.description_fr||'',pack_price:std.price??cus.price??null,pack_old_price:std.old_price??cus.old_price??null,pack_images:(std.images&&std.images.length?std.images:cus.images)||[],pack_config:{standard:std,custom:cus}};
+}
+async function saveProduct(){
+  if(!PREVIEW_APPROVED){document.getElementById('save-msg').innerHTML='<div class="msg err">خاصك تدير المعاينة قبل الحفظ</div>';return;}
+  const type=document.getElementById('p_type').value,body={title_ar:document.getElementById('p_title_ar').value,title_fr:document.getElementById('p_title_fr').value,description_ar:document.getElementById('p_desc_ar').value,description_fr:document.getElementById('p_desc_fr').value,price:parseFloat(getProductFormValue('price'))||0,stock_quantity:Math.max(0,parseInt(getProductFormValue('stock')||'0',10)),old_price:getProductFormValue('old_price')?parseFloat(getProductFormValue('old_price')):null,video_url:pendingVideoUrl||'',images:pendingImages.slice(),is_active:document.getElementById('p_active').checked,product_type:type,sizes:document.getElementById('p_sizes')?.value||'',colors:document.getElementById('p_colors')?.value||'',...collectPackBody()};
+  const msg=document.getElementById('save-msg'),btn=document.getElementById('save-product');btn.disabled=true;try{const res=adminData.product?await sbUpdate('products',`id=eq.${adminData.product.id}`,body):await sbInsert('products',body,true);const ok=res.ok&&res.status>=200&&res.status<300&&(!adminData.product?Array.isArray(res.data)&&res.data.length>0:true);msg.innerHTML=ok?'<div class="msg ok">تم الحفظ ✅</div>':'<div class="msg err">وقع مشكل، حاول مرة أخرى</div>';if(ok){UNSAVED_DRAFT.product=null;PREVIEW_APPROVED=false;await loadAdminData();renderProductTab();}}catch(e){msg.innerHTML=`<div class="msg err">وقع مشكل: ${escHtml(e?.message||'خطأ غير معروف')}</div>`}btn.disabled=false;
+}
+async function deletePack(){
+  const msg=document.getElementById('save-msg');
+  if(!adminData.product?.id){
+    if(msg) msg.innerHTML='<div class="msg err">ما كاين حتى منتج باش نحيدو منو الـPack</div>';
+    return;
   }
-  function refreshType(){
-    const clothing=typeEl.value==="clothing";
-    standardEl.style.display=clothing?"none":"block"; clothingEl.style.display=clothing?"block":"none";
-    psEl.style.display=clothing?"none":"block"; pcEl.style.display=clothing?"block":"none";
-    // Re-render only the pack's ready assortment when clothing is selected.
-    if(clothing){ const mode=document.getElementById("pack_mode"); if(mode) mode.value=pc.mode||"choice"; }
-    renderReadyItems();
+  if(!confirm('واش متأكد بغيتي تحذف الـPack نهائياً؟')) return;
+  try{
+    const body={
+      pack_enabled:false,
+      pack_visible:false,
+      pack_mode:'choice',
+      pack_pieces:3,
+      pack_items:[],
+      pack_title_ar:'',
+      pack_title_fr:'',
+      pack_description_ar:'',
+      pack_description_fr:'',
+      pack_price:null,
+      pack_old_price:null,
+      pack_images:[],
+      pack_config:{mode:'choice',pieces:3,items:[],standard:null,custom:null}
+    };
+    const res=await sbUpdate('products',`id=eq.${encodeURIComponent(adminData.product.id)}`,body);
+    if(!res.ok) throw new Error(res.data?.message||res.data?.error||res.error||`HTTP ${res.status}`);
+    if(msg) msg.innerHTML='<div class="msg ok">تم حذف الـPack نهائياً ✅</div>';
+    await loadAdminData();
+    renderProductTab();
+  }catch(e){
+    console.error('deletePack failed:',e);
+    if(msg) msg.innerHTML=`<div class="msg err">تعذر حذف الـPack: ${escHtml(e?.message||'خطأ غير معروف')}</div>`;
   }
-  typeEl.onchange=refreshType;
-  document.getElementById("pack_mode")?.addEventListener("change",renderReadyItems);
-  document.getElementById("pack_pieces_clothing")?.addEventListener("input",renderReadyItems);
-  document.getElementById("p_sizes")?.addEventListener("input",renderReadyItems);
-  document.getElementById("p_colors")?.addEventListener("input",renderReadyItems);
-  refreshType();
-  bindPreviewRequired();
+}
+async function deleteProduct(){
+  const msg = document.getElementById('save-msg');
+  const btn = document.getElementById('delete-product');
+
+  if(!adminData.product?.id){
+    if(msg) msg.innerHTML='<div class="msg err">ما كاين حتى منتج باش يتحذف</div>';
+    return;
+  }
+
+  if(!confirm('واش متأكد بغيتي تحذف المنتج نهائياً؟ هاد العملية مايمكنش التراجع عليها.')) return;
+
+  const productId = adminData.product.id;
+  if(btn) btn.disabled = true;
+  if(msg) msg.innerHTML='<div class="msg">جاري حذف المنتج...</div>';
+
+  try{
+    // The upsell belongs to the product and can safely be removed first.
+    const upRes = await sbDelete('upsells', `product_id=eq.${encodeURIComponent(productId)}`);
+    if(!upRes.ok){
+      throw new Error(upRes.data?.message || upRes.data?.error || upRes.error || `فشل حذف العرض الإضافي (HTTP ${upRes.status})`);
+    }
+
+    // Orders are intentionally NOT deleted. The SQL migration below changes
+    // orders.product_id to ON DELETE SET NULL, preserving order history.
+    const res = await sbDelete('products', `id=eq.${encodeURIComponent(productId)}`);
+
+    if(!res.ok){
+      const detail = res.data?.message || res.data?.error || res.error || `HTTP ${res.status}`;
+      throw new Error(detail);
+    }
+
+    adminData.product = null;
+    adminData.upsell = null;
+    UNSAVED_DRAFT.product = null;
+    UNSAVED_DRAFT.upsell = null;
+    PREVIEW_APPROVED = false;
+    pendingImages = [];
+    pendingPackImages = [];
+    pendingVideoUrl = '';
+
+    if(msg) msg.innerHTML='<div class="msg ok">تم حذف المنتج نهائياً ✅</div>';
+    await loadAdminData();
+    setTimeout(()=>renderProductTab(), 500);
+
+  }catch(e){
+    console.error('deleteProduct failed:', e);
+    if(msg) msg.innerHTML=`<div class="msg err">تعذر حذف المنتج: ${escHtml(e?.message || 'خطأ غير معروف')}</div>`;
+  }finally{
+    if(btn) btn.disabled = false;
+  }
 }
 
 function renderPackImagesPreview(){
@@ -1531,70 +1410,6 @@ async function onPackImagesSelected(e){
     if(res.ok){pendingPackImages.push(res.url);renderPackImagesPreview();status.textContent="";}else status.textContent=`فشل رفع "${file.name}"`;
   }
 }
-function collectPackBody(){
-  const enabled=document.getElementById("pack_enabled")?.checked||false, visible=document.getElementById("pack_visible")?.checked||false;
-  const clothing=document.getElementById("p_type")?.value==="clothing"; const mode=clothing?(document.getElementById("pack_mode")?.value||"choice"):"ready", pieces=Math.max(1,parseInt((clothing?document.getElementById("pack_pieces_clothing")?.value:document.getElementById("pack_pieces")?.value)||"3",10));
-  const items=Array.from(document.querySelectorAll("#pack-ready-items .pack-piece-choice")).map((el,i)=>({piece:i+1,size:el.querySelector(".ready-size")?.value||"",color:el.querySelector(".ready-color")?.value||""}));
-  return {pack_enabled:enabled,pack_visible:enabled&&visible,pack_title_ar:document.getElementById("pack_title_ar")?.value||"",pack_title_fr:document.getElementById("pack_title_fr")?.value||"",pack_description_ar:document.getElementById("pack_desc_ar")?.value||"",pack_description_fr:document.getElementById("pack_desc_fr")?.value||"",pack_price:document.getElementById("pack_price")?.value?parseFloat(document.getElementById("pack_price").value):null,pack_old_price:document.getElementById("pack_old_price")?.value?parseFloat(document.getElementById("pack_old_price").value):null,pack_images:pendingPackImages.slice(),pack_mode:mode,pack_pieces:pieces,pack_items:items,pack_config:{mode,pieces,items}};
-}
-async function savePack(){
-  if(!PREVIEW_APPROVED){ document.getElementById("save-msg").innerHTML=`<div class="msg err">خاصك تدير المعاينة قبل الحفظ</div>`; return; }
-  if(!adminData.product)return; const msg=document.getElementById("save-msg"),btn=document.getElementById("save-pack"); if(btn)btn.disabled=true;
-  try{const res=await sbUpdate("products",`id=eq.${adminData.product.id}`,collectPackBody()); const ok=res.ok&&res.status>=200&&res.status<300; msg.innerHTML=ok?`<div class="msg ok">تم حفظ الـPack ✅</div>`:`<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`; if(ok){UNSAVED_DRAFT.product=null;await loadAdminData();renderProductTab();}}catch(e){msg.innerHTML=`<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;}
-  if(btn)btn.disabled=false;
-}
-async function deletePack(){
-  if(!adminData.product)return; if(!confirm("حذف الـPack نهائياً؟"))return;
-  const body={pack_enabled:false,pack_visible:false,pack_title_ar:"",pack_title_fr:"",pack_description_ar:"",pack_description_fr:"",pack_price:null,pack_old_price:null,pack_images:[],pack_mode:"choice",pack_pieces:3,pack_items:[],pack_config:{mode:"choice",pieces:3,items:[]}};
-  const res=await sbUpdate("products",`id=eq.${adminData.product.id}`,body);
-  const msg=document.getElementById("save-msg"); msg.innerHTML=res.ok?`<div class="msg ok">تم حذف الـPack</div>`:`<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;
-  if(res.ok){UNSAVED_DRAFT.product=null;await loadAdminData();renderProductTab();}
-}
-
-async function deleteProduct(){
-  if(!adminData.product || !adminData.product.id){
-    const m = document.getElementById("save-msg");
-    if(m) m.innerHTML = `<div class="msg err">ما كاين حتى منتج باش يتحذف</div>`;
-    return;
-  }
-
-  const ok = confirm("واش متأكد بغيتي تحذف المنتج نهائياً؟ هاد العملية مايمكنش التراجع عليها.");
-  if(!ok) return;
-
-  const msg = document.getElementById("save-msg");
-  const btn = document.getElementById("delete-product");
-  if(btn) btn.disabled = true;
-
-  try{
-    const productId = adminData.product.id;
-
-    // Delete dependent records first.
-    try { await sbDelete("upsells", `product_id=eq.${productId}`); } catch(e) { console.warn("upsell cleanup failed:", e); }
-    try { await sbDelete("packs", `product_id=eq.${productId}`); } catch(e) { console.warn("pack cleanup failed:", e); }
-
-    const res = await sbDelete("products", `id=eq.${productId}`);
-
-    if(res && res.ok && res.status >= 200 && res.status < 300){
-      adminData.product = null;
-      adminData.upsell = null;
-      UNSAVED_DRAFT.product = null;
-      pendingImages = [];
-      pendingVideoUrl = "";
-
-      if(msg) msg.innerHTML = `<div class="msg ok">تم حذف المنتج نهائياً ✅</div>`;
-      setTimeout(()=>renderProductTab(), 500);
-    }else{
-      const detail = res && (res.error || res.message || res.data?.message);
-      if(msg) msg.innerHTML = `<div class="msg err">تعذر حذف المنتج${detail ? `: ${detail}` : ""}</div>`;
-    }
-  }catch(e){
-    console.error("deleteProduct failed:", e);
-    if(msg) msg.innerHTML = `<div class="msg err">تعذر حذف المنتج: ${e?.message || "خطأ غير معروف"}</div>`;
-  }
-
-  if(btn) btn.disabled = false;
-}
-
 function renderImagesPreview(){
   const box = document.getElementById("images-preview");
   if(!box) return;
@@ -1682,49 +1497,6 @@ async function onVideoSelected(e){
   } else {
     status.innerHTML = `<span style="color:#B02A2A">فشل رفع الفيديو: ${res.error}</span>`;
   }
-}
-
-async function saveProduct(){
-  if(!PREVIEW_APPROVED){ document.getElementById("save-msg").innerHTML=`<div class="msg err">خاصك تدير المعاينة قبل الحفظ</div>`; return; }
-  const body = {
-    title_ar: document.getElementById("p_title_ar").value,
-    title_fr: document.getElementById("p_title_fr").value,
-    description_ar: document.getElementById("p_desc_ar").value,
-    description_fr: document.getElementById("p_desc_fr").value,
-    price: parseFloat(getProductFormValue("price"))||0,
-    stock_quantity: Math.max(0, parseInt(getProductFormValue("stock")||"0",10)),
-    old_price: getProductFormValue("old_price") ? parseFloat(getProductFormValue("old_price")) : null,
-    video_url: pendingVideoUrl || "",
-    images: pendingImages.slice(),
-    is_active: document.getElementById("p_active").checked,
-    product_type: document.getElementById("p_type")?.value||"standard",
-    sizes: document.getElementById("p_sizes")?.value||"",
-    colors: document.getElementById("p_colors")?.value||"",
-    ...collectPackBody()
-  };
-  const msg = document.getElementById("save-msg");
-  const btn = document.getElementById("save-product");
-  if(btn) btn.disabled = true;
-  try{
-    let res;
-    if(adminData.product){
-      res = await sbUpdate("products", `id=eq.${adminData.product.id}`, body);
-    } else {
-      res = await sbInsert("products", body, true);
-    }
-    const success = res.ok && res.status>=200 && res.status<300 && Array.isArray(res.data) && res.data.length>0;
-    if(success){
-      msg.innerHTML = `<div class="msg ok">تم الحفظ ✅</div>`;
-      UNSAVED_DRAFT.product=null;
-      PREVIEW_APPROVED=false;
-      await loadAdminData();
-    } else {
-      msg.innerHTML = `<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;
-    }
-  } catch(e){
-    msg.innerHTML = `<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;
-  }
-  if(btn) btn.disabled = false;
 }
 
 function renderUpsellTab(){
