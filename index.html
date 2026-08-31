@@ -1420,7 +1420,7 @@ function collectPackBody(){
 async function saveProduct(){
   if(!PREVIEW_APPROVED){document.getElementById('save-msg').innerHTML='<div class="msg err">خاصك تدير المعاينة قبل الحفظ</div>';return;}
   const type=document.getElementById('p_type').value;
-  const baseBody={title_ar:document.getElementById('p_title_ar').value,title_fr:document.getElementById('p_title_fr').value,description_ar:document.getElementById('p_desc_ar').value,description_fr:document.getElementById('p_desc_fr').value,price:parseFloat(getProductFormValue('price'))||0,stock_quantity:Math.max(0,parseInt(getProductFormValue('stock')||'0',10)),old_price:getProductFormValue('old_price')?parseFloat(getProductFormValue('old_price')):null,video_url:pendingVideoUrl||'',images:pendingImages.slice(),is_active:document.getElementById('p_active').checked,product_type:type,sizes:document.getElementById('p_sizes')?.value||'',colors:document.getElementById('p_colors')?.value||''};
+  const baseBody={title_ar:document.getElementById('p_title_ar').value,title_fr:document.getElementById('p_title_fr').value,description_ar:document.getElementById('p_desc_ar').value,description_fr:document.getElementById('p_desc_fr').value,price:parseFloat(getProductFormValue('price'))||0,old_price:getProductFormValue('old_price')?parseFloat(getProductFormValue('old_price')):null,video_url:pendingVideoUrl||'',images:pendingImages.slice(),is_active:document.getElementById('p_active').checked,product_type:type,sizes:document.getElementById('p_sizes')?.value||'',colors:document.getElementById('p_colors')?.value||''};
   const body={...baseBody,...collectPackBody()};
   const msg=document.getElementById('save-msg'),btn=document.getElementById('save-product');btn.disabled=true;
   try{
