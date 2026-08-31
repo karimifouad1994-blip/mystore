@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Store</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --radius: 14px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Tajawal', sans-serif;
+    min-height:100vh;
+    color: var(--ink);
+    background: var(--bg);
+    transition: background .3s ease, color .3s ease;
+  }
+  /* ===== THEMES ===== */
+  body[data-theme="1"]{ --bg:#F6F1E9; --ink:#211D17; --accent:#B5581F; --accent-ink:#ffffff; --card:#FFFFFF; --muted:#8A8072; --line:#E7DFCF; }
+  body[data-theme="2"]{ --bg:#121417; --ink:#F2F2F0; --accent:#5B8CFF; --accent-ink:#0A0A0A; --card:#1B1E22; --muted:#8E949C; --line:#2A2E33; }
+  body[data-theme="3"]{ --bg:#FBEAE7; --ink:#2B1C24; --accent:#7A2F63; --accent-ink:#ffffff; --card:#FFFFFF; --muted:#9C7E8D; --line:#F1D3CD; }
+  body[data-theme="4"]{ --bg:#F4E9D8; --ink:#1F2E27; --accent:#1F5C4A; --accent-ink:#ffffff; --card:#FFFCF6; --muted:#7C8A80; --line:#E3D3B4; }
+  body[data-theme="5"]{ --bg:#FFFFFF; --ink:#15181B; --accent:#E4572E; --accent-ink:#ffffff; --card:#F7F7F8; --muted:#767C82; --line:#E9EAEC; }
+
+  a{color:inherit; text-decoration:none;}
+  button{font-family:inherit; cursor:pointer; border:none;}
+  img{max-width:100%; display:block;}
+
+  .wrap{max-width:520px; margin:0 auto; padding:0 18px 60px;}
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 18px; max-width:520px; margin:0 auto;
+  }
+  .brand{font-weight:800; font-size:1.15rem; letter-spacing:.2px;}
+  .lang-switch{
+    display:flex; background:var(--card); border:1px solid var(--line); border-radius:999px; overflow:hidden;
+  }
+  .lang-switch button{
+    padding:7px 14px; font-size:.82rem; font-weight:700; background:transparent; color:var(--muted);
+  }
+  .lang-switch button.active{ background:var(--accent); color:var(--accent-ink); }
+
+  .hero-media{
+    border-radius: var(--radius); overflow:hidden; background:var(--card); border:1px solid var(--line); margin-bottom:22px;
+  }
+  .hero-media video, .hero-media img{ width:100%; display:block; }
+  .thumbs{display:flex; gap:8px; margin-top:8px; overflow-x:auto;}
+  .thumbs img{ width:64px; height:64px; object-fit:cover; border-radius:10px; border:1px solid var(--line); flex-shrink:0; }
+
+  h1.title{ font-size:1.55rem; font-weight:800; line-height:1.35; margin-bottom:10px; }
+  .desc{ color:var(--muted); font-size:.98rem; line-height:1.8; margin-bottom:18px; white-space:pre-line; }
+
+  .price-row{ display:flex; align-items:baseline; gap:10px; margin-bottom:22px; }
+  .price{ font-size:1.7rem; font-weight:800; color:var(--accent); }
+  .old-price{ font-size:1.05rem; color:var(--muted); text-decoration:line-through; }
+
+  .cta{
+    width:100%; padding:16px; border-radius:12px; background:var(--accent); color:var(--accent-ink);
+    font-size:1.02rem; font-weight:800; margin-bottom:14px;
+  }
+  .cta.secondary{ background:transparent; color:var(--ink); border:1.5px solid var(--line); }
+  .wa-btn{ display:flex; align-items:center; justify-content:center; gap:8px; }
+
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:20px; margin-bottom:16px; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:.86rem; font-weight:700; margin-bottom:6px; color:var(--muted); }
+  .field input, .field textarea, .field select{
+    width:100%; padding:12px 14px; border-radius:10px; border:1.5px solid var(--line);
+    background:var(--bg); color:var(--ink); font-family:inherit; font-size:.95rem;
+  }
+  .field textarea{ resize:vertical; min-height:70px; }
+  .field-row{ display:flex; gap:10px; }
+  .field-row .field{ flex:1; }
+
+  .upsell-box{ border:1.5px dashed var(--accent); border-radius:var(--radius); padding:16px; margin-bottom:16px; }
+  .upsell-box .up-title{ font-weight:800; margin-bottom:6px; }
+  .up-check{ display:flex; align-items:center; gap:10px; margin-top:10px; padding:12px; background:var(--bg); border-radius:10px; }
+
+  .success{ text-align:center; padding:40px 10px; }
+  .success .emoji{ font-size:3rem; margin-bottom:14px; }
+  .success h2{ font-size:1.3rem; margin-bottom:8px; }
+  .success p{ color:var(--muted); }
+
+  .footer-note{ text-align:center; color:var(--muted); font-size:.78rem; margin-top:30px; }
+
+  /* ===== ADMIN ===== */
+  .admin-wrap{ max-width:640px; margin:0 auto; padding:20px 18px 80px; }
+  .admin-login{ max-width:360px; margin:60px auto; }
+  .admin-tabs{ display:flex; gap:6px; overflow-x:auto; margin-bottom:18px; padding-bottom:4px; }
+  .admin-tabs button{
+    padding:9px 16px; border-radius:999px; background:var(--card); border:1px solid var(--line);
+    font-size:.85rem; font-weight:700; color:var(--muted); white-space:nowrap;
+  }
+  .admin-tabs button.active{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+  .section-title{ font-weight:800; font-size:1.1rem; margin-bottom:14px; }
+  .theme-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:16px; }
+  .theme-swatch{ height:46px; border-radius:10px; border:2px solid transparent; cursor:pointer; }
+  .theme-swatch.selected{ border-color:var(--ink); }
+  .save-btn{ padding:13px 22px; border-radius:10px; background:var(--accent); color:var(--accent-ink); font-weight:800; }
+  .order-item{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:10px; }
+  .order-item .row1{ display:flex; justify-content:space-between; font-weight:700; margin-bottom:6px; }
+  .order-item .meta{ color:var(--muted); font-size:.85rem; line-height:1.7; }
+  .status-pill{ display:inline-block; padding:4px 12px; border-radius:999px; font-size:.78rem; font-weight:700; }
+  .badge-new{ background:#FFF1D6; color:#8A5B00; }
+  .badge-confirmed{ background:#DCF5E3; color:#1F7A3D; }
+  .badge-cancelled{ background:#FBDCDC; color:#B02A2A; }
+  .toggle{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .toggle input{ width:20px; height:20px; }
+  .small-muted{ color:var(--muted); font-size:.8rem; margin-top:-6px; margin-bottom:14px; }
+  .logout-btn{ font-size:.82rem; color:var(--muted); text-decoration:underline; }
+  .msg{ padding:10px 14px; border-radius:10px; font-size:.85rem; margin-bottom:14px; }
+  .msg.ok{ background:#DCF5E3; color:#1F7A3D; }
+  .msg.err{ background:#FBDCDC; color:#B02A2A; }
+</style>
+</head>
+<body data-theme="1">
+
+<div id="app"></div>
+
+<script>
+/* ============ CONFIG ============ */
+const SUPABASE_URL = "https://qqhwheethihkpvogpxwo.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxaHdoZWV0aGloa3B2b2dweHdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxMjY0NTcsImV4cCI6MjEwMzcwMjQ1N30.jJbdAq535j252I_wGTkJuGbSUjkdUtMSQQsrhD4zo9o";
+
+const SESSION_KEY = "store_admin_session";
+let session = { access_token: null, refresh_token: null, expires_at: null, user: null };
+
+function saveSession(s){
+  session = s;
+  try{ localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }catch(e){}
+}
+function loadStoredSession(){
+  try{
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function clearSession(){
+  session = { access_token:null, refresh_token:null, expires_at:null, user:null };
+  try{ localStorage.removeItem(SESSION_KEY); }catch(e){}
+}
+async function refreshSession(refresh_token){
+  if(!refresh_token) return null;
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method:"POST", headers:{ "apikey":SUPABASE_ANON_KEY, "Content-Type":"application/json" },
+    body: JSON.stringify({ refresh_token })
+  });
+  if(!r.ok) return null;
+  return r.json();
+}
+
+const T = {
+  ar: {
+    order_now:"اطلب الآن", full_name:"الاسم الكامل", phone:"رقم الهاتف", address:"العنوان", city:"المدينة",
+    qty:"الكمية", place_order:"تأكيد الطلب", contact_whatsapp:"تواصل عبر واتساب",
+    add_offer:"عرض خاص لك 🎁", yes_add:"نعم، أضفها", no_thanks:"لا شكرا", finish_order:"إتمام الطلب",
+    success_title:"توصل طلبك بنجاح 🎉", success_sub:"غادي نتواصلو معاك قريب باش نأكدو الطلب ✅",
+    required:"هاد الحقل خاصو يتعمر", order_error:"وقع مشكل، عاود المحاولة", loading:"جاري التحميل...",
+    no_product:"لا يوجد منتج بعد", from:"", currency:"درهم"
+  },
+  fr: {
+    order_now:"Commander", full_name:"Nom complet", phone:"Téléphone", address:"Adresse", city:"Ville",
+    qty:"Quantité", place_order:"Confirmer la commande", contact_whatsapp:"Contacter sur WhatsApp",
+    add_offer:"Offre spéciale pour vous 🎁", yes_add:"Oui, ajouter", no_thanks:"Non merci", finish_order:"Finaliser la commande",
+    success_title:"Commande reçue avec succès 🎉", success_sub:"On vous contacte bientôt pour confirmer ✅",
+    required:"Ce champ est requis", order_error:"Une erreur est survenue, réessayez", loading:"Chargement...",
+    no_product:"Aucun produit pour le moment", from:"", currency:"DH"
+  }
+};
+
+/* ============ SUPABASE REST HELPERS ============ */
+function headers(auth){
+  const h = { "apikey": SUPABASE_ANON_KEY, "Content-Type":"application/json" };
+  h["Authorization"] = "Bearer " + (auth ? session.access_token : SUPABASE_ANON_KEY);
+  return h;
+}
+async function sbGet(table, query){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, { headers: headers(false) });
+  return r.json();
+}
+async function sbGetAuth(table, query){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, { headers: headers(true) });
+  return r.json();
+}
+async function sbInsert(table, body, auth=false){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method:"POST", headers: {...headers(auth), "Prefer":"return=representation"}, body: JSON.stringify(body)
+  });
+  let data = null;
+  try{ data = await r.json(); }catch(e){}
+  return { ok: r.ok, status: r.status, data };
+}
+async function sbUpdate(table, query, body){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
+    method:"PATCH", headers: {...headers(true), "Prefer":"return=representation"}, body: JSON.stringify(body)
+  });
+  let data = null;
+  try{ data = await r.json(); }catch(e){}
+  return { ok: r.ok, status: r.status, data };
+}
+async function sbDelete(table, query){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, { method:"DELETE", headers: headers(true) });
+  return r.ok;
+}
+async function sbLogin(email, password){
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method:"POST", headers:{ "apikey":SUPABASE_ANON_KEY, "Content-Type":"application/json" },
+    body: JSON.stringify({ email, password })
+  });
+  return r.json();
+}
+
+/* ============ STATE ============ */
+let STATE = { settings:null, product:null, upsell:null, lang:"ar", step:"form", order:{}, upsellAccepted:false };
+
+/* ============ ROUTER ============ */
+async function boot(){
+  if(location.hash.startsWith("#admin")){
+    await initAdminSession();
+  } else {
+    await loadPublicData();
+    renderLanding();
+  }
+}
+
+async function initAdminSession(){
+  const stored = loadStoredSession();
+  if(!stored || !stored.access_token){
+    renderAdminLogin();
+    return;
+  }
+  // refresh if expired or about to expire (60s buffer)
+  if(!stored.expires_at || stored.expires_at - Date.now() < 60000){
+    const refreshed = await refreshSession(stored.refresh_token);
+    if(refreshed && refreshed.access_token){
+      saveSession({
+        access_token: refreshed.access_token,
+        refresh_token: refreshed.refresh_token,
+        expires_at: Date.now() + (refreshed.expires_in||3600)*1000,
+        user: refreshed.user
+      });
+      renderAdminDashboard("product");
+    } else {
+      clearSession();
+      renderAdminLogin();
+    }
+  } else {
+    session = stored;
+    renderAdminDashboard("product");
+  }
+}
+window.addEventListener("hashchange", boot);
+boot();
+
+/* ============ PUBLIC: LOAD DATA ============ */
+async function loadPublicData(){
+  const settingsArr = await sbGet("settings","id=eq.1&select=*");
+  STATE.settings = settingsArr[0] || {};
+  STATE.lang = STATE.settings.default_language || "ar";
+  const products = await sbGet("products","is_active=eq.true&select=*&order=created_at.asc&limit=1");
+  STATE.product = products[0] || null;
+  if(STATE.product){
+    const ups = await sbGet("upsells", `product_id=eq.${STATE.product.id}&is_active=eq.true&select=*&limit=1`);
+    STATE.upsell = ups[0] || null;
+  }
+}
+
+/* ============ LANDING RENDER ============ */
+function waLink(prefText){
+  const num = (STATE.settings.whatsapp_number||"").replace(/\D/g,"");
+  return `https://wa.me/${num}?text=${encodeURIComponent(prefText)}`;
+}
+
+function renderLanding(){
+  document.body.setAttribute("data-theme", STATE.settings.theme_id || 1);
+  if(STATE.settings.bg_color){ document.body.style.setProperty("--bg", STATE.settings.bg_color); }
+  document.documentElement.lang = STATE.lang;
+  document.documentElement.dir = STATE.lang === "ar" ? "rtl" : "ltr";
+  const t = T[STATE.lang];
+  const app = document.getElementById("app");
+
+  if(!STATE.product){
+    app.innerHTML = `<div class="wrap" style="padding-top:80px; text-align:center; color:var(--muted)">${t.no_product}</div>`;
+    return;
+  }
+
+  const p = STATE.product;
+  const title = STATE.lang==="ar" ? p.title_ar : p.title_fr;
+  const desc = STATE.lang==="ar" ? p.description_ar : p.description_fr;
+  const images = (p.images||[]).filter(Boolean);
+
+  let mediaHtml = "";
+  if(p.video_url){
+    mediaHtml = `<video src="${p.video_url}" controls playsinline></video>`;
+  } else if(images[0]){
+    mediaHtml = `<img src="${images[0]}" alt="${title}">`;
+  }
+  let thumbsHtml = images.length>1 ? `<div class="thumbs">${images.map(i=>`<img src="${i}">`).join("")}</div>` : "";
+
+  if(STATE.step === "success"){
+    const showWa = STATE.settings.whatsapp_enabled && STATE.settings.whatsapp_timing === "after";
+    app.innerHTML = `
+      <div class="wrap">
+        <div class="success">
+          <div class="emoji">🎉✅</div>
+          <h2>${t.success_title}</h2>
+          <p>${t.success_sub}</p>
+          ${showWa ? `<a class="cta wa-btn" style="margin-top:22px" href="${waLink((STATE.lang==='ar'?'مرحبا، عندي طلب لـ ':'Bonjour, j\'ai commandé ')+title)}" target="_blank">💬 ${t.contact_whatsapp}</a>` : ""}
+        </div>
+      </div>`;
+    return;
+  }
+
+  const showWaBefore = STATE.settings.whatsapp_enabled && STATE.settings.whatsapp_timing === "before";
+
+  app.innerHTML = `
+    <div class="topbar">
+      <div class="brand">${STATE.settings.store_name||""}</div>
+      <div class="lang-switch">
+        <button data-lang="ar" class="${STATE.lang==='ar'?'active':''}">AR</button>
+        <button data-lang="fr" class="${STATE.lang==='fr'?'active':''}">FR</button>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="hero-media">${mediaHtml}</div>
+      ${thumbsHtml}
+      <h1 class="title">${title||""}</h1>
+      <p class="desc">${desc||""}</p>
+      <div class="price-row">
+        <span class="price">${p.price} ${t.currency}</span>
+        ${p.old_price ? `<span class="old-price">${p.old_price} ${t.currency}</span>` : ""}
+      </div>
+
+      ${showWaBefore ? `<a class="cta secondary wa-btn" href="${waLink((STATE.lang==='ar'?'مرحبا، عندي سؤال على ':'Bonjour, j\'ai une question sur ')+title)}" target="_blank">💬 ${t.contact_whatsapp}</a>` : ""}
+
+      <div class="card">
+        <div class="field">
+          <label>${t.full_name}</label>
+          <input id="f_name" type="text">
+        </div>
+        <div class="field">
+          <label>${t.phone}</label>
+          <input id="f_phone" type="tel">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>${t.city}</label>
+            <input id="f_city" type="text">
+          </div>
+          <div class="field">
+            <label>${t.qty}</label>
+            <input id="f_qty" type="number" min="1" value="1">
+          </div>
+        </div>
+        <div class="field">
+          <label>${t.address}</label>
+          <textarea id="f_address"></textarea>
+        </div>
+        <div id="order-msg"></div>
+        <button class="cta" id="submit-btn">${t.place_order}</button>
+      </div>
+      <div class="footer-note">${STATE.settings.store_name||""}</div>
+    </div>
+  `;
+
+  document.querySelectorAll("[data-lang]").forEach(b=>{
+    b.onclick = ()=>{ STATE.lang = b.dataset.lang; renderLanding(); };
+  });
+  document.getElementById("submit-btn").onclick = onSubmitOrder;
+}
+
+async function onSubmitOrder(){
+  const t = T[STATE.lang];
+  const name = document.getElementById("f_name").value.trim();
+  const phone = document.getElementById("f_phone").value.trim();
+  const city = document.getElementById("f_city").value.trim();
+  const qty = parseInt(document.getElementById("f_qty").value)||1;
+  const address = document.getElementById("f_address").value.trim();
+  const msgBox = document.getElementById("order-msg");
+
+  if(!name || !phone){
+    msgBox.innerHTML = `<div class="msg err">${t.required}</div>`;
+    return;
+  }
+  STATE.order = { customer_name:name, phone, city, address, quantity:qty };
+
+  if(STATE.upsell){
+    renderUpsellStep();
+  } else {
+    await finalizeOrder(false, null);
+  }
+}
+
+function renderUpsellStep(){
+  const t = T[STATE.lang];
+  const up = STATE.upsell;
+  const upTitle = STATE.lang==="ar" ? up.title_ar : up.title_fr;
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <div class="wrap" style="padding-top:24px">
+      <div class="upsell-box">
+        <div class="up-title">${t.add_offer}</div>
+        ${up.image_url ? `<img src="${up.image_url}" style="border-radius:10px; margin-bottom:10px;">` : ""}
+        <div>${upTitle} — <strong>${up.price} ${t.currency}</strong></div>
+        <div class="up-check">
+          <input type="checkbox" id="up-check">
+          <label for="up-check">${t.yes_add}</label>
+        </div>
+      </div>
+      <div id="order-msg"></div>
+      <button class="cta" id="finish-btn">${t.finish_order}</button>
+    </div>
+  `;
+  document.getElementById("finish-btn").onclick = ()=>{
+    const accepted = document.getElementById("up-check").checked;
+    finalizeOrder(accepted, up.id);
+  };
+}
+
+async function finalizeOrder(upsellAccepted, upsellId){
+  const t = T[STATE.lang];
+  const body = {
+    product_id: STATE.product.id,
+    customer_name: STATE.order.customer_name,
+    phone: STATE.order.phone,
+    address: STATE.order.address,
+    city: STATE.order.city,
+    quantity: STATE.order.quantity,
+    upsell_accepted: upsellAccepted,
+    upsell_id: upsellId
+  };
+  const msgBox = document.getElementById("order-msg");
+  const finishBtn = document.getElementById("finish-btn") || document.getElementById("submit-btn");
+  if(finishBtn) finishBtn.disabled = true;
+
+  let res;
+  try{
+    res = await sbInsert("orders", body);
+  } catch(networkErr){
+    res = { ok:false, status:0, data:null };
+  }
+
+  // Only treat as success if HTTP status confirms the row was actually created,
+  // and the API returned the inserted row back.
+  const insertedOk = res.ok && res.status >= 200 && res.status < 300 && Array.isArray(res.data) && res.data.length > 0;
+
+  if(insertedOk){
+    STATE.step = "success";
+    renderLanding();
+  } else {
+    if(finishBtn) finishBtn.disabled = false;
+    if(msgBox) msgBox.innerHTML = `<div class="msg err">${t.order_error}</div>`;
+  }
+}
+
+/* ================= ADMIN ================= */
+function renderAdminLogin(){
+  document.body.setAttribute("data-theme","5");
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <div class="admin-login">
+      <h2 class="section-title" style="text-align:center; margin-bottom:20px;">دخول الإدارة</h2>
+      <div class="field"><label>Email</label><input id="a_email" type="email"></div>
+      <div class="field"><label>Password</label><input id="a_pass" type="password"></div>
+      <div id="login-msg"></div>
+      <button class="cta" id="login-btn">دخول</button>
+    </div>
+  `;
+  document.getElementById("login-btn").onclick = async ()=>{
+    const email = document.getElementById("a_email").value.trim();
+    const pass = document.getElementById("a_pass").value;
+    const res = await sbLogin(email, pass);
+    if(res.access_token){
+      saveSession({
+        access_token: res.access_token,
+        refresh_token: res.refresh_token,
+        expires_at: Date.now() + (res.expires_in||3600)*1000,
+        user: res.user
+      });
+      renderAdminDashboard("product");
+    } else {
+      document.getElementById("login-msg").innerHTML = `<div class="msg err">Email ولا Password غلط</div>`;
+    }
+  };
+}
+
+let ADMIN_TAB = "product";
+let adminData = { settings:null, product:null, upsell:null, orders:[] };
+
+async function loadAdminData(){
+  const s = await sbGet("settings","id=eq.1&select=*");
+  adminData.settings = s[0];
+  const p = await sbGet("products","select=*&order=created_at.asc&limit=1");
+  adminData.product = p[0] || null;
+  if(adminData.product){
+    const u = await sbGet("upsells", `product_id=eq.${adminData.product.id}&select=*&limit=1`);
+    adminData.upsell = u[0] || null;
+  }
+  const o = await sbGetAuth("orders","select=*&order=created_at.desc&limit=100");
+  adminData.orders = Array.isArray(o) ? o : [];
+}
+
+async function renderAdminDashboard(tab){
+  ADMIN_TAB = tab;
+  document.body.setAttribute("data-theme","5");
+  const app = document.getElementById("app");
+  app.innerHTML = `<div class="admin-wrap" style="padding-top:60px; text-align:center; color:var(--muted)">جاري التحميل...</div>`;
+  await loadAdminData();
+
+  const app2 = document.getElementById("app");
+  app2.innerHTML = `
+    <div class="admin-wrap">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h2 class="section-title" style="margin:0">لوحة التحكم</h2>
+        <a class="logout-btn" id="logout-link" href="#">خروج / مشاهدة الموقع</a>
+      </div>
+      <div class="admin-tabs">
+        <button data-tab="product" class="${tab==='product'?'active':''}">المنتج</button>
+        <button data-tab="upsell" class="${tab==='upsell'?'active':''}">العرض الإضافي</button>
+        <button data-tab="settings" class="${tab==='settings'?'active':''}">الإعدادات</button>
+        <button data-tab="orders" class="${tab==='orders'?'active':''}">الطلبات (${adminData.orders.length})</button>
+      </div>
+      <div id="tab-content"></div>
+    </div>
+  `;
+  document.querySelectorAll("[data-tab]").forEach(b=>{
+    b.onclick = ()=> renderAdminDashboard(b.dataset.tab);
+  });
+  document.getElementById("logout-link").onclick = (e)=>{ e.preventDefault(); clearSession(); location.hash=""; };
+
+  if(tab==="product") renderProductTab();
+  if(tab==="upsell") renderUpsellTab();
+  if(tab==="settings") renderSettingsTab();
+  if(tab==="orders") renderOrdersTab();
+}
+
+function renderProductTab(){
+  const p = adminData.product || {};
+  const c = document.getElementById("tab-content");
+  c.innerHTML = `
+    <div id="save-msg"></div>
+    <div class="field-row">
+      <div class="field"><label>عنوان المنتج (عربي)</label><input id="p_title_ar" value="${p.title_ar||''}"></div>
+      <div class="field"><label>Titre (français)</label><input id="p_title_fr" value="${p.title_fr||''}"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>الوصف (عربي)</label><textarea id="p_desc_ar">${p.description_ar||''}</textarea></div>
+      <div class="field"><label>Description (français)</label><textarea id="p_desc_fr">${p.description_fr||''}</textarea></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>الثمن</label><input id="p_price" type="number" value="${p.price||''}"></div>
+      <div class="field"><label>الثمن القديم (اختياري)</label><input id="p_old_price" type="number" value="${p.old_price||''}"></div>
+    </div>
+    <div class="field"><label>رابط الفيديو (اختياري)</label><input id="p_video" value="${p.video_url||''}"></div>
+    <div class="field"><label>روابط الصور (مفصولة بفاصلة ,)</label><textarea id="p_images">${(p.images||[]).join(',')}</textarea></div>
+    <div class="toggle"><input type="checkbox" id="p_active" ${p.is_active!==false?'checked':''}><label>المنتج ظاهر فالموقع</label></div>
+    <button class="save-btn" id="save-product">حفظ المنتج</button>
+  `;
+  document.getElementById("save-product").onclick = saveProduct;
+}
+
+async function saveProduct(){
+  const imagesRaw = document.getElementById("p_images").value.split(",").map(s=>s.trim()).filter(Boolean);
+  const body = {
+    title_ar: document.getElementById("p_title_ar").value,
+    title_fr: document.getElementById("p_title_fr").value,
+    description_ar: document.getElementById("p_desc_ar").value,
+    description_fr: document.getElementById("p_desc_fr").value,
+    price: parseFloat(document.getElementById("p_price").value)||0,
+    old_price: document.getElementById("p_old_price").value ? parseFloat(document.getElementById("p_old_price").value) : null,
+    video_url: document.getElementById("p_video").value,
+    images: imagesRaw,
+    is_active: document.getElementById("p_active").checked
+  };
+  const msg = document.getElementById("save-msg");
+  const btn = document.getElementById("save-product");
+  if(btn) btn.disabled = true;
+  try{
+    let res;
+    if(adminData.product){
+      res = await sbUpdate("products", `id=eq.${adminData.product.id}`, body);
+    } else {
+      res = await sbInsert("products", body, true);
+    }
+    const success = res.ok && res.status>=200 && res.status<300 && Array.isArray(res.data) && res.data.length>0;
+    if(success){
+      msg.innerHTML = `<div class="msg ok">تم الحفظ ✅</div>`;
+      await loadAdminData();
+    } else {
+      msg.innerHTML = `<div class="msg err">وقع مشكل</div>`;
+    }
+  } catch(e){
+    msg.innerHTML = `<div class="msg err">وقع مشكل</div>`;
+  }
+  if(btn) btn.disabled = false;
+}
+
+function renderUpsellTab(){
+  const c = document.getElementById("tab-content");
+  if(!adminData.product){
+    c.innerHTML = `<div class="small-muted">خاصك تزيد المنتج الرئيسي قبل ما تزيد عرض إضافي</div>`;
+    return;
+  }
+  const u = adminData.upsell || {};
+  c.innerHTML = `
+    <div id="save-msg"></div>
+    <div class="field-row">
+      <div class="field"><label>عنوان العرض (عربي)</label><input id="u_title_ar" value="${u.title_ar||''}"></div>
+      <div class="field"><label>Titre offre (français)</label><input id="u_title_fr" value="${u.title_fr||''}"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>الثمن</label><input id="u_price" type="number" value="${u.price||''}"></div>
+      <div class="field"><label>رابط الصورة</label><input id="u_image" value="${u.image_url||''}"></div>
+    </div>
+    <div class="toggle"><input type="checkbox" id="u_active" ${u.is_active!==false?'checked':''}><label>العرض مفعل</label></div>
+    <button class="save-btn" id="save-upsell">حفظ العرض</button>
+  `;
+  document.getElementById("save-upsell").onclick = async ()=>{
+    const body = {
+      product_id: adminData.product.id,
+      title_ar: document.getElementById("u_title_ar").value,
+      title_fr: document.getElementById("u_title_fr").value,
+      price: parseFloat(document.getElementById("u_price").value)||0,
+      image_url: document.getElementById("u_image").value,
+      is_active: document.getElementById("u_active").checked
+    };
+    const msg = document.getElementById("save-msg");
+    const btn = document.getElementById("save-upsell");
+    if(btn) btn.disabled = true;
+    try{
+      let res;
+      if(adminData.upsell){
+        res = await sbUpdate("upsells", `id=eq.${adminData.upsell.id}`, body);
+      } else {
+        res = await sbInsert("upsells", body, true);
+      }
+      const success = res.ok && res.status>=200 && res.status<300 && Array.isArray(res.data) && res.data.length>0;
+      if(success){
+        msg.innerHTML = `<div class="msg ok">تم الحفظ ✅</div>`;
+        await loadAdminData();
+      } else {
+        msg.innerHTML = `<div class="msg err">وقع مشكل</div>`;
+      }
+    } catch(e){
+      msg.innerHTML = `<div class="msg err">وقع مشكل</div>`;
+    }
+    if(btn) btn.disabled = false;
+  };
+}
+
+function renderSettingsTab(){
+  const s = adminData.settings || {};
+  const c = document.getElementById("tab-content");
+  const themeColors = {1:"#B5581F",2:"#5B8CFF",3:"#7A2F63",4:"#1F5C4A",5:"#E4572E"};
+  c.innerHTML = `
+    <div id="save-msg"></div>
+    <div class="field"><label>اسم المتجر</label><input id="s_store" value="${s.store_name||''}"></div>
+
+    <label style="font-size:.86rem; font-weight:700; color:var(--muted); display:block; margin-bottom:8px;">اختر الثيم</label>
+    <div class="theme-grid">
+      ${[1,2,3,4,5].map(id=>`<div class="theme-swatch ${s.theme_id==id?'selected':''}" data-theme-id="${id}" style="background:${themeColors[id]}"></div>`).join("")}
+    </div>
+
+    <div class="field"><label>لون الخلفية (مخصص)</label><input id="s_bg" type="color" value="${s.bg_color||'#F6F1E9'}"></div>
+
+    <div class="field">
+      <label>اللغة الأساسية للصفحة</label>
+      <select id="s_lang">
+        <option value="ar" ${s.default_language==='ar'?'selected':''}>العربية</option>
+        <option value="fr" ${s.default_language==='fr'?'selected':''}>Français</option>
+      </select>
+    </div>
+
+    <div class="toggle"><input type="checkbox" id="s_wa_enabled" ${s.whatsapp_enabled?'checked':''}><label>تفعيل واتساب</label></div>
+    <div class="field"><label>رقم الواتساب (مع كود البلد، مثال 212612345678)</label><input id="s_wa_number" value="${s.whatsapp_number||''}"></div>
+    <div class="field">
+      <label>وقت ظهور واتساب</label>
+      <select id="s_wa_timing">
+        <option value="before" ${s.whatsapp_timing==='before'?'selected':''}>قبل الطلب</option>
+        <option value="after" ${s.whatsapp_timing==='after'?'selected':''}>بعد الطلب</option>
+      </select>
+    </div>
+
+    <button class="save-btn" id="save-settings">حفظ الإعدادات</button>
+  `;
+  let selectedTheme = s.theme_id || 1;
+  document.querySelectorAll("[data-theme-id]").forEach(el=>{
+    el.onclick = ()=>{
+      selectedTheme = parseInt(el.dataset.themeId);
+      document.querySelectorAll("[data-theme-id]").forEach(x=>x.classList.remove("selected"));
+      el.classList.add("selected");
+    };
+  });
+  document.getElementById("save-settings").onclick = async ()=>{
+    const body = {
+      store_name: document.getElementById("s_store").value,
+      theme_id: selectedTheme,
+      bg_color: document.getElementById("s_bg").value,
+      default_language: document.getElementById("s_lang").value,
+      whatsapp_enabled: document.getElementById("s_wa_enabled").checked,
+      whatsapp_number: document.getElementById("s_wa_number").value,
+      whatsapp_timing: document.getElementById("s_wa_timing").value
+    };
+    const msg = document.getElementById("save-msg");
+    const btn = document.getElementById("save-settings");
+    if(btn) btn.disabled = true;
+    try{
+      const res = await sbUpdate("settings","id=eq.1", body);
+      const success = res.ok && res.status>=200 && res.status<300 && Array.isArray(res.data) && res.data.length>0;
+      if(success){
+        msg.innerHTML = `<div class="msg ok">تم الحفظ ✅</div>`;
+        await loadAdminData();
+      } else {
+        msg.innerHTML = `<div class="msg err">وقع مشكل</div>`;
+      }
+    } catch(e){
+      msg.innerHTML = `<div class="msg err">وقع مشكل</div>`;
+    }
+    if(btn) btn.disabled = false;
+  };
+}
+
+function renderOrdersTab(){
+  const c = document.getElementById("tab-content");
+  if(adminData.orders.length===0){
+    c.innerHTML = `<div class="small-muted">مازال ما وصل حتى طلب</div>`;
+    return;
+  }
+  const statusLabel = { "nouveau":"جديد", "confirmé":"مؤكد", "annulé":"ملغي" };
+  const badgeClass = { "nouveau":"badge-new", "confirmé":"badge-confirmed", "annulé":"badge-cancelled" };
+  c.innerHTML = adminData.orders.map(o=>`
+    <div class="order-item">
+      <div class="row1">
+        <span>${o.customer_name}</span>
+        <span class="status-pill ${badgeClass[o.status]||'badge-new'}">${statusLabel[o.status]||o.status}</span>
+      </div>
+      <div class="meta">
+        📞 ${o.phone}<br>
+        📍 ${o.city||''} ${o.address||''}<br>
+        الكمية: ${o.quantity} ${o.upsell_accepted ? '+ العرض الإضافي 🎁' : ''}<br>
+        🕒 ${new Date(o.created_at).toLocaleString('ar-MA')}
+      </div>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <select data-order-id="${o.id}" class="status-select" style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--line); background:var(--bg); color:var(--ink);">
+          <option value="nouveau" ${o.status==='nouveau'?'selected':''}>جديد</option>
+          <option value="confirmé" ${o.status==='confirmé'?'selected':''}>مؤكد</option>
+          <option value="annulé" ${o.status==='annulé'?'selected':''}>ملغي</option>
+        </select>
+        <a href="https://wa.me/${(o.phone||'').replace(/\D/g,'')}" target="_blank" style="padding:8px 14px; border-radius:8px; background:#25D366; color:#fff; font-size:.85rem; display:flex; align-items:center;">واتساب</a>
+      </div>
+    </div>
+  `).join("");
+  document.querySelectorAll(".status-select").forEach(sel=>{
+    sel.onchange = async ()=>{
+      await sbUpdate("orders", `id=eq.${sel.dataset.orderId}`, { status: sel.value });
+    };
+  });
+}
+</script>
+</body>
+</html>
