@@ -844,7 +844,8 @@ function buildPackPublicMarkup(product, lang, type){
   let options="";
   if(type==='custom'){
     const sizes=csvList(product.sizes),colors=csvList(product.colors),n=Math.max(1,Number(c.pieces)||1);
-    options=`<div style="margin-top:12px"><strong>${lang==='ar'?'اختيار كل قطعة':'Choix de chaque pièce'}</strong>${Array.from({length:n},(_,i)=>`<div class="pack-piece-choice"><strong>${lang==='ar'?'القطعة':'Pièce'} ${i+1}</strong><div class="field"><label>${lang==='ar'?'المقاس':'Taille'}</label><div class="choice-grid pack-sizes" data-piece="${i}">${sizes.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div><div class="field"><label>${lang==='ar'?'اللون':'Couleur'}</label><div class="choice-grid pack-colors" data-piece="${i}">${colors.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div></div>`).join('')}</div>`;
+    const sizeBlock=sizes.length?`<div class="field"><label>${lang==='ar'?'المقاس (موحد للـPack كامل)':'Taille (unique pour tout le pack)'}</label><div class="choice-grid pack-common-size" id="pack-custom-common-size">${sizes.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:'';
+    options=`<div style="margin-top:12px"><strong>${lang==='ar'?'التشكيلة المتنوعة':'Assortiment varié'}</strong>${sizeBlock}<div class="small-muted" style="margin:8px 0 12px">${lang==='ar'?'اختار اللون لكل قطعة بشكل مستقل، والمقاس يبقى موحداً للـPack كامل':'Choisissez la couleur séparément pour chaque pièce. La taille reste la même pour tout le pack.'}</div>${Array.from({length:n},(_,i)=>`<div class="pack-piece-choice"><strong>${lang==='ar'?'القطعة':'Pièce'} ${i+1}</strong><div class="field"><label>${lang==='ar'?'اللون':'Couleur'}</label><div class="choice-grid pack-colors" data-piece="${i}">${colors.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div></div>`).join('')}</div>`;
   } else {
     options=`<div class="small-muted" style="margin-top:10px">${lang==='ar'?'Pack Standard — التشكيلة محددة من المتجر':'Pack Standard — assortiment défini par le magasin'}</div>`;
   }
@@ -871,17 +872,18 @@ function buildFormMarkup(settings, product, lang, qty){
   const hasStandardPack=std.enabled&&std.visible,hasCustomPack=cus.enabled&&cus.visible;
   const varietyChoices=hasStandardPack||hasCustomPack ? `<div class="variety-choice-wrap" id="variety-choice-wrap" style="display:none"><div class="small-muted">${lang==='ar'?'اختار نوع التشكيلة':'Choisissez le type de sélection'}</div><div class="purchase-grid variety-grid">${hasStandardPack?`<label class="purchase-option variety-option"><input type="radio" name="variety-choice" value="pack_standard"><span>${lang==='ar'?'تشكيلة محددة':'Assortiment fixe'}</span></label>`:''}${hasCustomPack?`<label class="purchase-option variety-option"><input type="radio" name="variety-choice" value="pack_custom"><span>${lang==='ar'?'تشكيلة مخصصة':'Assortiment personnalisé'}</span></label>`:''}</div></div>` : `<div class="variety-choice-wrap" id="variety-choice-wrap" style="display:none"><div class="small-muted">${lang==='ar'?'ما كايناش تشكيلة مفعلة حاليا':'Aucune sélection multiple n’est activée actuellement'}</div></div>`;
   const purchaseOptions=product.product_type==='clothing' ? `<div class="purchase-selector" id="purchase-selector"><div class="section-mini-title">${lang==='ar'?'🛒 اختار شنو بغيتي تشري':'🛒 Choisissez ce que vous voulez acheter'}</div><div class="purchase-grid"><label class="purchase-option selected"><input type="radio" name="purchase-choice" value="product" checked><span>${lang==='ar'?'قطعة واحدة':'Une pièce'}</span></label><label class="purchase-option"><input type="radio" name="purchase-choice" value="variety"><span>${lang==='ar'?'تشكيلة متنوعة':'Assortiment varié'}</span></label></div>${varietyChoices}</div>`:"";
-  return `<div class="topbar"><div class="brand">${escHtml(settings.store_name||'')}</div><div class="lang-switch"><button data-lang="ar" class="${lang==='ar'?'active':''}">AR</button><button data-lang="fr" class="${lang==='fr'?'active':''}">FR</button></div></div><div class="wrap"><div class="hero-media">${mediaHtml}</div>${thumbsHtml}<h1 class="title">${escHtml(title||'')}</h1><p class="desc">${escHtml(desc||'')}</p><div class="price-row"><span class="price">${product.price||0} ${t.currency}</span>${product.old_price?`<span class="old-price">${product.old_price} ${t.currency}</span>`:''}</div>${purchaseOptions}<div id="product-options-wrap">${buildClothingOptions(product,lang)}</div>${hasPacks?`<div id="pack-standard-wrap" style="display:none"><div class="selection-info-title">${lang==='ar'?'معلومات الاختيار':'Informations du choix'}</div>${std.enabled&&std.visible?buildPackPublicMarkup(product,lang,'standard'):''}</div><div id="pack-custom-wrap" style="display:none"><div class="selection-info-title">${lang==='ar'?'معلومات الاختيار':'Informations du choix'}</div>${cus.enabled&&cus.visible?buildPackPublicMarkup(product,lang,'custom'):''}</div>`:''}${videoHtml}<div class="cart-bar"><button type="button" class="cart-button" id="cart-button">🛒 <span>${lang==='ar'?'السلة':'Panier'}</span><b id="cart-count">0</b></button></div><div class="card"><div class="field"><label>${t.full_name}</label><input id="f_name" type="text"></div><div class="field"><label>${t.phone}</label><input id="f_phone" type="tel"></div><div class="field"><label>${t.city}</label><input id="f_city" type="text"></div><div class="field"><label>${t.address}</label><textarea id="f_address"></textarea></div><div id="order-msg"></div><button class="cta" id="submit-btn">${t.place_order}</button></div><div class="footer-note">${escHtml(settings.store_name||'')}</div></div>`;
+  return `<div class="topbar"><div class="brand">${escHtml(settings.store_name||'')}</div><div class="lang-switch"><button data-lang="ar" class="${lang==='ar'?'active':''}">AR</button><button data-lang="fr" class="${lang==='fr'?'active':''}">FR</button></div></div><div class="wrap"><div class="hero-media">${mediaHtml}</div>${thumbsHtml}<h1 class="title">${escHtml(title||'')}</h1><p class="desc">${escHtml(desc||'')}</p><div class="price-row"><span class="price">${product.price||0} ${t.currency}</span>${product.old_price?`<span class="old-price">${product.old_price} ${t.currency}</span>`:''}</div>${purchaseOptions}<div id="product-options-wrap">${buildClothingOptions(product,lang)}<div class="single-qty-wrap" id="single-qty-wrap"><div class="section-mini-title">${lang==='ar'?'الكمية':'Quantité'}</div><div class="qty-stepper"><button type="button" id="qty-minus">−</button><span id="qty-value">${qty||1}</span><button type="button" id="qty-plus">+</button></div></div></div>${hasPacks?`<div id="pack-standard-wrap" style="display:none"><div class="selection-info-title">${lang==='ar'?'معلومات الاختيار':'Informations du choix'}</div>${std.enabled&&std.visible?buildPackPublicMarkup(product,lang,'standard'):''}</div><div id="pack-custom-wrap" style="display:none"><div class="selection-info-title">${lang==='ar'?'معلومات الاختيار':'Informations du choix'}</div>${cus.enabled&&cus.visible?buildPackPublicMarkup(product,lang,'custom'):''}</div>`:''}${videoHtml}<div class="cart-bar"><button type="button" class="cart-button" id="cart-button">🛒 <span>${lang==='ar'?'السلة':'Panier'}</span><b id="cart-count">0</b></button></div><div class="card"><div class="field"><label>${t.full_name}</label><input id="f_name" type="text"></div><div class="field"><label>${t.phone}</label><input id="f_phone" type="tel"></div><div class="field"><label>${t.city}</label><input id="f_city" type="text"></div><div class="field"><label>${t.address}</label><textarea id="f_address"></textarea></div><div id="order-msg"></div><button class="cta" id="submit-btn">${t.place_order}</button></div><div class="footer-note">${escHtml(settings.store_name||'')}</div></div>`;
 }
 
 function initPurchaseSelector(root){
   const radios=root.querySelectorAll('input[name="purchase-choice"]');if(!radios.length){STATE.purchaseType='product';return;}
-  const productWrap=root.querySelector('#product-options-wrap'),stdWrap=root.querySelector('#pack-standard-wrap'),cusWrap=root.querySelector('#pack-custom-wrap'),varietyWrap=root.querySelector('#variety-choice-wrap');
+  const productWrap=root.querySelector('#product-options-wrap'),qtyWrap=root.querySelector('#single-qty-wrap'),stdWrap=root.querySelector('#pack-standard-wrap'),cusWrap=root.querySelector('#pack-custom-wrap'),varietyWrap=root.querySelector('#variety-choice-wrap');
   const varietyRadios=root.querySelectorAll('input[name="variety-choice"]');
   const update=()=>{
     const selected=root.querySelector('input[name="purchase-choice"]:checked')?.value||'product';
     root.querySelectorAll('#purchase-selector > .purchase-grid .purchase-option').forEach(x=>x.classList.toggle('selected',x.querySelector('input')?.checked));
     if(productWrap) productWrap.style.display=selected==='product'?'block':'none';
+    if(qtyWrap) qtyWrap.style.display=selected==='product'?'block':'none';
     if(varietyWrap) varietyWrap.style.display=selected==='variety'?'block':'none';
     const varietySelected=root.querySelector('input[name="variety-choice"]:checked')?.value||'';
     if(stdWrap) stdWrap.style.display=selected==='variety'&&varietySelected==='pack_standard'?'block':'none';
@@ -894,12 +896,36 @@ function initPurchaseSelector(root){
   update();
   root.querySelectorAll('#pack-custom-wrap .choice-grid').forEach(g=>g.querySelectorAll('.choice-btn').forEach(b=>b.onclick=()=>{g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')}));
 }
+function initSingleQuantity(root){
+  const minus=root.querySelector('#qty-minus'),plus=root.querySelector('#qty-plus'),value=root.querySelector('#qty-value');
+  if(!minus||!plus||!value)return;
+  value.textContent=LANDING_QTY;
+  minus.onclick=()=>{if(LANDING_QTY>1){LANDING_QTY--;value.textContent=LANDING_QTY;}};
+  plus.onclick=()=>{LANDING_QTY++;value.textContent=LANDING_QTY;};
+}
 function getCurrentCartItem(){
-  const root=document,purchase=root.querySelector('input[name="purchase-choice"]:checked')?.value||'product',qty=LANDING_QTY,productOptions={size:selectedChoice(root,'product-sizes'),color:selectedChoice(root,'product-colors')};let packOptions=[];
-  if(purchase==='pack_custom'){const c=getCustomPackConfig(STATE.product),n=Math.max(1,Number(c.pieces)||1);for(let i=0;i<n;i++){const sg=root.querySelector(`#pack-custom-wrap .pack-sizes[data-piece="${i}"] .selected`),cg=root.querySelector(`#pack-custom-wrap .pack-colors[data-piece="${i}"] .selected`);packOptions.push({piece:i+1,size:sg?.dataset.value||'',color:cg?.dataset.value||''})}}
-  if(purchase==='pack_standard')packOptions=getStandardPackConfig(STATE.product).items||[];
+  const root=document;
+  const mainChoice=root.querySelector('input[name="purchase-choice"]:checked')?.value||'product';
+  const varietyChoice=root.querySelector('input[name="variety-choice"]:checked')?.value||'';
+  const purchase=mainChoice==='variety'?(varietyChoice||'variety'):'product';
+  const qty=mainChoice==='product'?LANDING_QTY:1;
+  const productOptions={
+    size:mainChoice==='product'?selectedChoice(root,'product-sizes'):'',
+    color:mainChoice==='product'?selectedChoice(root,'product-colors'):''
+  };
+  let packOptions=[];
+  if(purchase==='pack_custom'){
+    const c=getCustomPackConfig(STATE.product),n=Math.max(1,Number(c.pieces)||1);
+    const commonSize=root.querySelector('#pack-custom-wrap .pack-common-size .selected')?.dataset.value||'';
+    for(let i=0;i<n;i++){
+      const cg=root.querySelector(`#pack-custom-wrap .pack-colors[data-piece="${i}"] .selected`);
+      packOptions.push({piece:i+1,size:commonSize,color:cg?.dataset.value||''});
+    }
+  }
+  if(purchase==='pack_standard') packOptions=getStandardPackConfig(STATE.product).items||[];
   return {purchaseType:purchase,quantity:qty,productOptions,packOptions};
 }
+
 function initCart(root){const btn=root.querySelector('#cart-button');if(!btn)return;btn.onclick=()=>{const purchase=root.querySelector('input[name="purchase-choice"]:checked')?.value||'product';if(purchase==='variety'&&!root.querySelector('input[name="variety-choice"]:checked')){const msg=root.querySelector('#order-msg');if(msg)msg.innerHTML=`<div class="msg err">${STATE.lang==='ar'?'اختار أولاً نوع التشكيلة التي بغيتي 🛒':'Choisissez d’abord le type de sélection 🛒'}</div>`;root.querySelector('#variety-choice-wrap')?.scrollIntoView({behavior:'smooth',block:'center'});return;}STATE.cartItem=getCurrentCartItem();const count=root.querySelector('#cart-count');if(count)count.textContent='1';const msg=root.querySelector('#order-msg');if(msg)msg.innerHTML=`<div class="msg ok">${STATE.lang==='ar'?'تمت إضافة الاختيار للسلة ✅':'Ajouté au panier ✅'}`;}}
 
 function maybeShowAdminReturn(show){
@@ -944,12 +970,9 @@ function renderLanding(){
     document.querySelectorAll("[data-lang]").forEach(b=>{
       b.onclick = ()=>{ STATE.lang = b.dataset.lang; renderLanding(); };
     });
-    document.getElementById("qty-minus").onclick = ()=>{
-      if(LANDING_QTY>1){ LANDING_QTY--; document.getElementById("qty-value").textContent = LANDING_QTY; }
-    };
-    document.getElementById("qty-plus").onclick = ()=>{
-      LANDING_QTY++; document.getElementById("qty-value").textContent = LANDING_QTY;
-    };
+    initSingleQuantity(document);
+    initPurchaseSelector(document);
+    initCart(document);
     document.getElementById("submit-btn").onclick = onSubmitOrder;
     initProductVideo(document);
     initClothingOptions(document);
