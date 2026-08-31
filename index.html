@@ -1196,6 +1196,13 @@ async function saveSettingsSmart(body){
   return { success, fallback:true };
 }
 
+function getProductTypeFormValue(){ return document.getElementById("p_type")?.value || "standard"; }
+function getProductFormValue(base){
+  const type=getProductTypeFormValue();
+  const suffix=type==="clothing"?"clothing":"standard";
+  const el=document.getElementById(`p_${base}_${suffix}`);
+  return el ? el.value : "";
+}
 function collectCurrentAdminDraft(){
   const base = Object.assign({}, adminData.settings||{}, UNSAVED_DRAFT.settings||{});
   const bg=document.getElementById("s_bg");
@@ -1205,19 +1212,20 @@ function collectCurrentAdminDraft(){
   if(bg || fs) UNSAVED_DRAFT.settings = base;
 
   const ta=document.getElementById("p_title_ar");
-  if(ta) UNSAVED_DRAFT.product=Object.assign({},adminData.product||{},{title_ar:ta.value,title_fr:document.getElementById("p_title_fr").value,description_ar:document.getElementById("p_desc_ar").value,description_fr:document.getElementById("p_desc_fr").value,price:parseFloat(document.getElementById("p_price").value)||0,old_price:document.getElementById("p_old_price").value?parseFloat(document.getElementById("p_old_price").value):null,images:pendingImages.slice(),video_url:pendingVideoUrl||"",is_active:document.getElementById("p_active").checked,
-        product_type:document.getElementById("p_type")?.value || "standard",
-        sizes:document.getElementById("p_sizes")?.value || "",
-        colors:document.getElementById("p_colors")?.value || "",
-        pack_enabled:document.getElementById("pack_enabled")?.checked || false,
-        pack_visible:document.getElementById("pack_visible")?.checked || false,
-        pack_title_ar:document.getElementById("pack_title_ar")?.value || "",
-        pack_title_fr:document.getElementById("pack_title_fr")?.value || "",
-        pack_description_ar:document.getElementById("pack_desc_ar")?.value || "",
-        pack_description_fr:document.getElementById("pack_desc_fr")?.value || "",
-        pack_price:document.getElementById("pack_price")?.value ? parseFloat(document.getElementById("pack_price").value) : null,
-        pack_old_price:document.getElementById("pack_old_price")?.value ? parseFloat(document.getElementById("pack_old_price").value) : null,
-        pack_images:pendingPackImages.slice()});
+  if(ta){
+    const type=getProductTypeFormValue();
+    const packBody=typeof collectPackBody==="function" ? collectPackBody() : {};
+    UNSAVED_DRAFT.product=Object.assign({},adminData.product||{}, {
+      title_ar:ta.value, title_fr:document.getElementById("p_title_fr").value,
+      description_ar:document.getElementById("p_desc_ar").value, description_fr:document.getElementById("p_desc_fr").value,
+      price:parseFloat(getProductFormValue("price"))||0,
+      stock_quantity:Math.max(0,parseInt(getProductFormValue("stock")||"0",10)),
+      old_price:getProductFormValue("old_price")?parseFloat(getProductFormValue("old_price")):null,
+      images:pendingImages.slice(), video_url:pendingVideoUrl||"", is_active:document.getElementById("p_active").checked,
+      product_type:type, sizes:document.getElementById("p_sizes")?.value || "", colors:document.getElementById("p_colors")?.value || "",
+      ...packBody
+    });
+  }
 }
 
 /* reads the Design tab form fields into a settings-shaped partial object (only when that tab is on screen) */
@@ -1294,104 +1302,168 @@ function renderProductTab(){
   pendingImages = (p.images||[]).filter(Boolean).slice();
   pendingVideoUrl = p.video_url || "";
   pendingPackImages = (p.pack_images||[]).filter(Boolean).slice();
+  const isClothing = p.product_type === "clothing";
   const c = document.getElementById("tab-content");
   c.innerHTML = `
     <div id="save-msg"></div>
-    <div class="field-row">
-      <div class="field"><label>عنوان المنتج (عربي)</label><input id="p_title_ar" value="${p.title_ar||''}"></div>
-      <div class="field"><label>Titre (français)</label><input id="p_title_fr" value="${p.title_fr||''}"></div>
-    </div>
-    <div class="field-row">
-      <div class="field"><label>الوصف (عربي)</label><textarea id="p_desc_ar">${p.description_ar||''}</textarea></div>
-      <div class="field"><label>Description (français)</label><textarea id="p_desc_fr">${p.description_fr||''}</textarea></div>
-    </div>
-    <div class="field-row">
-      <div class="field"><label>الثمن</label><input id="p_price" type="number" value="${p.price||''}"></div>
-      <div class="field"><label>الثمن القديم (اختياري)</label><input id="p_old_price" type="number" value="${p.old_price||''}"></div>
-    </div>
 
-    <div class="field">
-      <label>صور المنتج</label>
-      <div class="upload-row">
-        <button type="button" class="upload-btn" id="btn-add-images">📷 إضافة الصور</button>
-        <input type="file" id="input-images" accept="image/*" multiple style="display:none">
+    <!-- 1) PRODUCT TYPE FIRST -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="section-title" style="font-size:1rem;margin-bottom:10px">نوع المنتج</div>
+      <div class="field">
+        <label>اختار نوع المنتج قبل ما تعمر المعلومات</label>
+        <select id="p_type">
+          <option value="standard" ${!isClothing?'selected':''}>Standard</option>
+          <option value="clothing" ${isClothing?'selected':''}>Vêtements</option>
+        </select>
       </div>
-      <div class="thumbs" id="images-preview" style="margin-top:0;"></div>
-      <div class="upload-status" id="images-status"></div>
     </div>
 
-    <div class="field">
-      <label>فيديو المنتج (اختياري)</label>
-      <div class="upload-row">
-        <button type="button" class="upload-btn" id="btn-add-video">🎥 إضافة فيديو</button>
-        <input type="file" id="input-video" accept="video/*" style="display:none">
-        <button type="button" class="upload-btn" id="btn-remove-video" style="display:${pendingVideoUrl?'inline-block':'none'}">✕ حذف الفيديو</button>
+    <!-- STANDARD -->
+    <div id="standard-fields" style="display:${!isClothing?'block':'none'}">
+      <div class="card" style="margin-bottom:16px">
+        <div class="section-title" style="font-size:1rem;margin-bottom:10px">منتج Standard</div>
+        <div class="field-row">
+          <div class="field"><label>الكمية</label><input id="p_stock_standard" type="number" min="0" value="${p.stock_quantity??''}"></div>
+          <div class="field"><label>الثمن</label><input id="p_price_standard" type="number" min="0" value="${p.price??''}"></div>
+        </div>
+        <div class="field"><label>الثمن القديم (اختياري)</label><input id="p_old_price_standard" type="number" min="0" value="${p.old_price??''}"></div>
       </div>
-      <div id="video-preview"></div>
-      <div class="upload-status" id="video-status"></div>
     </div>
 
-    <div class="field"><label>نوع المنتج</label><select id="p_type"><option value="standard" ${p.product_type!=="clothing"?'selected':''}>Standard</option><option value="clothing" ${p.product_type==="clothing"?'selected':''}>Vêtements</option></select></div>
-    <div id="clothing-fields" style="display:${p.product_type==="clothing"?'block':'none'}"><div class="field-row"><div class="field"><label>المقاسات (افصل بفاصلة)</label><input id="p_sizes" value="${escHtml(p.sizes||"S, M, L, XL")}"></div><div class="field"><label>الألوان (افصل بفاصلة)</label><input id="p_colors" value="${escHtml(p.colors||"Noir, Blanc")}"></div></div></div>
-    <div class="toggle"><input type="checkbox" id="p_active" ${p.is_active!==false?'checked':''}><label>المنتج ظاهر فالموقع</label></div>
+    <!-- CLOTHING -->
+    <div id="clothing-fields" style="display:${isClothing?'block':'none'}">
+      <div class="card" style="margin-bottom:16px">
+        <div class="section-title" style="font-size:1rem;margin-bottom:10px">منتج Vêtements</div>
+        <div class="field-row">
+          <div class="field"><label>الكمية</label><input id="p_stock_clothing" type="number" min="0" value="${p.stock_quantity??''}"></div>
+          <div class="field"><label>الثمن</label><input id="p_price_clothing" type="number" min="0" value="${p.price??''}"></div>
+        </div>
+        <div class="field"><label>الثمن القديم (اختياري)</label><input id="p_old_price_clothing" type="number" min="0" value="${p.old_price??''}"></div>
+        <div class="field-row">
+          <div class="field"><label>المقاسات</label><input id="p_sizes" value="${escHtml(p.sizes||"")}" placeholder="S, M, L, XL"></div>
+          <div class="field"><label>الألوان</label><input id="p_colors" value="${escHtml(p.colors||"")}" placeholder="Noir, Blanc, Beige"></div>
+        </div>
+        <div class="small-muted">كتب غير الاختيارات اللي متوفرين عندك، مفصولين بفاصلة.</div>
+      </div>
+    </div>
 
+    <!-- COMMON PRODUCT CONTENT -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="section-title" style="font-size:1rem;margin-bottom:10px">معلومات المنتج</div>
+      <div class="field-row">
+        <div class="field"><label>عنوان المنتج (عربي)</label><input id="p_title_ar" value="${escHtml(p.title_ar||'')}"></div>
+        <div class="field"><label>Titre (français)</label><input id="p_title_fr" value="${escHtml(p.title_fr||'')}"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>الوصف (عربي)</label><textarea id="p_desc_ar">${escHtml(p.description_ar||'')}</textarea></div>
+        <div class="field"><label>Description (français)</label><textarea id="p_desc_fr">${escHtml(p.description_fr||'')}</textarea></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="field">
+        <label>صور المنتج</label>
+        <div class="upload-row"><button type="button" class="upload-btn" id="btn-add-images">📷 إضافة الصور</button><input type="file" id="input-images" accept="image/*" multiple style="display:none"></div>
+        <div class="thumbs" id="images-preview" style="margin-top:0;"></div>
+        <div class="upload-status" id="images-status"></div>
+      </div>
+      <div class="field">
+        <label>فيديو المنتج (اختياري)</label>
+        <div class="upload-row"><button type="button" class="upload-btn" id="btn-add-video">🎥 إضافة فيديو</button><input type="file" id="input-video" accept="video/*" style="display:none"><button type="button" class="upload-btn" id="btn-remove-video" style="display:${pendingVideoUrl?'inline-block':'none'}">✕ حذف الفيديو</button></div>
+        <div id="video-preview"></div><div class="upload-status" id="video-status"></div>
+      </div>
+      <div class="toggle"><input type="checkbox" id="p_active" ${p.is_active!==false?'checked':''}><label>المنتج ظاهر فالموقع</label></div>
+    </div>
+
+    <!-- PACK -->
     <div class="pack-admin-box">
       <div class="pack-admin-title">Pack</div>
-      <div class="small-muted">ضيف Pack للمنتج، تقدر تخليه ظاهر، تخبيه مؤقتاً، أو تمسحو نهائياً.</div>
+      <div class="small-muted">الـPack مستقل على المنتج. تقدر تفعّلو، تخليه ظاهر، تخبيه مؤقتاً، أو تمسحو نهائياً.</div>
       <div class="toggle"><input type="checkbox" id="pack_enabled" ${p.pack_enabled?'checked':''}><label>تفعيل الـPack</label></div>
       <div class="toggle"><input type="checkbox" id="pack_visible" ${p.pack_visible!==false && p.pack_enabled?'checked':''}><label>الـPack ظاهر للزبون</label></div>
       <div class="field-row">
-        <div class="field"><label>عنوان الـPack (عربي)</label><input id="pack_title_ar" value="${p.pack_title_ar||''}"></div>
-        <div class="field"><label>Titre du Pack (français)</label><input id="pack_title_fr" value="${p.pack_title_fr||''}"></div>
+        <div class="field"><label>عنوان الـPack (عربي)</label><input id="pack_title_ar" value="${escHtml(p.pack_title_ar||'')}"></div>
+        <div class="field"><label>Titre du Pack (français)</label><input id="pack_title_fr" value="${escHtml(p.pack_title_fr||'')}"></div>
       </div>
       <div class="field-row">
-        <div class="field"><label>وصف الـPack (عربي)</label><textarea id="pack_desc_ar">${p.pack_description_ar||''}</textarea></div>
-        <div class="field"><label>Description du Pack (français)</label><textarea id="pack_desc_fr">${p.pack_description_fr||''}</textarea></div>
+        <div class="field"><label>وصف الـPack (عربي)</label><textarea id="pack_desc_ar">${escHtml(p.pack_description_ar||'')}</textarea></div>
+        <div class="field"><label>Description du Pack (français)</label><textarea id="pack_desc_fr">${escHtml(p.pack_description_fr||'')}</textarea></div>
       </div>
       <div class="field-row">
-        <div class="field"><label>ثمن الـPack</label><input id="pack_price" type="number" value="${p.pack_price??''}"></div>
-        <div class="field"><label>الثمن القديم للـPack (اختياري)</label><input id="pack_old_price" type="number" value="${p.pack_old_price??''}"></div>
+        <div class="field"><label>ثمن الـPack</label><input id="pack_price" type="number" min="0" value="${p.pack_price??''}"></div>
+        <div class="field"><label>الثمن القديم للـPack (اختياري)</label><input id="pack_old_price" type="number" min="0" value="${p.pack_old_price??''}"></div>
       </div>
       <div class="field">
         <label>صور الـPack</label>
         <div class="upload-row"><button type="button" class="upload-btn" id="btn-add-pack-images">📷 إضافة صور الـPack</button><input type="file" id="input-pack-images" accept="image/*" multiple style="display:none"></div>
-        <div class="pack-gallery-preview" id="pack-images-preview"></div>
-        <div class="upload-status" id="pack-images-status"></div>
+        <div class="pack-gallery-preview" id="pack-images-preview"></div><div class="upload-status" id="pack-images-status"></div>
       </div>
-      <div class="field"><label>طريقة الـPack</label><select id="pack_mode"><option value="choice">الزبون يختار كل قطعة</option><option value="ready">تشكيلة متنوعة جاهزة</option></select></div>
-      <div class="field" id="pack-pieces-field"><label>عدد القطع</label><input id="pack_pieces" type="number" min="1" value="${p.pack_pieces||3}"></div>
-      <div id="pack-ready-items"></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+
+      <div id="pack-standard-options" style="display:${!isClothing?'block':'none'}">
+        <div class="section-title" style="font-size:1rem;margin:12px 0 8px">Pack Standard</div>
+        <div class="small-muted">فـ Pack Standard ما كاين حتى اختيار للزبون. نتا اللي كتتحكم فالمحتوى ديال الـPack.</div>
+        <div class="field"><label>عدد القطع</label><input id="pack_pieces" type="number" min="1" value="${p.pack_pieces||3}"></div>
+      </div>
+
+      <div id="pack-clothing-options" style="display:${isClothing?'block':'none'}">
+        <div class="section-title" style="font-size:1rem;margin:12px 0 8px">Pack Vêtements</div>
+        <div class="field"><label>طريقة الـPack</label><select id="pack_mode"><option value="choice">الزبون يختار كل قطعة</option><option value="ready">تشكيلة متنوعة جاهزة</option></select></div>
+        <div class="field" id="pack-pieces-field"><label>عدد القطع</label><input id="pack_pieces_clothing" type="number" min="1" value="${p.pack_pieces||3}"></div>
+        <div id="pack-ready-items"></div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
         <button type="button" class="save-btn" id="save-pack">حفظ الـPack</button>
         <button type="button" class="upload-btn" id="delete-pack">حذف الـPack</button>
       </div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="save-btn" id="save-product">حفظ المنتج</button><button type="button" class="upload-btn" id="delete-product">حذف المنتج نهائياً</button></div>
+
+    <div class="small-muted" style="margin-top:12px">💡 دير «معاينة» قبل الحفظ باش تشوف بالضبط شنو غادي يشوف الزبون. المعاينة ما كتسجل والو فقاعدة البيانات.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><button class="save-btn" id="save-product">حفظ المنتج</button><button type="button" class="upload-btn" id="delete-product">حذف المنتج نهائياً</button></div>
   `;
 
-  renderImagesPreview();
-  renderVideoPreview();
+  renderImagesPreview(); renderVideoPreview(); renderPackImagesPreview();
+  document.getElementById("btn-add-images").onclick=()=>document.getElementById("input-images").click();
+  document.getElementById("input-images").onchange=onImagesSelected;
+  document.getElementById("btn-add-video").onclick=()=>document.getElementById("input-video").click();
+  document.getElementById("input-video").onchange=onVideoSelected;
+  document.getElementById("btn-remove-video").onclick=()=>{pendingVideoUrl="";document.getElementById("btn-remove-video").style.display="none";renderVideoPreview();};
+  document.getElementById("save-product").onclick=saveProduct;
+  document.getElementById("delete-product").onclick=deleteProduct;
+  document.getElementById("btn-add-pack-images").onclick=()=>document.getElementById("input-pack-images").click();
+  document.getElementById("input-pack-images").onchange=onPackImagesSelected;
+  document.getElementById("save-pack").onclick=savePack;
+  document.getElementById("delete-pack").onclick=deletePack;
 
-  document.getElementById("btn-add-images").onclick = ()=> document.getElementById("input-images").click();
-  document.getElementById("input-images").onchange = onImagesSelected;
-  document.getElementById("btn-add-video").onclick = ()=> document.getElementById("input-video").click();
-  document.getElementById("input-video").onchange = onVideoSelected;
-  document.getElementById("btn-remove-video").onclick = ()=>{
-    pendingVideoUrl = "";
-    document.getElementById("btn-remove-video").style.display = "none";
-    renderVideoPreview();
-  };
-
-  document.getElementById("save-product").onclick = saveProduct;
-  document.getElementById("delete-product").onclick = deleteProduct;
-  document.getElementById("btn-add-pack-images").onclick = ()=>document.getElementById("input-pack-images").click();
-  document.getElementById("input-pack-images").onchange = onPackImagesSelected;
-  document.getElementById("save-pack").onclick = savePack;
-  const pc=getPackConfig(p); document.getElementById("pack_mode").value=pc.mode||"choice";
-  function renderReadyItems(){ const box=document.getElementById("pack-ready-items"); if(!box)return; if(document.getElementById("pack_mode").value!=="ready"){box.innerHTML="";return;} const sizes=csvList(document.getElementById("p_sizes")?.value||p.sizes),colors=csvList(document.getElementById("p_colors")?.value||p.colors),items=pc.items||[]; const n=Math.max(1,parseInt(document.getElementById("pack_pieces")?.value||"3",10)); box.innerHTML=Array.from({length:n},(_,i)=>{const it=items[i]||{};return `<div class="pack-piece-choice"><strong>القطعة ${i+1}</strong><div class="field"><label>المقاس</label><select class="ready-size">${sizes.map(x=>`<option ${x===it.size?'selected':''}>${escHtml(x)}</option>`).join("")}</select></div><div class="field"><label>اللون</label><select class="ready-color">${colors.map(x=>`<option ${x===it.color?'selected':''}>${escHtml(x)}</option>`).join("")}</select></div></div>`}).join(""); }
-  renderReadyItems(); document.getElementById("pack_mode").onchange=renderReadyItems; document.getElementById("pack_pieces").oninput=renderReadyItems; document.getElementById("p_type").onchange=()=>{document.getElementById("clothing-fields").style.display=document.getElementById("p_type").value==="clothing"?"block":"none";renderReadyItems();};
-  document.getElementById("delete-pack").onclick = deletePack;
-  renderPackImagesPreview();
+  const pc=getPackConfig(p);
+  const typeEl=document.getElementById("p_type");
+  const standardEl=document.getElementById("standard-fields");
+  const clothingEl=document.getElementById("clothing-fields");
+  const psEl=document.getElementById("pack-standard-options");
+  const pcEl=document.getElementById("pack-clothing-options");
+  function renderReadyItems(){
+    const box=document.getElementById("pack-ready-items"); if(!box)return;
+    if(typeEl.value!=="clothing" || document.getElementById("pack_mode")?.value!=="ready"){box.innerHTML="";return;}
+    const sizes=csvList(document.getElementById("p_sizes")?.value||p.sizes), colors=csvList(document.getElementById("p_colors")?.value||p.colors), items=pc.items||[];
+    const n=Math.max(1,parseInt(document.getElementById("pack_pieces_clothing")?.value||"3",10));
+    box.innerHTML=Array.from({length:n},(_,i)=>{const it=items[i]||{};return `<div class="pack-piece-choice"><strong>القطعة ${i+1}</strong><div class="field"><label>المقاس</label><select class="ready-size">${sizes.map(x=>`<option value="${escHtml(x)}" ${x===it.size?'selected':''}>${escHtml(x)}</option>`).join("")}</select></div><div class="field"><label>اللون</label><select class="ready-color">${colors.map(x=>`<option value="${escHtml(x)}" ${x===it.color?'selected':''}>${escHtml(x)}</option>`).join("")}</select></div></div>`}).join("");
+  }
+  function refreshType(){
+    const clothing=typeEl.value==="clothing";
+    standardEl.style.display=clothing?"none":"block"; clothingEl.style.display=clothing?"block":"none";
+    psEl.style.display=clothing?"none":"block"; pcEl.style.display=clothing?"block":"none";
+    // Re-render only the pack's ready assortment when clothing is selected.
+    if(clothing){ const mode=document.getElementById("pack_mode"); if(mode) mode.value=pc.mode||"choice"; }
+    renderReadyItems();
+  }
+  typeEl.onchange=refreshType;
+  document.getElementById("pack_mode")?.addEventListener("change",renderReadyItems);
+  document.getElementById("pack_pieces_clothing")?.addEventListener("input",renderReadyItems);
+  document.getElementById("p_sizes")?.addEventListener("input",renderReadyItems);
+  document.getElementById("p_colors")?.addEventListener("input",renderReadyItems);
+  refreshType();
+  bindPreviewRequired();
 }
 
 function renderPackImagesPreview(){
@@ -1413,11 +1485,12 @@ async function onPackImagesSelected(e){
 }
 function collectPackBody(){
   const enabled=document.getElementById("pack_enabled")?.checked||false, visible=document.getElementById("pack_visible")?.checked||false;
-  const mode=document.getElementById("pack_mode")?.value||"choice", pieces=Math.max(1,parseInt(document.getElementById("pack_pieces")?.value||"3",10));
+  const clothing=document.getElementById("p_type")?.value==="clothing"; const mode=clothing?(document.getElementById("pack_mode")?.value||"choice"):"ready", pieces=Math.max(1,parseInt((clothing?document.getElementById("pack_pieces_clothing")?.value:document.getElementById("pack_pieces")?.value)||"3",10));
   const items=Array.from(document.querySelectorAll("#pack-ready-items .pack-piece-choice")).map((el,i)=>({piece:i+1,size:el.querySelector(".ready-size")?.value||"",color:el.querySelector(".ready-color")?.value||""}));
   return {pack_enabled:enabled,pack_visible:enabled&&visible,pack_title_ar:document.getElementById("pack_title_ar")?.value||"",pack_title_fr:document.getElementById("pack_title_fr")?.value||"",pack_description_ar:document.getElementById("pack_desc_ar")?.value||"",pack_description_fr:document.getElementById("pack_desc_fr")?.value||"",pack_price:document.getElementById("pack_price")?.value?parseFloat(document.getElementById("pack_price").value):null,pack_old_price:document.getElementById("pack_old_price")?.value?parseFloat(document.getElementById("pack_old_price").value):null,pack_images:pendingPackImages.slice(),pack_mode:mode,pack_pieces:pieces,pack_items:items,pack_config:{mode,pieces,items}};
 }
 async function savePack(){
+  if(!PREVIEW_APPROVED){ document.getElementById("save-msg").innerHTML=`<div class="msg err">خاصك تدير المعاينة قبل الحفظ</div>`; return; }
   if(!adminData.product)return; const msg=document.getElementById("save-msg"),btn=document.getElementById("save-pack"); if(btn)btn.disabled=true;
   try{const res=await sbUpdate("products",`id=eq.${adminData.product.id}`,collectPackBody()); const ok=res.ok&&res.status>=200&&res.status<300; msg.innerHTML=ok?`<div class="msg ok">تم حفظ الـPack ✅</div>`:`<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`; if(ok){UNSAVED_DRAFT.product=null;await loadAdminData();renderProductTab();}}catch(e){msg.innerHTML=`<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;}
   if(btn)btn.disabled=false;
@@ -1526,13 +1599,15 @@ async function onVideoSelected(e){
 }
 
 async function saveProduct(){
+  if(!PREVIEW_APPROVED){ document.getElementById("save-msg").innerHTML=`<div class="msg err">خاصك تدير المعاينة قبل الحفظ</div>`; return; }
   const body = {
     title_ar: document.getElementById("p_title_ar").value,
     title_fr: document.getElementById("p_title_fr").value,
     description_ar: document.getElementById("p_desc_ar").value,
     description_fr: document.getElementById("p_desc_fr").value,
-    price: parseFloat(document.getElementById("p_price").value)||0,
-    old_price: document.getElementById("p_old_price").value ? parseFloat(document.getElementById("p_old_price").value) : null,
+    price: parseFloat(getProductFormValue("price"))||0,
+    stock_quantity: Math.max(0, parseInt(getProductFormValue("stock")||"0",10)),
+    old_price: getProductFormValue("old_price") ? parseFloat(getProductFormValue("old_price")) : null,
     video_url: pendingVideoUrl || "",
     images: pendingImages.slice(),
     is_active: document.getElementById("p_active").checked,
@@ -1555,6 +1630,7 @@ async function saveProduct(){
     if(success){
       msg.innerHTML = `<div class="msg ok">تم الحفظ ✅</div>`;
       UNSAVED_DRAFT.product=null;
+      PREVIEW_APPROVED=false;
       await loadAdminData();
     } else {
       msg.innerHTML = `<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;
@@ -1907,6 +1983,20 @@ function openChangePasswordModal(){
 
 /* ================= ADMIN: PREVIEW (no DB writes) ================= */
 let PREVIEW_LANG = "ar";
+let PREVIEW_APPROVED = false;
+function setPreviewApproval(ok){
+  PREVIEW_APPROVED=!!ok;
+  document.getElementById("save-product")?.toggleAttribute("disabled", !PREVIEW_APPROVED);
+  document.getElementById("save-pack")?.toggleAttribute("disabled", !PREVIEW_APPROVED);
+}
+function bindPreviewRequired(){
+  const root=document.getElementById("tab-content"); if(!root)return;
+  root.querySelectorAll("input, textarea, select").forEach(el=>{
+    el.addEventListener("input",()=>setPreviewApproval(false));
+    el.addEventListener("change",()=>setPreviewApproval(false));
+  });
+  setPreviewApproval(false);
+}
 
 function collectPreviewData(){
   const s=Object.assign({},adminData.settings||{},UNSAVED_DRAFT.settings||{});
@@ -1921,8 +2011,15 @@ function collectPreviewData(){
   }
   const p=Object.assign({},adminData.product||{},UNSAVED_DRAFT.product||{});
   if(document.getElementById("p_title_ar")){
-    p.title_ar=document.getElementById("p_title_ar").value; p.title_fr=document.getElementById("p_title_fr").value; p.description_ar=document.getElementById("p_desc_ar").value; p.description_fr=document.getElementById("p_desc_fr").value; p.price=parseFloat(document.getElementById("p_price").value)||0;
-    const oldP=document.getElementById("p_old_price").value; p.old_price=oldP?parseFloat(oldP):null; p.is_active=document.getElementById("p_active").checked;
+    p.title_ar=document.getElementById("p_title_ar").value; p.title_fr=document.getElementById("p_title_fr").value;
+    p.description_ar=document.getElementById("p_desc_ar").value; p.description_fr=document.getElementById("p_desc_fr").value;
+    p.product_type=getProductTypeFormValue();
+    p.price=parseFloat(getProductFormValue("price"))||0;
+    const oldP=getProductFormValue("old_price"); p.old_price=oldP?parseFloat(oldP):null;
+    p.stock_quantity=Math.max(0,parseInt(getProductFormValue("stock")||"0",10));
+    p.sizes=document.getElementById("p_sizes")?.value||""; p.colors=document.getElementById("p_colors")?.value||"";
+    p.is_active=document.getElementById("p_active").checked;
+    Object.assign(p, typeof collectPackBody==="function" ? collectPackBody() : {});
   }
   p.images=pendingImages.slice(); p.video_url=pendingVideoUrl||""; UNSAVED_DRAFT.product=Object.assign({},p);
   return {settings:s,product:p};
@@ -1936,6 +2033,7 @@ function openPreview(){
   };
   PREVIEW_LANG = settings.default_language || "ar";
   renderPreviewOverlay(PREVIEW_SNAPSHOT.settings, PREVIEW_SNAPSHOT.product);
+  setPreviewApproval(true);
 }
 
 function renderPreviewOverlay(settings, product){
