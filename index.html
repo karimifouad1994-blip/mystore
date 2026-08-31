@@ -852,7 +852,10 @@ function buildPackPublicMarkup(product, lang, type){
     const sizeBlock=sizes.length?`<div class="field"><label>${lang==='ar'?'المقاس (موحد للـPack كامل)':'Taille (unique pour tout le pack)'}</label><div class="choice-grid pack-common-size" id="pack-custom-common-size">${sizes.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:'';
     options=`<div style="margin-top:12px"><strong>${lang==='ar'?'التشكيلة المتنوعة':'Assortiment varié'}</strong>${sizeBlock}<div class="small-muted" style="margin:8px 0 12px">${lang==='ar'?'اختار اللون لكل قطعة بشكل مستقل، والمقاس يبقى موحداً للـPack كامل':'Choisissez la couleur séparément pour chaque pièce. La taille reste la même pour tout le pack.'}</div>${Array.from({length:n},(_,i)=>`<div class="pack-piece-choice"><strong>${lang==='ar'?'القطعة':'Pièce'} ${i+1}</strong><div class="field"><label>${lang==='ar'?'اللون':'Couleur'}</label><div class="choice-grid pack-colors" data-piece="${i}">${colors.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div></div>`).join('')}</div>`;
   } else {
-    options=`<div class="small-muted" style="margin-top:10px">${lang==='ar'?'Pack Standard — التشكيلة محددة من المتجر':'Pack Standard — assortiment défini par le magasin'}</div>`;
+    const sizes=csvList(product.sizes),items=(c.items||[]);
+    const sizeBlock=sizes.length?`<div class="field"><label>${lang==='ar'?'المقاس':'Taille'}</label><div class="choice-grid pack-common-size" id="pack-standard-common-size">${sizes.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:'';
+    const colorsList=items.length?`<div class="small-muted" style="margin-top:8px">${items.map((it,i)=>`${lang==='ar'?'القطعة':'Pièce'} ${i+1}: ${escHtml(it.color||'-')}`).join(' · ')}</div>`:'';
+    options=`<div style="margin-top:12px">${sizeBlock}<div class="small-muted" style="margin:8px 0 4px">${lang==='ar'?'الألوان محددة من طرف المتجر لكل قطعة، وغادي تختار غير المقاس':'Les couleurs sont fixées par la boutique pour chaque pièce, vous choisissez uniquement la taille'}</div>${colorsList}</div>`;
   }
   return `<div class="pack-public"><div class="pack-public-head"><div class="pack-public-title">${escHtml(title)}</div><div class="pack-public-badge">${type==='custom'?'PACK PERSONNALISÉ':'PACK STANDARD'}</div></div>${img}<div class="pack-public-desc">${escHtml(desc)}</div><div class="price-row"><span class="price">${c.price||0} DH</span>${old}</div>${options}</div>`;
 }
@@ -952,7 +955,11 @@ function getCurrentCartItem(){
       packOptions.push({piece:i+1,size:commonSize,color:cg?.dataset.value||''});
     }
   }
-  if(purchase==='pack_standard') packOptions=getStandardPackConfig(STATE.product).items||[];
+  if(purchase==='pack_standard'){
+    const items=getStandardPackConfig(STATE.product).items||[];
+    const commonSize=root.querySelector('#pack-standard-wrap .pack-common-size .selected')?.dataset.value||'';
+    packOptions=items.map(it=>({piece:it.piece,size:commonSize,color:it.color||''}));
+  }
   return {purchaseType:purchase,quantity:qty,productOptions,packOptions};
 }
 
@@ -1023,6 +1030,8 @@ async function onSubmitOrder(){
   if(!STATE.cartItem) STATE.cartItem=item;
   const productOptions=item.productOptions||{};
   if(selected==='product'&&STATE.product.product_type==='clothing'&&(!productOptions.size||!productOptions.color)){msgBox.innerHTML=`<div class="msg err">${STATE.lang==='ar'?'اختار المقاس واللون من فضلك':'Veuillez choisir la taille et la couleur'}</div>`;return;}
+  if((selected==='pack_standard'||selected==='pack_custom')&&csvList(STATE.product.sizes).length&&(item.packOptions||[]).some(x=>!x.size)){msgBox.innerHTML=`<div class="msg err">${STATE.lang==='ar'?'اختار المقاس من فضلك':'Veuillez choisir la taille'}</div>`;return;}
+  if(selected==='pack_custom'&&(item.packOptions||[]).some(x=>!x.color)){msgBox.innerHTML=`<div class="msg err">${STATE.lang==='ar'?'اختار لون كل قطعة من فضلك':'Veuillez choisir la couleur de chaque pièce'}</div>`;return;}
   STATE.order={customer_name:name,phone,city,address,quantity:item.quantity,product_options:productOptions,pack_options:item.packOptions||[]};
   if(STATE.upsell) renderUpsellStep(); else await finalizeOrder(false,null);
 }
@@ -1389,8 +1398,8 @@ function renderProductTab(){
   document.getElementById('std-add-images').onclick=()=>document.getElementById('std-images').click();document.getElementById('cus-add-images').onclick=()=>document.getElementById('cus-images').click();
   async function uploadPackImages(input,arr,boxId){const files=Array.from(input.files||[]);input.value='';for(const file of files){if(!file.type.startsWith('image/')||file.size>MAX_IMAGE_MB*1024*1024)continue;const res=await sbUploadFile(file,'images');if(res.ok){arr.push(res.url);previewImgs(boxId,arr)}}}
   document.getElementById('std-images').onchange=e=>uploadPackImages(e.target,stdPending,'std-images-preview');document.getElementById('cus-images').onchange=e=>uploadPackImages(e.target,cusPending,'cus-images-preview');
-  function renderStdItems(){const box=document.getElementById('std-ready-items');if(!box)return;const n=Math.max(1,parseInt(document.getElementById('std_pieces')?.value||'3',10)),sizes=csvList(document.getElementById('p_sizes')?.value||p.sizes),colors=csvList(document.getElementById('p_colors')?.value||p.colors),items=std.items||[];box.innerHTML=Array.from({length:n},(_,i)=>{const it=items[i]||{};return `<div class="pack-piece-choice"><strong>القطعة ${i+1}</strong><div class="field"><label>المقاس</label><select class="std-size">${sizes.map(x=>`<option ${x===it.size?'selected':''}>${escHtml(x)}</option>`).join('')}</select></div><div class="field"><label>اللون</label><select class="std-color">${colors.map(x=>`<option ${x===it.color?'selected':''}>${escHtml(x)}</option>`).join('')}</select></div></div>`}).join('')}
-  document.getElementById('std_pieces').oninput=renderStdItems;document.getElementById('p_sizes')?.addEventListener('input',renderStdItems);document.getElementById('p_colors')?.addEventListener('input',renderStdItems);renderStdItems();
+  function renderStdItems(){const box=document.getElementById('std-ready-items');if(!box)return;const n=Math.max(1,parseInt(document.getElementById('std_pieces')?.value||'3',10)),colors=csvList(document.getElementById('p_colors')?.value||p.colors),items=std.items||[];box.innerHTML=`<div class="small-muted" style="margin-top:8px">حدد لون كل قطعة. المقاس غادي يختاره الزبون بنفسه (مقاس واحد للـPack كامل).</div>`+Array.from({length:n},(_,i)=>{const it=items[i]||{};return `<div class="pack-piece-choice"><strong>القطعة ${i+1}</strong><div class="field"><label>اللون</label><select class="std-color">${colors.map(x=>`<option ${x===it.color?'selected':''}>${escHtml(x)}</option>`).join('')}</select></div></div>`}).join('')}
+  document.getElementById('std_pieces').oninput=renderStdItems;document.getElementById('p_colors')?.addEventListener('input',renderStdItems);renderStdItems();
   const toggleFields=(id,box)=>{document.getElementById(id)?.addEventListener('change',()=>{box.style.display=document.getElementById(id).checked?'block':'none';setPreviewApproval(false)});box.style.display=document.getElementById(id).checked?'block':'none'};toggleFields('std_enabled',document.getElementById('std-fields'));toggleFields('cus_enabled',document.getElementById('cus-fields'));
   document.getElementById('std-delete').onclick=()=>{stdPending=[];document.getElementById('std_enabled').checked=false;document.getElementById('std_visible').checked=false;setPreviewApproval(false);previewImgs('std-images-preview',stdPending)};document.getElementById('cus-delete').onclick=()=>{cusPending=[];document.getElementById('cus_enabled').checked=false;document.getElementById('cus_visible').checked=false;setPreviewApproval(false);previewImgs('cus-images-preview',cusPending)};
   document.getElementById('save-product').onclick=saveProduct;document.getElementById('delete-product').onclick=deleteProduct;bindPreviewRequired();
@@ -1401,7 +1410,7 @@ function collectPackBody(){
   if(type!=='clothing') return {pack_enabled:false,pack_visible:false,pack_standard_config:null,pack_custom_config:null,pack_mode:'choice',pack_pieces:3,pack_items:[],pack_config:{mode:'choice',pieces:3,items:[]}};
   const imgs=window.__packAdminDraft?window.__packAdminDraft():{stdPending:[],cusPending:[]};
   const read=(prefix,enabledKey,visibleKey,piecesKey,priceKey,oldKey,titleAr,titleFr,descAr,descFr,images,items)=>({enabled:!!document.getElementById(enabledKey)?.checked,visible:!!document.getElementById(visibleKey)?.checked,pieces:Math.max(1,parseInt(document.getElementById(piecesKey)?.value||'3',10)),price:document.getElementById(priceKey)?.value?parseFloat(document.getElementById(priceKey).value):null,old_price:document.getElementById(oldKey)?.value?parseFloat(document.getElementById(oldKey).value):null,title_ar:document.getElementById(titleAr)?.value||'',title_fr:document.getElementById(titleFr)?.value||'',description_ar:document.getElementById(descAr)?.value||'',description_fr:document.getElementById(descFr)?.value||'',images:images.slice(),items:items||[]});
-  const stdItems=Array.from(document.querySelectorAll('#std-ready-items .pack-piece-choice')).map((el,i)=>({piece:i+1,size:el.querySelector('.std-size')?.value||'',color:el.querySelector('.std-color')?.value||''}));
+  const stdItems=Array.from(document.querySelectorAll('#std-ready-items .pack-piece-choice')).map((el,i)=>({piece:i+1,color:el.querySelector('.std-color')?.value||''}));
   const std=read('std','std_enabled','std_visible','std_pieces','std_price','std_old_price','std_title_ar','std_title_fr','std_desc_ar','std_desc_fr',imgs.stdPending,stdItems);
   const cus=read('cus','cus_enabled','cus_visible','cus_pieces','cus_price','cus_old_price','cus_title_ar','cus_title_fr','cus_desc_ar','cus_desc_fr',imgs.cusPending,[]);
   const single={enabled:!!document.getElementById('single_enabled')?.checked,visible:!!document.getElementById('single_visible')?.checked};
