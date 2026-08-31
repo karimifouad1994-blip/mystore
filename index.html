@@ -47,6 +47,15 @@
     border-radius: var(--radius); overflow:hidden; background:var(--card); border:1px solid var(--line); margin-bottom:22px;
   }
   .hero-media video, .hero-media img{ width:100%; display:block; }
+  .video-wrap{ position:relative; width:100%; }
+  .video-wrap .product-video{ width:100%; display:block; }
+  .video-sound-btn{
+    position:absolute; bottom:12px; left:12px; z-index:2;
+    width:42px; height:42px; border-radius:50%;
+    background:rgba(0,0,0,.58); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.05rem; backdrop-filter:blur(4px);
+  }
   .thumbs{display:flex; gap:8px; margin-top:8px; overflow-x:auto;}
   .thumbs img{ width:64px; height:64px; object-fit:cover; border-radius:10px; border:1px solid var(--line); flex-shrink:0; }
 
@@ -114,6 +123,38 @@
   .msg{ padding:10px 14px; border-radius:10px; font-size:.85rem; margin-bottom:14px; }
   .msg.ok{ background:#DCF5E3; color:#1F7A3D; }
   .msg.err{ background:#FBDCDC; color:#B02A2A; }
+
+  /* ===== NEW: quantity stepper ===== */
+  .qty-stepper{ display:flex; align-items:center; justify-content:space-between; border:1.5px solid var(--line); border-radius:10px; overflow:hidden; background:var(--bg); height:46px; }
+  .qty-stepper button{ background:var(--card); color:var(--ink); font-size:1.15rem; font-weight:800; width:42px; height:100%; display:flex; align-items:center; justify-content:center; }
+  .qty-stepper span{ flex:1; text-align:center; font-weight:700; font-size:1rem; }
+
+  /* ===== NEW: admin nav links (preview / view site / logout) ===== */
+  .admin-nav-links{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  .admin-nav-links button, .admin-nav-links a{ font-size:.82rem; color:var(--muted); text-decoration:underline; background:none; padding:0; }
+
+  /* ===== NEW: preview overlay ===== */
+  .preview-overlay{ position:fixed; inset:0; background:var(--bg); z-index:2000; overflow-y:auto; }
+  .preview-bar{ position:sticky; top:0; z-index:5; display:flex; justify-content:space-between; align-items:center; padding:12px 18px; background:var(--card); border-bottom:1px solid var(--line); }
+  .preview-bar .tag{ font-size:.78rem; font-weight:800; color:var(--accent); }
+  .preview-bar button{ padding:9px 16px; border-radius:999px; background:var(--ink); color:var(--bg); font-weight:700; font-size:.82rem; }
+
+  /* ===== NEW: admin return floating button (on public site, admin only) ===== */
+  .admin-return-btn{ position:fixed; bottom:16px; left:16px; z-index:999; padding:10px 16px; border-radius:999px;
+    background:var(--ink); color:var(--bg); font-weight:700; font-size:.82rem; box-shadow:0 4px 14px rgba(0,0,0,.25); }
+
+  /* ===== NEW: media uploads (images / video) ===== */
+  .upload-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+  .upload-btn{ padding:10px 16px; border-radius:10px; background:var(--card); border:1.5px dashed var(--accent); color:var(--ink); font-weight:700; font-size:.85rem; }
+  .img-thumb{ position:relative; width:70px; height:70px; border-radius:10px; overflow:hidden; border:1px solid var(--line); flex-shrink:0; }
+  .img-thumb img{ width:100%; height:100%; object-fit:cover; }
+  .img-thumb .rm-btn{ position:absolute; top:2px; left:2px; background:rgba(0,0,0,.6); color:#fff; border-radius:50%; width:20px; height:20px; font-size:.7rem; display:flex; align-items:center; justify-content:center; }
+  .img-thumb .mv-btns{ position:absolute; bottom:2px; right:2px; display:flex; gap:2px; }
+  .img-thumb .mv-btns button{ background:rgba(0,0,0,.6); color:#fff; border-radius:4px; width:16px; height:16px; font-size:.6rem; }
+  .upload-status{ font-size:.8rem; color:var(--muted); margin-top:4px; min-height:1em; }
+
+  /* ===== NEW: auto-contrast demo swatch ===== */
+  .contrast-demo{ padding:12px 14px; border-radius:10px; margin-top:8px; margin-bottom:14px; font-size:.85rem; font-weight:700; text-align:center; border:1px solid var(--line); }
 </style>
 </head>
 <body data-theme="1">
@@ -124,6 +165,7 @@
 /* ============ CONFIG ============ */
 const SUPABASE_URL = "https://qqhwheethihkpvogpxwo.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxaHdoZWV0aGloa3B2b2dweHdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxMjY0NTcsImV4cCI6MjEwMzcwMjQ1N30.jJbdAq535j252I_wGTkJuGbSUjkdUtMSQQsrhD4zo9o";
+const STORAGE_BUCKET = "product-media";
 
 const SESSION_KEY = "store_admin_session";
 let session = { access_token: null, refresh_token: null, expires_at: null, user: null };
@@ -213,14 +255,119 @@ async function sbLogin(email, password){
   return r.json();
 }
 
+/* ============ NEW: STORAGE UPLOAD HELPER ============ */
+const MAX_IMAGE_MB = 8;
+const MAX_VIDEO_MB = 60;
+
+async function sbUploadFile(file, folder){
+  try{
+    const cleanName = file.name.replace(/[^a-zA-Z0-9.\-_]/g,"_");
+    const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2,8)}_${cleanName}`;
+    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${path}`, {
+      method:"POST",
+      headers:{
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": "Bearer " + session.access_token,
+        "Content-Type": file.type || "application/octet-stream"
+      },
+      body: file
+    });
+    let data = null;
+    try{ data = await r.json(); }catch(e){}
+    const ok = r.ok && r.status>=200 && r.status<300;
+    if(!ok){
+      const errMsg = (data && (data.message || data.error)) || `status ${r.status}`;
+      return { ok:false, url:null, error: errMsg };
+    }
+    const url = `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`;
+    return { ok:true, url };
+  } catch(networkErr){
+    return { ok:false, url:null, error:"مشكل فالاتصال، عاود المحاولة" };
+  }
+}
+
+/* ============ NEW: AUTO CONTRAST ============ */
+function getReadableTextColor(hexBg){
+  const hex = (hexBg||"#ffffff").replace("#","");
+  const full = hex.length===3 ? hex.split("").map(c=>c+c).join("") : hex;
+  const r = parseInt(full.substr(0,2),16); const rr = isNaN(r)?255:r;
+  const g = parseInt(full.substr(2,2),16); const gg = isNaN(g)?255:g;
+  const b = parseInt(full.substr(4,2),16); const bb = isNaN(b)?255:b;
+  const toLin = c => { c/=255; return c<=0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055,2.4); };
+  const L = 0.2126*toLin(rr)+0.7152*toLin(gg)+0.0722*toLin(bb);
+  return L > 0.5 ? "#1A1A1A" : "#FAFAFA";
+}
+function getMutedColor(hexBg){
+  return getReadableTextColor(hexBg) === "#1A1A1A" ? "#6B6B6B" : "#B7BBC0";
+}
+const THEME_DEFAULT_BG = {1:"#F6F1E9",2:"#121417",3:"#FBEAE7",4:"#F4E9D8",5:"#FFFFFF"};
+function applyThemeAndContrast(settings){
+  const themeId = (settings && settings.theme_id) || 1;
+  document.body.setAttribute("data-theme", themeId);
+  const bg = (settings && settings.bg_color) || THEME_DEFAULT_BG[themeId] || "#FFFFFF";
+  document.body.style.setProperty("--bg", bg);
+  document.body.style.setProperty("--ink", getReadableTextColor(bg));
+  document.body.style.setProperty("--muted", getMutedColor(bg));
+}
+
+function initProductVideo(root=document){
+  const video = root.querySelector(".product-video");
+  const soundBtn = root.querySelector(".video-sound-btn");
+  if(!video) return;
+
+  video.muted = false;
+  video.volume = 1;
+
+  const tryPlay = async ()=>{
+    try{
+      await video.play();
+      if(soundBtn) soundBtn.textContent = video.muted ? "🔇" : "🔊";
+    }catch(e){
+      // Browsers may block autoplay with sound. Fall back to muted autoplay,
+      // while keeping the custom sound button available.
+      video.muted = true;
+      try{ await video.play(); }catch(_){}
+      if(soundBtn) soundBtn.textContent = "🔇";
+    }
+  };
+
+  tryPlay();
+
+  if(soundBtn){
+    soundBtn.onclick = async ()=>{
+      video.muted = !video.muted;
+      if(!video.paused){
+        try{ await video.play(); }catch(_){}
+      } else {
+        try{ await video.play(); }catch(_){}
+      }
+      soundBtn.textContent = video.muted ? "🔇" : "🔊";
+    };
+  }
+
+  video.addEventListener("contextmenu", e=>e.preventDefault());
+  video.setAttribute("controlsList","nodownload noplaybackrate");
+  video.setAttribute("disablePictureInPicture","");
+}
+
 /* ============ STATE ============ */
 let STATE = { settings:null, product:null, upsell:null, lang:"ar", step:"form", order:{}, upsellAccepted:false };
+let LANDING_QTY = 1;
+let SHOW_ADMIN_RETURN = false;
 
 /* ============ ROUTER ============ */
 async function boot(){
   if(location.hash.startsWith("#admin")){
+    SHOW_ADMIN_RETURN = false;
     await initAdminSession();
+  } else if(location.hash === "#view"){
+    SHOW_ADMIN_RETURN = true;
+    STATE.step = "form";
+    await loadPublicData();
+    renderLanding();
   } else {
+    SHOW_ADMIN_RETURN = false;
+    STATE.step = "form";
     await loadPublicData();
     renderLanding();
   }
@@ -274,54 +421,34 @@ function waLink(prefText){
   return `https://wa.me/${num}?text=${encodeURIComponent(prefText)}`;
 }
 
-function renderLanding(){
-  document.body.setAttribute("data-theme", STATE.settings.theme_id || 1);
-  if(STATE.settings.bg_color){ document.body.style.setProperty("--bg", STATE.settings.bg_color); }
-  document.documentElement.lang = STATE.lang;
-  document.documentElement.dir = STATE.lang === "ar" ? "rtl" : "ltr";
-  const t = T[STATE.lang];
-  const app = document.getElementById("app");
-
-  if(!STATE.product){
-    app.innerHTML = `<div class="wrap" style="padding-top:80px; text-align:center; color:var(--muted)">${t.no_product}</div>`;
-    return;
-  }
-
-  const p = STATE.product;
-  const title = STATE.lang==="ar" ? p.title_ar : p.title_fr;
-  const desc = STATE.lang==="ar" ? p.description_ar : p.description_fr;
-  const images = (p.images||[]).filter(Boolean);
+/* Shared markup builder used by both the real landing page and the admin Preview. */
+function buildFormMarkup(settings, product, lang, qty){
+  const t = T[lang] || T.ar;
+  const title = lang==="ar" ? product.title_ar : product.title_fr;
+  const desc = lang==="ar" ? product.description_ar : product.description_fr;
+  const images = (product.images||[]).filter(Boolean);
 
   let mediaHtml = "";
-  if(p.video_url){
-    mediaHtml = `<video src="${p.video_url}" controls playsinline></video>`;
-  } else if(images[0]){
-    mediaHtml = `<img src="${images[0]}" alt="${title}">`;
-  }
-  let thumbsHtml = images.length>1 ? `<div class="thumbs">${images.map(i=>`<img src="${i}">`).join("")}</div>` : "";
-
-  if(STATE.step === "success"){
-    const showWa = STATE.settings.whatsapp_enabled && STATE.settings.whatsapp_timing === "after";
-    app.innerHTML = `
-      <div class="wrap">
-        <div class="success">
-          <div class="emoji">🎉✅</div>
-          <h2>${t.success_title}</h2>
-          <p>${t.success_sub}</p>
-          ${showWa ? `<a class="cta wa-btn" style="margin-top:22px" href="${waLink((STATE.lang==='ar'?'مرحبا، عندي طلب لـ ':'Bonjour, j\'ai commandé ')+title)}" target="_blank">💬 ${t.contact_whatsapp}</a>` : ""}
-        </div>
+  if(product.video_url){
+    mediaHtml = `
+      <div class="video-wrap">
+        <video class="product-video" src="${product.video_url}" autoplay playsinline preload="auto"></video>
+        <button type="button" class="video-sound-btn" aria-label="الصوت">🔊</button>
       </div>`;
-    return;
+  } else if(images[0]){
+    mediaHtml = `<img src="${images[0]}" alt="${title||''}">`;
   }
+  const thumbsHtml = images.length>1 ? `<div class="thumbs">${images.map(i=>`<img src="${i}">`).join("")}</div>` : "";
+  const num = (settings.whatsapp_number||"").replace(/\D/g,"");
+  const showWaBefore = settings.whatsapp_enabled && settings.whatsapp_timing === "before";
+  const waHref = (txt)=> `https://wa.me/${num}?text=${encodeURIComponent(txt)}`;
 
-  const showWaBefore = STATE.settings.whatsapp_enabled && STATE.settings.whatsapp_timing === "before";
-
-  app.innerHTML = `
+  return `
     <div class="topbar">
-      <div class="brand">${STATE.settings.store_name||""}</div>
+      <div class="brand">${settings.store_name||""}</div>
       <div class="lang-switch">
-        <button data-lang="ar" class="${STATE.lang==='ar'?'active':''}">AR</button>
-        <button data-lang="fr" class="${STATE.lang==='fr'?'active':''}">FR</button>
+        <button data-lang="ar" class="${lang==='ar'?'active':''}">AR</button>
+        <button data-lang="fr" class="${lang==='fr'?'active':''}">FR</button>
       </div>
     </div>
     <div class="wrap">
@@ -330,11 +457,11 @@ function renderLanding(){
       <h1 class="title">${title||""}</h1>
       <p class="desc">${desc||""}</p>
       <div class="price-row">
-        <span class="price">${p.price} ${t.currency}</span>
-        ${p.old_price ? `<span class="old-price">${p.old_price} ${t.currency}</span>` : ""}
+        <span class="price">${product.price||0} ${t.currency}</span>
+        ${product.old_price ? `<span class="old-price">${product.old_price} ${t.currency}</span>` : ""}
       </div>
 
-      ${showWaBefore ? `<a class="cta secondary wa-btn" href="${waLink((STATE.lang==='ar'?'مرحبا، عندي سؤال على ':'Bonjour, j\'ai une question sur ')+title)}" target="_blank">💬 ${t.contact_whatsapp}</a>` : ""}
+      ${showWaBefore ? `<a class="cta secondary wa-btn" href="${waHref((lang==='ar'?'مرحبا، عندي سؤال على ':'Bonjour, j\'ai une question sur ')+(title||''))}" target="_blank">💬 ${t.contact_whatsapp}</a>` : ""}
 
       <div class="card">
         <div class="field">
@@ -352,7 +479,11 @@ function renderLanding(){
           </div>
           <div class="field">
             <label>${t.qty}</label>
-            <input id="f_qty" type="number" min="1" value="1">
+            <div class="qty-stepper">
+              <button type="button" id="qty-minus" aria-label="minus">−</button>
+              <span id="qty-value">${qty}</span>
+              <button type="button" id="qty-plus" aria-label="plus">+</button>
+            </div>
           </div>
         </div>
         <div class="field">
@@ -362,14 +493,64 @@ function renderLanding(){
         <div id="order-msg"></div>
         <button class="cta" id="submit-btn">${t.place_order}</button>
       </div>
-      <div class="footer-note">${STATE.settings.store_name||""}</div>
+      <div class="footer-note">${settings.store_name||""}</div>
     </div>
   `;
+}
 
-  document.querySelectorAll("[data-lang]").forEach(b=>{
-    b.onclick = ()=>{ STATE.lang = b.dataset.lang; renderLanding(); };
-  });
-  document.getElementById("submit-btn").onclick = onSubmitOrder;
+function maybeShowAdminReturn(show){
+  const old = document.getElementById("admin-return-btn");
+  if(old) old.remove();
+  if(!show) return;
+  const stored = loadStoredSession();
+  if(!stored || !stored.access_token) return;
+  const btn = document.createElement("button");
+  btn.id = "admin-return-btn";
+  btn.className = "admin-return-btn";
+  btn.textContent = "🔙 رجوع للإدارة";
+  btn.onclick = ()=>{ location.hash = "#admin"; };
+  document.body.appendChild(btn);
+}
+
+function renderLanding(){
+  applyThemeAndContrast(STATE.settings);
+  document.documentElement.lang = STATE.lang;
+  document.documentElement.dir = STATE.lang === "ar" ? "rtl" : "ltr";
+  const t = T[STATE.lang];
+  const app = document.getElementById("app");
+
+  if(!STATE.product){
+    app.innerHTML = `<div class="wrap" style="padding-top:80px; text-align:center; color:var(--muted)">${t.no_product}</div>`;
+  } else if(STATE.step === "success"){
+    const p = STATE.product;
+    const title = STATE.lang==="ar" ? p.title_ar : p.title_fr;
+    const showWa = STATE.settings.whatsapp_enabled && STATE.settings.whatsapp_timing === "after";
+    app.innerHTML = `
+      <div class="wrap">
+        <div class="success">
+          <div class="emoji">🎉✅</div>
+          <h2>${t.success_title}</h2>
+          <p>${t.success_sub}</p>
+          ${showWa ? `<a class="cta wa-btn" style="margin-top:22px" href="${waLink((STATE.lang==='ar'?'مرحبا، عندي طلب لـ ':'Bonjour, j\'ai commandé ')+title)}" target="_blank">💬 ${t.contact_whatsapp}</a>` : ""}
+        </div>
+      </div>`;
+  } else {
+    app.innerHTML = buildFormMarkup(STATE.settings, STATE.product, STATE.lang, LANDING_QTY);
+
+    document.querySelectorAll("[data-lang]").forEach(b=>{
+      b.onclick = ()=>{ STATE.lang = b.dataset.lang; renderLanding(); };
+    });
+    document.getElementById("qty-minus").onclick = ()=>{
+      if(LANDING_QTY>1){ LANDING_QTY--; document.getElementById("qty-value").textContent = LANDING_QTY; }
+    };
+    document.getElementById("qty-plus").onclick = ()=>{
+      LANDING_QTY++; document.getElementById("qty-value").textContent = LANDING_QTY;
+    };
+    document.getElementById("submit-btn").onclick = onSubmitOrder;
+    initProductVideo(document);
+  }
+
+  maybeShowAdminReturn(SHOW_ADMIN_RETURN);
 }
 
 async function onSubmitOrder(){
@@ -377,7 +558,7 @@ async function onSubmitOrder(){
   const name = document.getElementById("f_name").value.trim();
   const phone = document.getElementById("f_phone").value.trim();
   const city = document.getElementById("f_city").value.trim();
-  const qty = parseInt(document.getElementById("f_qty").value)||1;
+  const qty = LANDING_QTY;
   const address = document.getElementById("f_address").value.trim();
   const msgBox = document.getElementById("order-msg");
 
@@ -459,6 +640,9 @@ async function finalizeOrder(upsellAccepted, upsellId){
 /* ================= ADMIN ================= */
 function renderAdminLogin(){
   document.body.setAttribute("data-theme","5");
+  document.body.style.removeProperty("--bg");
+  document.body.style.removeProperty("--ink");
+  document.body.style.removeProperty("--muted");
   const app = document.getElementById("app");
   app.innerHTML = `
     <div class="admin-login">
@@ -490,6 +674,12 @@ function renderAdminLogin(){
 let ADMIN_TAB = "product";
 let adminData = { settings:null, product:null, upsell:null, orders:[] };
 
+/* pending (not-yet-saved) product media state, shared with Preview */
+let pendingImages = [];
+let pendingVideoUrl = "";
+let SETTINGS_SELECTED_THEME = null;
+let UNSAVED_DRAFT = { settings:null, product:null, upsell:null };
+
 async function loadAdminData(){
   const s = await sbGet("settings","id=eq.1&select=*");
   adminData.settings = s[0];
@@ -503,9 +693,19 @@ async function loadAdminData(){
   adminData.orders = Array.isArray(o) ? o : [];
 }
 
+function collectCurrentAdminDraft(){
+  const bg=document.getElementById("s_bg");
+  if(bg) UNSAVED_DRAFT.settings=Object.assign({},adminData.settings||{},{store_name:document.getElementById("s_store").value,theme_id:SETTINGS_SELECTED_THEME||1,bg_color:bg.value,default_language:document.getElementById("s_lang").value,whatsapp_enabled:document.getElementById("s_wa_enabled").checked,whatsapp_number:document.getElementById("s_wa_number").value,whatsapp_timing:document.getElementById("s_wa_timing").value});
+  const ta=document.getElementById("p_title_ar");
+  if(ta) UNSAVED_DRAFT.product=Object.assign({},adminData.product||{},{title_ar:ta.value,title_fr:document.getElementById("p_title_fr").value,description_ar:document.getElementById("p_desc_ar").value,description_fr:document.getElementById("p_desc_fr").value,price:parseFloat(document.getElementById("p_price").value)||0,old_price:document.getElementById("p_old_price").value?parseFloat(document.getElementById("p_old_price").value):null,images:pendingImages.slice(),video_url:pendingVideoUrl||"",is_active:document.getElementById("p_active").checked});
+}
+
 async function renderAdminDashboard(tab){
   ADMIN_TAB = tab;
   document.body.setAttribute("data-theme","5");
+  document.body.style.removeProperty("--bg");
+  document.body.style.removeProperty("--ink");
+  document.body.style.removeProperty("--muted");
   const app = document.getElementById("app");
   app.innerHTML = `<div class="admin-wrap" style="padding-top:60px; text-align:center; color:var(--muted)">جاري التحميل...</div>`;
   await loadAdminData();
@@ -513,9 +713,13 @@ async function renderAdminDashboard(tab){
   const app2 = document.getElementById("app");
   app2.innerHTML = `
     <div class="admin-wrap">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
         <h2 class="section-title" style="margin:0">لوحة التحكم</h2>
-        <a class="logout-btn" id="logout-link" href="#">خروج / مشاهدة الموقع</a>
+        <div class="admin-nav-links">
+          <button type="button" id="btn-preview">👁 معاينة</button>
+          <a href="#view" id="view-site-link">🌐 مشاهدة الموقع</a>
+          <a href="#" id="logout-link">خروج</a>
+        </div>
       </div>
       <div class="admin-tabs">
         <button data-tab="product" class="${tab==='product'?'active':''}">المنتج</button>
@@ -527,9 +731,10 @@ async function renderAdminDashboard(tab){
     </div>
   `;
   document.querySelectorAll("[data-tab]").forEach(b=>{
-    b.onclick = ()=> renderAdminDashboard(b.dataset.tab);
+    b.onclick = ()=>{ collectCurrentAdminDraft(); renderAdminDashboard(b.dataset.tab); };
   });
   document.getElementById("logout-link").onclick = (e)=>{ e.preventDefault(); clearSession(); location.hash=""; };
+  document.getElementById("btn-preview").onclick = openPreview;
 
   if(tab==="product") renderProductTab();
   if(tab==="upsell") renderUpsellTab();
@@ -538,7 +743,9 @@ async function renderAdminDashboard(tab){
 }
 
 function renderProductTab(){
-  const p = adminData.product || {};
+  const p = UNSAVED_DRAFT.product || adminData.product || {};
+  pendingImages = (p.images||[]).filter(Boolean).slice();
+  pendingVideoUrl = p.video_url || "";
   const c = document.getElementById("tab-content");
   c.innerHTML = `
     <div id="save-msg"></div>
@@ -554,16 +761,138 @@ function renderProductTab(){
       <div class="field"><label>الثمن</label><input id="p_price" type="number" value="${p.price||''}"></div>
       <div class="field"><label>الثمن القديم (اختياري)</label><input id="p_old_price" type="number" value="${p.old_price||''}"></div>
     </div>
-    <div class="field"><label>رابط الفيديو (اختياري)</label><input id="p_video" value="${p.video_url||''}"></div>
-    <div class="field"><label>روابط الصور (مفصولة بفاصلة ,)</label><textarea id="p_images">${(p.images||[]).join(',')}</textarea></div>
+
+    <div class="field">
+      <label>صور المنتج</label>
+      <div class="upload-row">
+        <button type="button" class="upload-btn" id="btn-add-images">📷 إضافة الصور</button>
+        <input type="file" id="input-images" accept="image/*" multiple style="display:none">
+      </div>
+      <div class="thumbs" id="images-preview" style="margin-top:0;"></div>
+      <div class="upload-status" id="images-status"></div>
+    </div>
+
+    <div class="field">
+      <label>فيديو المنتج (اختياري)</label>
+      <div class="upload-row">
+        <button type="button" class="upload-btn" id="btn-add-video">🎥 إضافة فيديو</button>
+        <input type="file" id="input-video" accept="video/*" style="display:none">
+        <button type="button" class="upload-btn" id="btn-remove-video" style="display:${pendingVideoUrl?'inline-block':'none'}">✕ حذف الفيديو</button>
+      </div>
+      <div id="video-preview"></div>
+      <div class="upload-status" id="video-status"></div>
+    </div>
+
     <div class="toggle"><input type="checkbox" id="p_active" ${p.is_active!==false?'checked':''}><label>المنتج ظاهر فالموقع</label></div>
     <button class="save-btn" id="save-product">حفظ المنتج</button>
   `;
+
+  renderImagesPreview();
+  renderVideoPreview();
+
+  document.getElementById("btn-add-images").onclick = ()=> document.getElementById("input-images").click();
+  document.getElementById("input-images").onchange = onImagesSelected;
+  document.getElementById("btn-add-video").onclick = ()=> document.getElementById("input-video").click();
+  document.getElementById("input-video").onchange = onVideoSelected;
+  document.getElementById("btn-remove-video").onclick = ()=>{
+    pendingVideoUrl = "";
+    document.getElementById("btn-remove-video").style.display = "none";
+    renderVideoPreview();
+  };
+
   document.getElementById("save-product").onclick = saveProduct;
 }
 
+function renderImagesPreview(){
+  const box = document.getElementById("images-preview");
+  if(!box) return;
+  box.innerHTML = pendingImages.map((url,idx)=>`
+    <div class="img-thumb">
+      <img src="${url}">
+      <button type="button" class="rm-btn" data-idx="${idx}">✕</button>
+      <div class="mv-btns">
+        ${idx>0 ? `<button type="button" data-mv="${idx}:-1">◀</button>` : ""}
+        ${idx<pendingImages.length-1 ? `<button type="button" data-mv="${idx}:1">▶</button>` : ""}
+      </div>
+    </div>
+  `).join("");
+  box.querySelectorAll(".rm-btn").forEach(b=>{
+    b.onclick = ()=>{ pendingImages.splice(parseInt(b.dataset.idx,10),1); renderImagesPreview(); };
+  });
+  box.querySelectorAll("[data-mv]").forEach(b=>{
+    b.onclick = ()=>{
+      const parts = b.dataset.mv.split(":").map(Number);
+      const idx = parts[0], dir = parts[1];
+      const newIdx = idx+dir;
+      if(newIdx<0 || newIdx>=pendingImages.length) return;
+      const tmp = pendingImages[idx];
+      pendingImages[idx] = pendingImages[newIdx];
+      pendingImages[newIdx] = tmp;
+      renderImagesPreview();
+    };
+  });
+}
+
+function renderVideoPreview(){
+  const box = document.getElementById("video-preview");
+  if(!box) return;
+  box.innerHTML = pendingVideoUrl
+    ? `<video src="${pendingVideoUrl}" controls playsinline style="width:100%; border-radius:10px; margin-top:8px;"></video>`
+    : "";
+}
+
+async function onImagesSelected(e){
+  const files = Array.from(e.target.files||[]);
+  e.target.value = "";
+  if(files.length===0) return;
+  const status = document.getElementById("images-status");
+  for(const file of files){
+    if(!file.type.startsWith("image/")){
+      status.innerHTML = `<span style="color:#B02A2A">الملف "${file.name}" ماشي صورة</span>`;
+      continue;
+    }
+    if(file.size > MAX_IMAGE_MB*1024*1024){
+      status.innerHTML = `<span style="color:#B02A2A">الصورة "${file.name}" كبيرة بزاف (الحد الأقصى ${MAX_IMAGE_MB}MB)</span>`;
+      continue;
+    }
+    status.textContent = `جاري رفع ${file.name}...`;
+    const res = await sbUploadFile(file, "images");
+    if(res.ok){
+      pendingImages.push(res.url);
+      renderImagesPreview();
+      status.textContent = "";
+    } else {
+      status.innerHTML = `<span style="color:#B02A2A">فشل رفع "${file.name}": ${res.error}</span>`;
+    }
+  }
+}
+
+async function onVideoSelected(e){
+  const file = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if(!file) return;
+  const status = document.getElementById("video-status");
+  if(!file.type.startsWith("video/")){
+    status.innerHTML = `<span style="color:#B02A2A">الملف المختار ماشي فيديو</span>`;
+    return;
+  }
+  if(file.size > MAX_VIDEO_MB*1024*1024){
+    status.innerHTML = `<span style="color:#B02A2A">الفيديو كبير بزاف (الحد الأقصى ${MAX_VIDEO_MB}MB)</span>`;
+    return;
+  }
+  status.textContent = "جاري رفع الفيديو...";
+  const res = await sbUploadFile(file, "videos");
+  if(res.ok){
+    pendingVideoUrl = res.url;
+    renderVideoPreview();
+    document.getElementById("btn-remove-video").style.display = "inline-block";
+    status.textContent = "تم الرفع ✅";
+  } else {
+    status.innerHTML = `<span style="color:#B02A2A">فشل رفع الفيديو: ${res.error}</span>`;
+  }
+}
+
 async function saveProduct(){
-  const imagesRaw = document.getElementById("p_images").value.split(",").map(s=>s.trim()).filter(Boolean);
   const body = {
     title_ar: document.getElementById("p_title_ar").value,
     title_fr: document.getElementById("p_title_fr").value,
@@ -571,8 +900,8 @@ async function saveProduct(){
     description_fr: document.getElementById("p_desc_fr").value,
     price: parseFloat(document.getElementById("p_price").value)||0,
     old_price: document.getElementById("p_old_price").value ? parseFloat(document.getElementById("p_old_price").value) : null,
-    video_url: document.getElementById("p_video").value,
-    images: imagesRaw,
+    video_url: pendingVideoUrl || "",
+    images: pendingImages.slice(),
     is_active: document.getElementById("p_active").checked
   };
   const msg = document.getElementById("save-msg");
@@ -588,12 +917,13 @@ async function saveProduct(){
     const success = res.ok && res.status>=200 && res.status<300 && Array.isArray(res.data) && res.data.length>0;
     if(success){
       msg.innerHTML = `<div class="msg ok">تم الحفظ ✅</div>`;
+      UNSAVED_DRAFT.product=null;
       await loadAdminData();
     } else {
-      msg.innerHTML = `<div class="msg err">وقع مشكل</div>`;
+      msg.innerHTML = `<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;
     }
   } catch(e){
-    msg.innerHTML = `<div class="msg err">وقع مشكل</div>`;
+    msg.innerHTML = `<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;
   }
   if(btn) btn.disabled = false;
 }
@@ -640,21 +970,24 @@ function renderUpsellTab(){
       const success = res.ok && res.status>=200 && res.status<300 && Array.isArray(res.data) && res.data.length>0;
       if(success){
         msg.innerHTML = `<div class="msg ok">تم الحفظ ✅</div>`;
+        UNSAVED_DRAFT.upsell=null;
         await loadAdminData();
       } else {
-        msg.innerHTML = `<div class="msg err">وقع مشكل</div>`;
+        msg.innerHTML = `<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;
       }
     } catch(e){
-      msg.innerHTML = `<div class="msg err">وقع مشكل</div>`;
+      msg.innerHTML = `<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;
     }
     if(btn) btn.disabled = false;
   };
 }
 
 function renderSettingsTab(){
-  const s = adminData.settings || {};
+  const s = UNSAVED_DRAFT.settings || adminData.settings || {};
+  SETTINGS_SELECTED_THEME = s.theme_id || 1;
   const c = document.getElementById("tab-content");
   const themeColors = {1:"#B5581F",2:"#5B8CFF",3:"#7A2F63",4:"#1F5C4A",5:"#E4572E"};
+  const initialBg = s.bg_color || THEME_DEFAULT_BG[SETTINGS_SELECTED_THEME] || "#F6F1E9";
   c.innerHTML = `
     <div id="save-msg"></div>
     <div class="field"><label>اسم المتجر</label><input id="s_store" value="${s.store_name||''}"></div>
@@ -664,7 +997,9 @@ function renderSettingsTab(){
       ${[1,2,3,4,5].map(id=>`<div class="theme-swatch ${s.theme_id==id?'selected':''}" data-theme-id="${id}" style="background:${themeColors[id]}"></div>`).join("")}
     </div>
 
-    <div class="field"><label>لون الخلفية (مخصص)</label><input id="s_bg" type="color" value="${s.bg_color||'#F6F1E9'}"></div>
+    <div class="field"><label>لون الخلفية (مخصص)</label><input id="s_bg" type="color" value="${initialBg}"></div>
+    <div class="contrast-demo" id="contrast-demo">نموذج نص Aa 123 — العنوان والسعر والأزرار</div>
+    <div class="small-muted" style="margin-top:-10px;">الكتابة كتتبدل أوتوماتيكيا (فاتح/غامق) حسب وضوح القراءة مع الخلفية</div>
 
     <div class="field">
       <label>اللغة الأساسية للصفحة</label>
@@ -686,18 +1021,22 @@ function renderSettingsTab(){
 
     <button class="save-btn" id="save-settings">حفظ الإعدادات</button>
   `;
-  let selectedTheme = s.theme_id || 1;
+
+  updateContrastDemo(initialBg);
+
   document.querySelectorAll("[data-theme-id]").forEach(el=>{
     el.onclick = ()=>{
-      selectedTheme = parseInt(el.dataset.themeId);
+      SETTINGS_SELECTED_THEME = parseInt(el.dataset.themeId,10);
       document.querySelectorAll("[data-theme-id]").forEach(x=>x.classList.remove("selected"));
       el.classList.add("selected");
     };
   });
+  document.getElementById("s_bg").oninput = (e)=> updateContrastDemo(e.target.value);
+
   document.getElementById("save-settings").onclick = async ()=>{
     const body = {
       store_name: document.getElementById("s_store").value,
-      theme_id: selectedTheme,
+      theme_id: SETTINGS_SELECTED_THEME,
       bg_color: document.getElementById("s_bg").value,
       default_language: document.getElementById("s_lang").value,
       whatsapp_enabled: document.getElementById("s_wa_enabled").checked,
@@ -712,15 +1051,23 @@ function renderSettingsTab(){
       const success = res.ok && res.status>=200 && res.status<300 && Array.isArray(res.data) && res.data.length>0;
       if(success){
         msg.innerHTML = `<div class="msg ok">تم الحفظ ✅</div>`;
+        UNSAVED_DRAFT.settings=null;
         await loadAdminData();
       } else {
-        msg.innerHTML = `<div class="msg err">وقع مشكل</div>`;
+        msg.innerHTML = `<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;
       }
     } catch(e){
-      msg.innerHTML = `<div class="msg err">وقع مشكل</div>`;
+      msg.innerHTML = `<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;
     }
     if(btn) btn.disabled = false;
   };
+}
+
+function updateContrastDemo(bgHex){
+  const demo = document.getElementById("contrast-demo");
+  if(!demo) return;
+  demo.style.background = bgHex;
+  demo.style.color = getReadableTextColor(bgHex);
 }
 
 function renderOrdersTab(){
@@ -758,6 +1105,91 @@ function renderOrdersTab(){
       await sbUpdate("orders", `id=eq.${sel.dataset.orderId}`, { status: sel.value });
     };
   });
+}
+
+/* ================= ADMIN: PREVIEW (no DB writes) ================= */
+let PREVIEW_LANG = "ar";
+
+function collectPreviewData(){
+  const s=Object.assign({},adminData.settings||{},UNSAVED_DRAFT.settings||{});
+  if(document.getElementById("s_bg")){
+    s.bg_color=document.getElementById("s_bg").value; s.store_name=document.getElementById("s_store").value; s.default_language=document.getElementById("s_lang").value;
+    s.whatsapp_enabled=document.getElementById("s_wa_enabled").checked; s.whatsapp_number=document.getElementById("s_wa_number").value; s.whatsapp_timing=document.getElementById("s_wa_timing").value; s.theme_id=SETTINGS_SELECTED_THEME||s.theme_id;
+    UNSAVED_DRAFT.settings=Object.assign({},s);
+  }
+  const p=Object.assign({},adminData.product||{},UNSAVED_DRAFT.product||{});
+  if(document.getElementById("p_title_ar")){
+    p.title_ar=document.getElementById("p_title_ar").value; p.title_fr=document.getElementById("p_title_fr").value; p.description_ar=document.getElementById("p_desc_ar").value; p.description_fr=document.getElementById("p_desc_fr").value; p.price=parseFloat(document.getElementById("p_price").value)||0;
+    const oldP=document.getElementById("p_old_price").value; p.old_price=oldP?parseFloat(oldP):null; p.is_active=document.getElementById("p_active").checked;
+  }
+  p.images=pendingImages.slice(); p.video_url=pendingVideoUrl||""; UNSAVED_DRAFT.product=Object.assign({},p);
+  return {settings:s,product:p};
+}
+
+function openPreview(){
+  const { settings, product } = collectPreviewData();
+  PREVIEW_SNAPSHOT = {
+    settings: JSON.parse(JSON.stringify(settings || {})),
+    product: JSON.parse(JSON.stringify(product || {}))
+  };
+  PREVIEW_LANG = settings.default_language || "ar";
+  renderPreviewOverlay(PREVIEW_SNAPSHOT.settings, PREVIEW_SNAPSHOT.product);
+}
+
+function renderPreviewOverlay(settings, product){
+  let overlay = document.getElementById("preview-overlay");
+  if(!overlay){
+    overlay = document.createElement("div");
+    overlay.id = "preview-overlay";
+    overlay.className = "preview-overlay";
+    document.body.appendChild(overlay);
+  }
+  applyThemeAndContrast(settings);
+  document.documentElement.dir = PREVIEW_LANG === "ar" ? "rtl" : "ltr";
+
+  const hasProduct = product && (product.title_ar || product.title_fr);
+  const t = T[PREVIEW_LANG] || T.ar;
+  const bodyHtml = hasProduct
+    ? buildFormMarkup(settings, product, PREVIEW_LANG, 1)
+    : `<div class="wrap" style="padding-top:80px; text-align:center; color:var(--muted)">${t.no_product}</div>`;
+
+  overlay.innerHTML = `
+    <div class="preview-bar">
+      <span class="tag">👁 معاينة (غير محفوظ)</span>
+      <button type="button" id="close-preview">🔙 رجوع للتعديل</button>
+    </div>
+    ${bodyHtml}
+  `;
+  document.getElementById("close-preview").onclick = closePreview;
+
+  if(hasProduct){
+    initProductVideo(overlay);
+    overlay.querySelectorAll("[data-lang]").forEach(b=>{
+      b.onclick = ()=>{ PREVIEW_LANG = b.dataset.lang; renderPreviewOverlay(settings, product); };
+    });
+    let qty = 1;
+    const qtyMinus = overlay.querySelector("#qty-minus");
+    const qtyPlus = overlay.querySelector("#qty-plus");
+    const qtyValue = overlay.querySelector("#qty-value");
+    if(qtyMinus) qtyMinus.onclick = ()=>{ if(qty>1){ qty--; qtyValue.textContent = qty; } };
+    if(qtyPlus) qtyPlus.onclick = ()=>{ qty++; qtyValue.textContent = qty; };
+    const submitBtn = overlay.querySelector("#submit-btn");
+    if(submitBtn) submitBtn.onclick = (e)=>{
+      e.preventDefault();
+      const msgBox = overlay.querySelector("#order-msg");
+      if(msgBox) msgBox.innerHTML = `<div class="msg ok">هادي معاينة فقط، الطلب ما غاديش يتسجل فقاعدة البيانات</div>`;
+    };
+  }
+}
+
+function closePreview(){
+  const overlay = document.getElementById("preview-overlay");
+  if(overlay) overlay.remove();
+  document.body.style.removeProperty("--bg");
+  document.body.style.removeProperty("--ink");
+  document.body.style.removeProperty("--muted");
+  document.body.setAttribute("data-theme","5");
+  document.documentElement.dir = "rtl";
 }
 </script>
 </body>
