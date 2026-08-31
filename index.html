@@ -1552,9 +1552,47 @@ async function deletePack(){
 }
 
 async function deleteProduct(){
-  if(!adminData.product)return;
-  if(!confirm(ADMIN_LANG==='fr'?"Supprimer définitivement le produit ?":"حذف المنتج نهائياً؟"))return;
-  try{ await sbDelete("upsells",`product_id=eq.${adminData.product.id}`); const ok=await sbDelete("products",`id=eq.${adminData.product.id}`); const msg=document.getElementById("save-msg"); if(ok){msg.innerHTML=`<div class="msg ok">${ADMIN_LANG==='fr'?"Produit supprimé":"تم حذف المنتج"} ✅</div>`;await loadAdminData();renderProductTab();}else msg.innerHTML=`<div class="msg err">${ADMIN_LANG==='fr'?"Suppression impossible":"تعذر حذف المنتج"}</div>`;}catch(e){console.error(e);}
+  if(!adminData.product || !adminData.product.id){
+    const m = document.getElementById("save-msg");
+    if(m) m.innerHTML = `<div class="msg err">ما كاين حتى منتج باش يتحذف</div>`;
+    return;
+  }
+
+  const ok = confirm("واش متأكد بغيتي تحذف المنتج نهائياً؟ هاد العملية مايمكنش التراجع عليها.");
+  if(!ok) return;
+
+  const msg = document.getElementById("save-msg");
+  const btn = document.getElementById("delete-product");
+  if(btn) btn.disabled = true;
+
+  try{
+    const productId = adminData.product.id;
+
+    // Delete dependent records first.
+    try { await sbDelete("upsells", `product_id=eq.${productId}`); } catch(e) { console.warn("upsell cleanup failed:", e); }
+    try { await sbDelete("packs", `product_id=eq.${productId}`); } catch(e) { console.warn("pack cleanup failed:", e); }
+
+    const res = await sbDelete("products", `id=eq.${productId}`);
+
+    if(res && res.ok && res.status >= 200 && res.status < 300){
+      adminData.product = null;
+      adminData.upsell = null;
+      UNSAVED_DRAFT.product = null;
+      pendingImages = [];
+      pendingVideoUrl = "";
+
+      if(msg) msg.innerHTML = `<div class="msg ok">تم حذف المنتج نهائياً ✅</div>`;
+      setTimeout(()=>renderProductTab(), 500);
+    }else{
+      const detail = res && (res.error || res.message || res.data?.message);
+      if(msg) msg.innerHTML = `<div class="msg err">تعذر حذف المنتج${detail ? `: ${detail}` : ""}</div>`;
+    }
+  }catch(e){
+    console.error("deleteProduct failed:", e);
+    if(msg) msg.innerHTML = `<div class="msg err">تعذر حذف المنتج: ${e?.message || "خطأ غير معروف"}</div>`;
+  }
+
+  if(btn) btn.disabled = false;
 }
 
 function renderImagesPreview(){
