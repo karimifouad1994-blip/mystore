@@ -178,6 +178,22 @@
   .img-thumb .mv-btns{ position:absolute; bottom:2px; right:2px; display:flex; gap:2px; }
   .img-thumb .mv-btns button{ background:rgba(0,0,0,.6); color:#fff; border-radius:4px; width:16px; height:16px; font-size:.6rem; }
   .upload-status{ font-size:.8rem; color:var(--muted); margin-top:4px; min-height:1em; }
+  .pack-admin-box{border:1.5px solid var(--line);border-radius:14px;padding:16px;margin-top:22px;background:var(--card)}
+  .pack-admin-title{font-size:1rem;font-weight:900;margin-bottom:6px}
+  .pack-gallery-preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .pack-public{margin:18px 0;padding:16px;border:1.5px solid var(--accent);border-radius:14px;background:var(--card)}
+  .pack-public-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}
+  .pack-public-badge{font-size:.72rem;font-weight:800;color:var(--accent)}
+  .pack-public-title{font-weight:900;font-size:1.05rem}
+  .pack-public-desc{color:var(--muted);font-size:.86rem;line-height:1.7;margin:6px 0 10px}
+  .pack-gallery{position:relative;overflow:hidden;border-radius:12px;background:var(--bg);touch-action:pan-y}
+  .pack-gallery img{width:100%;display:block;aspect-ratio:1/1;object-fit:cover}
+  .pack-gallery-btn{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+  .pack-gallery-prev{left:10px}.pack-gallery-next{right:10px}
+  .pack-gallery-dots{text-align:center;padding:7px 0 0;font-size:.72rem;color:var(--muted)}
+  .pack-choice{display:flex;gap:10px;align-items:center;margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:10px}
+  .pack-choice input{width:19px;height:19px}
+
 
   /* ===== NEW: auto-contrast demo swatch ===== */
   .contrast-demo{ padding:12px 14px; border-radius:10px; margin-top:8px; margin-bottom:14px; font-size:.85rem; font-weight:700; text-align:center; border:1px solid var(--line); }
@@ -506,7 +522,7 @@ function initProductVideo(root=document){
 }
 
 /* ============ STATE ============ */
-let STATE = { settings:null, product:null, upsell:null, lang:"ar", step:"form", order:{}, upsellAccepted:false };
+let STATE = { settings:null, product:null, upsell:null, lang:"ar", step:"form", order:{}, upsellAccepted:false, purchaseType:"product", packGalleryIndex:0 };
 let LANDING_QTY = 1;
 let SHOW_ADMIN_RETURN = false;
 
@@ -515,6 +531,118 @@ const AT = { ar:{dir:"rtl"}, fr:{dir:"ltr"} };
 let ADMIN_LANG = "ar";
 try { ADMIN_LANG = localStorage.getItem("store_admin_lang") || "ar"; } catch(e) {}
 if(!AT[ADMIN_LANG]) ADMIN_LANG = "ar";
+
+
+/* ===== ADMIN TRANSLATIONS ===== */
+const ADMIN_I18N = {
+  ar: {
+    "دخول الإدارة":"دخول الإدارة","دخول":"دخول","نسيت كلمة السر؟":"نسيت كلمة السر؟",
+    "Email باش نرسلو ليه رابط استرجاع كلمة السر":"Email لإرسال رابط استرجاع كلمة السر",
+    "إرسال رابط الاسترجاع":"إرسال رابط الاسترجاع","Email ولا Password غلط":"Email أو Password غير صحيح",
+    "دخل Email":"أدخل Email","تصيفط ليك Email فيه رابط استرجاع كلمة السر، تحقق من صندوق البريد ✅":"تم إرسال Email فيه رابط استرجاع كلمة السر، تحقق من صندوق البريد ✅",
+    "وقع مشكل، تأكد من Email وعاود المحاولة":"وقع مشكل، تأكد من Email وعاود المحاولة",
+    "إعادة تعيين كلمة السر":"إعادة تعيين كلمة السر","كلمة السر الجديدة":"كلمة السر الجديدة","تأكيد كلمة السر الجديدة":"تأكيد كلمة السر الجديدة",
+    "حفظ كلمة السر الجديدة":"حفظ كلمة السر الجديدة","كلمة السر خاصها 6 حروف/أرقام على الأقل":"كلمة السر خاصها 6 حروف/أرقام على الأقل",
+    "كلمتا السر الجديدة غير متطابقتين":"كلمتا السر الجديدة غير متطابقتين","تقدر دابا تدخل بكلمة السر الجديدة":"تقدر دابا تدخل بكلمة السر الجديدة",
+    "الرابط انتهت صلاحيته أو وقع مشكل، اطلب رابط جديد":"الرابط انتهت صلاحيته أو وقع مشكل، اطلب رابط جديد",
+    "جاري التحميل...":"جاري التحميل...","لوحة التحكم":"لوحة التحكم","👁 معاينة":"👁 معاينة","🌐 مشاهدة الموقع":"🌐 مشاهدة الموقع",
+    "🔒 كلمة السر":"🔒 كلمة السر","خروج":"خروج","المنتج":"المنتج","العرض الإضافي":"العرض الإضافي","الإعدادات":"الإعدادات","التصميم":"التصميم","الطلبات":"الطلبات",
+    "عنوان المنتج (عربي)":"عنوان المنتج (عربي)","Titre (français)":"Titre (français)","الوصف (عربي)":"الوصف (عربي)","Description (français)":"Description (français)",
+    "الثمن":"الثمن","الثمن القديم (اختياري)":"الثمن القديم (اختياري)","صور المنتج":"صور المنتج","📷 إضافة الصور":"📷 إضافة الصور",
+    "فيديو المنتج (اختياري)":"فيديو المنتج (اختياري)","🎥 إضافة فيديو":"🎥 إضافة فيديو","✕ حذف الفيديو":"✕ حذف الفيديو",
+    "المنتج ظاهر فالموقع":"المنتج ظاهر فالموقع","حفظ المنتج":"حفظ المنتج","تم الحفظ ✅":"تم الحفظ ✅","وقع مشكل، حاول مرة أخرى":"وقع مشكل، حاول مرة أخرى",
+    "خاصك تزيد المنتج الرئيسي قبل ما تزيد عرض إضافي":"خاصك تزيد المنتج الرئيسي قبل ما تزيد عرض إضافي",
+    "عنوان العرض (عربي)":"عنوان العرض (عربي)","رابط الصورة":"رابط الصورة","العرض مفعل":"العرض مفعل","حفظ العرض":"حفظ العرض",
+    "اسم المتجر":"اسم المتجر","اختر الثيم":"اختر الثيم","لون الخلفية (مخصص)":"لون الخلفية (مخصص)",
+    "نموذج نص Aa 123 — العنوان والسعر والأزرار":"نموذج نص Aa 123 — العنوان والسعر والأزرار",
+    "الكتابة كتتبدل أوتوماتيكيا (فاتح/غامق) حسب وضوح القراءة مع الخلفية":"الكتابة كتتبدل أوتوماتيكيا (فاتح/غامق) حسب وضوح القراءة مع الخلفية",
+    "اللغة الأساسية للصفحة":"اللغة الأساسية للصفحة","العربية":"العربية","Français":"Français","تفعيل واتساب":"تفعيل واتساب",
+    "رقم الواتساب (مع كود البلد، مثال 212612345678)":"رقم الواتساب (مع كود البلد، مثال 212612345678)","وقت ظهور واتساب":"وقت ظهور واتساب",
+    "قبل الطلب":"قبل الطلب","بعد الطلب":"بعد الطلب","حفظ الإعدادات":"حفظ الإعدادات",
+    "تم حفظ الإعدادات الأساسية ✅ (إعدادات التصميم خاصها تفعيل قاعدة البيانات، شوف الملاحظة فتاب \"التصميم والخط\")":"تم حفظ الإعدادات الأساسية ✅ (إعدادات التصميم تحتاج تفعيل قاعدة البيانات، راجع ملاحظة تاب \"التصميم والخط\")",
+    "ℹ️ إعدادات هاد التاب (الخط، الألوان المخصصة، الخلفية الفاخرة) خاصها أعمدة إضافية فجدول settings فـ Supabase. إلا ظهر ليك تحذير ملي دير حفظ، سول المطور يزيد الأعمدة (SQL جاهز فالتوثيق).":"ℹ️ إعدادات هذا التاب (الخط، الألوان المخصصة، الخلفية الفاخرة) تحتاج أعمدة إضافية في جدول settings في Supabase. إذا ظهر تحذير عند الحفظ، راجع المطور لإضافة الأعمدة (SQL جاهز في التوثيق).",
+    "اختيار نمط الكتابة":"اختيار نمط الكتابة","Aa عنوان":"Aa عنوان","حجم عنوان المنتوج":"حجم عنوان المنتج","وزن الخط":"وزن الخط",
+    "تباعد الأسطر (الوصف)":"تباعد الأسطر (الوصف)","محاذاة النص (العنوان والوصف)":"محاذاة النص (العنوان والوصف)","ألوان مخصصة (Luxury Theme)":"ألوان مخصصة (Luxury Theme)",
+    "اللون الرئيسي":"اللون الرئيسي","اللون الثانوي":"اللون الثانوي","لون الأزرار":"لون الأزرار","لون الحدود":"لون الحدود",
+    "خلفية متدرجة فاخرة (Luxury Gradient)":"خلفية متدرجة فاخرة (Luxury Gradient)","نموذج Aa 123 — العنوان والسعر":"نموذج Aa 123 — العنوان والسعر","حفظ التصميم":"حفظ التصميم",
+    "قاعدة البيانات ماعندهاش أعمدة التصميم بعد، سول المطور يزيد الأعمدة باش يتحفظ التصميم بشكل دائم.":"قاعدة البيانات ماعندهاش أعمدة التصميم بعد، سول المطور يزيد الأعمدة باش يتحفظ التصميم بشكل دائم.",
+    "مازال ما وصل حتى طلب":"مازال ما وصل حتى طلب","جديد":"جديد","مؤكد":"مؤكد","ملغي":"ملغي","الكمية:":"الكمية:","+ العرض الإضافي 🎁":"+ العرض الإضافي 🎁","واتساب":"واتساب",
+    "تغيير كلمة السر":"تغيير كلمة السر","كلمة السر القديمة":"كلمة السر القديمة","دخل كلمة السر القديمة":"دخل كلمة السر القديمة","كلمة السر الجديدة خاصها 6 حروف/أرقام على الأقل":"كلمة السر الجديدة خاصها 6 حروف/أرقام على الأقل",
+    "كلمة السر القديمة غير صحيحة":"كلمة السر القديمة غير صحيحة","جاري التحقق...":"جاري التحقق...","وقع مشكل بالجلسة، عاود دخول من جديد":"وقع مشكل بالجلسة، عاود دخول من جديد",
+    "Password changed successfully ✅":"Password changed successfully ✅","الرابط انتهت صلاحيته أو وقع مشكل، اطلب رابط جديد":"الرابط انتهت صلاحيته أو وقع مشكل، اطلب رابط جديد",
+    "تم حفظ التصميم ✅":"تم حفظ التصميم ✅","تم حفظ الإعدادات الأساسية ✅":"تم حفظ الإعدادات الأساسية ✅",
+    "صغير":"صغير","متوسط":"متوسط","كبير":"كبير","فاخر":"فاخر","خفيف":"خفيف","مضغوط":"مضغوط","مريح":"مريح","واسع":"واسع","افتراضي":"افتراضي","يمين":"يمين","توسيط":"توسيط","يسار":"يسار",
+    "Pack":"Pack","إضافة Pack":"إضافة Pack","تفعيل الـPack":"تفعيل الـPack","الـPack ظاهر للزبون":"الـPack ظاهر للزبون","عنوان الـPack (عربي)":"عنوان الـPack (عربي)","Titre du Pack (français)":"Titre du Pack (français)","وصف الـPack (عربي)":"وصف الـPack (عربي)","Description du Pack (français)":"Description du Pack (français)","ثمن الـPack":"ثمن الـPack","الثمن القديم للـPack (اختياري)":"الثمن القديم للـPack (اختياري)","صور الـPack":"صور الـPack","📷 إضافة صور الـPack":"📷 إضافة صور الـPack","حفظ الـPack":"حفظ الـPack","حذف الـPack":"حذف الـPack","إخفاء الـPack":"إخفاء الـPack","إظهار الـPack":"إظهار الـPack","الـPack غير مفعل":"الـPack غير مفعل","اختيار الـPack":"اختيار الـPack","الباقة":"الباقة","الصور":"الصور","دير السحب باش تشوف باقي الصور":"اسحب لرؤية باقي الصور","تم حفظ الـPack ✅":"تم حفظ الـPack ✅","تم حذف الـPack":"تم حذف الـPack","ماكاينش Pack حالياً":"لا يوجد Pack حالياً","ضيف Pack للمنتج، تقدر تخليه ظاهر، تخبيه مؤقتاً، أو تمسحو نهائياً.":"ضيف Pack للمنتج، تقدر تخليه ظاهر، تخبيه مؤقتاً، أو تمسحو نهائياً.","حذف الـPack نهائياً؟":"حذف الـPack نهائياً؟"
+  },
+  fr: {
+    "دخول الإدارة":"Connexion admin","دخول":"Connexion","نسيت كلمة السر؟":"Mot de passe oublié ?",
+    "Email باش نرسلو ليه رابط استرجاع كلمة السر":"Email pour envoyer le lien de récupération",
+    "إرسال رابط الاسترجاع":"Envoyer le lien de récupération","Email ولا Password غلط":"Email ou mot de passe incorrect",
+    "دخل Email":"Entrez votre Email","تصيفط ليك Email فيه رابط استرجاع كلمة السر، تحقق من صندوق البريد ✅":"Un Email avec le lien de récupération a été envoyé. Vérifiez votre boîte mail ✅",
+    "وقع مشكل، تأكد من Email وعاود المحاولة":"Une erreur est survenue. Vérifiez l’Email et réessayez",
+    "إعادة تعيين كلمة السر":"Réinitialiser le mot de passe","كلمة السر الجديدة":"Nouveau mot de passe","تأكيد كلمة السر الجديدة":"Confirmer le nouveau mot de passe",
+    "حفظ كلمة السر الجديدة":"Enregistrer le nouveau mot de passe","كلمة السر خاصها 6 حروف/أرقام على الأقل":"Le mot de passe doit contenir au moins 6 caractères",
+    "كلمتا السر الجديدة غير متطابقتين":"Les deux mots de passe ne correspondent pas","تقدر دابا تدخل بكلمة السر الجديدة":"Vous pouvez maintenant vous connecter avec le nouveau mot de passe",
+    "الرابط انتهت صلاحيته أو وقع مشكل، اطلب رابط جديد":"Le lien a expiré ou une erreur est survenue. Demandez un nouveau lien",
+    "جاري التحميل...":"Chargement...","لوحة التحكم":"Tableau de bord","👁 معاينة":"👁 Aperçu","🌐 مشاهدة الموقع":"🌐 Voir le site",
+    "🔒 كلمة السر":"🔒 Mot de passe","خروج":"Déconnexion","المنتج":"Produit","العرض الإضافي":"Offre supplémentaire","الإعدادات":"Paramètres","التصميم":"Design","الطلبات":"Commandes",
+    "عنوان المنتج (عربي)":"Titre du produit (arabe)","Titre (français)":"Titre (français)","الوصف (عربي)":"Description (arabe)","Description (français)":"Description (français)",
+    "الثمن":"Prix","الثمن القديم (اختياري)":"Ancien prix (optionnel)","صور المنتج":"Images du produit","📷 إضافة الصور":"📷 Ajouter des images",
+    "فيديو المنتج (اختياري)":"Vidéo du produit (optionnelle)","🎥 إضافة فيديو":"🎥 Ajouter une vidéo","✕ حذف الفيديو":"✕ Supprimer la vidéo",
+    "المنتج ظاهر فالموقع":"Produit visible sur le site","حفظ المنتج":"Enregistrer le produit","تم الحفظ ✅":"Enregistré ✅","وقع مشكل، حاول مرة أخرى":"Une erreur est survenue, réessayez",
+    "خاصك تزيد المنتج الرئيسي قبل ما تزيد عرض إضافي":"Ajoutez d’abord le produit principal avant l’offre supplémentaire",
+    "عنوان العرض (عربي)":"Titre de l’offre (arabe)","رابط الصورة":"URL de l’image","العرض مفعل":"Offre activée","حفظ العرض":"Enregistrer l’offre",
+    "اسم المتجر":"Nom de la boutique","اختر الثيم":"Choisir le thème","لون الخلفية (مخصص)":"Couleur de fond (personnalisée)",
+    "نموذج نص Aa 123 — العنوان والسعر والأزرار":"Exemple de texte Aa 123 — titre, prix et boutons",
+    "الكتابة كتتبدل أوتوماتيكيا (فاتح/غامق) حسب وضوح القراءة مع الخلفية":"Le texte s’adapte automatiquement (clair/foncé) selon la lisibilité du fond",
+    "اللغة الأساسية للصفحة":"Langue principale du site","العربية":"Arabe","Français":"Français","تفعيل واتساب":"Activer WhatsApp",
+    "رقم الواتساب (مع كود البلد، مثال 212612345678)":"Numéro WhatsApp (avec indicatif pays, ex. 212612345678)","وقت ظهور واتساب":"Moment d’affichage de WhatsApp",
+    "قبل الطلب":"Avant la commande","بعد الطلب":"Après la commande","حفظ الإعدادات":"Enregistrer les paramètres",
+    "تم حفظ الإعدادات الأساسية ✅ (إعدادات التصميم خاصها تفعيل قاعدة البيانات، شوف الملاحظة فتاب \"التصميم والخط\")":"Paramètres de base enregistrés ✅ (les paramètres de design nécessitent l’activation des colonnes en base de données, voir l’onglet « Design et police »)",
+    "ℹ️ إعدادات هاد التاب (الخط، الألوان المخصصة، الخلفية الفاخرة) خاصها أعمدة إضافية فجدول settings فـ Supabase. إلا ظهر ليك تحذير ملي دير حفظ، سول المطور يزيد الأعمدة (SQL جاهز فالتوثيق).":"ℹ️ Les paramètres de cet onglet (police, couleurs personnalisées, fond premium) nécessitent des colonnes supplémentaires dans la table settings de Supabase. Si un avertissement apparaît, faites ajouter les colonnes nécessaires (SQL disponible dans la documentation).",
+    "اختيار نمط الكتابة":"Style de police","Aa عنوان":"Aa Titre","حجم عنوان المنتوج":"Taille du titre du produit","وزن الخط":"Graisse de la police",
+    "تباعد الأسطر (الوصف)":"Interligne (description)","محاذاة النص (العنوان والوصف)":"Alignement du texte (titre et description)","ألوان مخصصة (Luxury Theme)":"Couleurs personnalisées (Luxury Theme)",
+    "اللون الرئيسي":"Couleur principale","اللون الثانوي":"Couleur secondaire","لون الأزرار":"Couleur des boutons","لون الحدود":"Couleur des bordures",
+    "خلفية متدرجة فاخرة (Luxury Gradient)":"Dégradé de fond premium (Luxury Gradient)","نموذج Aa 123 — العنوان والسعر":"Exemple Aa 123 — titre et prix","حفظ التصميم":"Enregistrer le design",
+    "قاعدة البيانات ماعندهاش أعمدة التصميم بعد، سول المطور يزيد الأعمدة باش يتحفظ التصميم بشكل دائم.":"La base de données ne contient pas encore les colonnes du design. Ajoutez-les pour enregistrer le design de façon permanente.",
+    "مازال ما وصل حتى طلب":"Aucune commande reçue","جديد":"Nouveau","مؤكد":"Confirmé","ملغي":"Annulé","الكمية:":"Quantité :","+ العرض الإضافي 🎁":"+ offre supplémentaire 🎁","واتساب":"WhatsApp",
+    "تغيير كلمة السر":"Changer le mot de passe","كلمة السر القديمة":"Ancien mot de passe","دخل كلمة السر القديمة":"Entrez l’ancien mot de passe","كلمة السر الجديدة خاصها 6 حروف/أرقام على الأقل":"Le nouveau mot de passe doit contenir au moins 6 caractères",
+    "كلمة السر القديمة غير صحيحة":"Ancien mot de passe incorrect","جاري التحقق...":"Vérification...","وقع مشكل بالجلسة، عاود دخول من جديد":"Problème de session, reconnectez-vous",
+    "Password changed successfully ✅":"Mot de passe modifié avec succès ✅","تم حفظ التصميم ✅":"Design enregistré ✅","تم حفظ الإعدادات الأساسية ✅":"Paramètres de base enregistrés ✅",
+    "صغير":"Petit","متوسط":"Moyen","كبير":"Grand","فاخر":"Premium","خفيف":"Léger","مضغوط":"Compact","مريح":"Confortable","واسع":"Spacieux","افتراضي":"Par défaut","يمين":"Droite","توسيط":"Centré","يسار":"Gauche",
+    "Pack":"Pack","إضافة Pack":"Ajouter un Pack","تفعيل الـPack":"Activer le Pack","الـPack ظاهر للزبون":"Pack visible pour le client","عنوان الـPack (عربي)":"Titre du Pack (arabe)","Titre du Pack (français)":"Titre du Pack (français)","وصف الـPack (عربي)":"Description du Pack (arabe)","Description du Pack (français)":"Description du Pack (français)","ثمن الـPack":"Prix du Pack","الثمن القديم للـPack (اختياري)":"Ancien prix du Pack (optionnel)","صور الـPack":"Images du Pack","📷 إضافة صور الـPack":"📷 Ajouter des images du Pack","حفظ الـPack":"Enregistrer le Pack","حذف الـPack":"Supprimer le Pack","إخفاء الـPack":"Masquer le Pack","إظهار الـPack":"Afficher le Pack","الـPack غير مفعل":"Pack désactivé","اختيار الـPack":"Choisir le Pack","الباقة":"Pack","الصور":"images","دير السحب باش تشوف باقي الصور":"Faites glisser pour voir les autres images","تم حفظ الـPack ✅":"Pack enregistré ✅","تم حذف الـPack":"Pack supprimé","ماكاينش Pack حالياً":"Aucun Pack pour le moment","ضيف Pack للمنتج، تقدر تخليه ظاهر، تخبيه مؤقتاً، أو تمسحو نهائياً.":"Ajoutez un Pack au produit : vous pouvez l’afficher, le masquer temporairement ou le supprimer définitivement.","حذف الـPack نهائياً؟":"Supprimer définitivement le Pack ?"
+  }
+};
+function translateAdminDom(root=document.getElementById("app")){
+  if(!root) return;
+  const dict=ADMIN_I18N[ADMIN_LANG]||ADMIN_I18N.ar;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  const nodes=[];
+  while(walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach(n=>{
+    const v=n.nodeValue;
+    const trimmed=v.trim();
+    if(dict[trimmed]) n.nodeValue=v.replace(trimmed,dict[trimmed]);
+  });
+}
+function setAdminLanguage(lang){
+  if(!AT[lang]) return;
+  try { collectCurrentAdminDraft(); } catch(e) {}
+  ADMIN_LANG=lang;
+  try { localStorage.setItem("store_admin_lang",lang); } catch(e) {}
+  document.documentElement.dir=AT[lang].dir;
+  document.documentElement.lang=lang;
+  if(location.hash.startsWith("#admin")) renderAdminDashboard(ADMIN_TAB||"product");
+}
+let ADMIN_LANG_OBSERVER = null;
+function watchAdminTranslations(){
+  const app=document.getElementById("app");
+  if(!app) return;
+  if(ADMIN_LANG_OBSERVER) ADMIN_LANG_OBSERVER.disconnect();
+  ADMIN_LANG_OBSERVER=new MutationObserver(()=>translateAdminDom(app));
+  ADMIN_LANG_OBSERVER.observe(app,{childList:true,subtree:true});
+  translateAdminDom(app);
+}
 
 /* Prevent overlapping boot calls when navigation/hash changes quickly. */
 let BOOT_SEQ = 0;
@@ -654,6 +782,7 @@ function buildFormMarkup(settings, product, lang, qty){
         <span class="price">${product.price||0} ${t.currency}</span>
         ${product.old_price ? `<span class="old-price">${product.old_price} ${t.currency}</span>` : ""}
       </div>
+      ${product.pack_enabled && product.pack_visible ? buildPackPublicMarkup(product, lang) : ""}
 
       ${showWaBefore ? `<a class="cta secondary wa-btn" href="${waHref((lang==='ar'?'مرحبا، عندي سؤال على ':'Bonjour, j\'ai une question sur ')+(title||''))}" target="_blank">💬 ${t.contact_whatsapp}</a>` : ""}
 
@@ -690,6 +819,22 @@ function buildFormMarkup(settings, product, lang, qty){
       <div class="footer-note">${settings.store_name||""}</div>
     </div>
   `;
+}
+
+function buildPackPublicMarkup(product, lang){
+  const title=lang==="ar"?(product.pack_title_ar||"Pack"):(product.pack_title_fr||"Pack");
+  const desc=lang==="ar"?(product.pack_description_ar||""):(product.pack_description_fr||"");
+  const imgs=(product.pack_images||[]).filter(Boolean);
+  const old=product.pack_old_price?`<span class="old-price">${product.pack_old_price} DH</span>`:"";
+  const img=imgs[0]?`<div class="pack-gallery" id="pack-gallery"><img id="pack-gallery-img" src="${imgs[0]}" alt="${title}">${imgs.length>1?`<button type="button" class="pack-gallery-btn pack-gallery-prev" id="pack-gallery-prev">‹</button><button type="button" class="pack-gallery-btn pack-gallery-next" id="pack-gallery-next">›</button>`:""}</div><div class="pack-gallery-dots">${imgs.length>1?`1 / ${imgs.length} · ${lang==="ar"?"دير السحب باش تشوف باقي الصور":"Faites glisser pour voir les autres images"}`:""}</div>`:"";
+  return `<div class="pack-public"><div class="pack-public-head"><div class="pack-public-title">${title}</div><div class="pack-public-badge">PACK</div></div>${img}<div class="pack-public-desc">${desc}</div><div class="price-row"><span class="price">${product.pack_price||0} DH</span>${old}</div><label class="pack-choice"><input type="radio" name="purchase-choice" id="product-choice" value="product" checked> <span>${lang==="ar"?"المنتج العادي":"Produit standard"}</span></label><label class="pack-choice"><input type="radio" name="purchase-choice" id="pack-choice" value="pack"> <span>${lang==="ar"?"اختيار الـPack":"Choisir le Pack"}</span></label></div>`;
+}
+function initPackGallery(){
+  const p=STATE.product, imgs=(p&&p.pack_images||[]).filter(Boolean); if(imgs.length<2)return;
+  const img=document.getElementById("pack-gallery-img"),dots=document.querySelector(".pack-gallery-dots"); let i=0;
+  const go=n=>{i=(n+imgs.length)%imgs.length;img.src=imgs[i];if(dots)dots.textContent=`${i+1} / ${imgs.length} · ${STATE.lang==="ar"?"دير السحب باش تشوف باقي الصور":"Faites glisser pour voir les autres images"}`;};
+  document.getElementById("pack-gallery-prev")?.addEventListener("click",()=>go(i-1)); document.getElementById("pack-gallery-next")?.addEventListener("click",()=>go(i+1));
+  let sx=0;const g=document.getElementById("pack-gallery");g?.addEventListener("touchstart",e=>sx=e.changedTouches[0].clientX,{passive:true});g?.addEventListener("touchend",e=>{const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>35)go(i+(dx<0?1:-1));},{passive:true});
 }
 
 function maybeShowAdminReturn(show){
@@ -742,6 +887,7 @@ function renderLanding(){
     };
     document.getElementById("submit-btn").onclick = onSubmitOrder;
     initProductVideo(document);
+    initPackGallery();
   }
 
   maybeShowAdminReturn(SHOW_ADMIN_RETURN);
@@ -760,6 +906,8 @@ async function onSubmitOrder(){
     msgBox.innerHTML = `<div class="msg err">${t.required}</div>`;
     return;
   }
+  const packChoice = document.getElementById("pack-choice");
+  STATE.purchaseType = (packChoice && packChoice.checked) ? "pack" : "product";
   STATE.order = { customer_name:name, phone, city, address, quantity:qty };
 
   if(STATE.upsell){
@@ -804,6 +952,9 @@ async function finalizeOrder(upsellAccepted, upsellId){
     address: STATE.order.address,
     city: STATE.order.city,
     quantity: STATE.order.quantity,
+    pack_selected: STATE.purchaseType === "pack",
+    pack_price: STATE.purchaseType === "pack" ? (STATE.product.pack_price||0) : null,
+    pack_title: STATE.purchaseType === "pack" ? (STATE.lang === "ar" ? STATE.product.pack_title_ar : STATE.product.pack_title_fr) : null,
     upsell_accepted: upsellAccepted,
     upsell_id: upsellId
   };
@@ -850,6 +1001,8 @@ function renderAdminLogin(){
       </div>
     </div>
   `;
+  translateAdminDom();
+  watchAdminTranslations();
   document.getElementById("login-btn").onclick = async ()=>{
     const email = document.getElementById("a_email").value.trim();
     const pass = document.getElementById("a_pass").value;
@@ -897,6 +1050,8 @@ function renderResetPassword(accessToken){
       <button class="cta" id="rp-save-btn">حفظ كلمة السر الجديدة</button>
     </div>
   `;
+  translateAdminDom();
+  watchAdminTranslations();
   document.getElementById("rp-save-btn").onclick = async ()=>{
     const p1 = document.getElementById("rp_new").value;
     const p2 = document.getElementById("rp_confirm").value;
@@ -923,6 +1078,7 @@ let adminData = { settings:null, product:null, upsell:null, orders:[] };
 /* pending (not-yet-saved) product media state, shared with Preview */
 let pendingImages = [];
 let pendingVideoUrl = "";
+let pendingPackImages = [];
 let SETTINGS_SELECTED_THEME = null;
 let DESIGN_SELECTED_FONT = null;
 let UNSAVED_DRAFT = { settings:null, product:null, upsell:null };
@@ -978,7 +1134,16 @@ function collectCurrentAdminDraft(){
   if(bg || fs) UNSAVED_DRAFT.settings = base;
 
   const ta=document.getElementById("p_title_ar");
-  if(ta) UNSAVED_DRAFT.product=Object.assign({},adminData.product||{},{title_ar:ta.value,title_fr:document.getElementById("p_title_fr").value,description_ar:document.getElementById("p_desc_ar").value,description_fr:document.getElementById("p_desc_fr").value,price:parseFloat(document.getElementById("p_price").value)||0,old_price:document.getElementById("p_old_price").value?parseFloat(document.getElementById("p_old_price").value):null,images:pendingImages.slice(),video_url:pendingVideoUrl||"",is_active:document.getElementById("p_active").checked});
+  if(ta) UNSAVED_DRAFT.product=Object.assign({},adminData.product||{},{title_ar:ta.value,title_fr:document.getElementById("p_title_fr").value,description_ar:document.getElementById("p_desc_ar").value,description_fr:document.getElementById("p_desc_fr").value,price:parseFloat(document.getElementById("p_price").value)||0,old_price:document.getElementById("p_old_price").value?parseFloat(document.getElementById("p_old_price").value):null,images:pendingImages.slice(),video_url:pendingVideoUrl||"",is_active:document.getElementById("p_active").checked,
+        pack_enabled:document.getElementById("pack_enabled")?.checked || false,
+        pack_visible:document.getElementById("pack_visible")?.checked || false,
+        pack_title_ar:document.getElementById("pack_title_ar")?.value || "",
+        pack_title_fr:document.getElementById("pack_title_fr")?.value || "",
+        pack_description_ar:document.getElementById("pack_desc_ar")?.value || "",
+        pack_description_fr:document.getElementById("pack_desc_fr")?.value || "",
+        pack_price:document.getElementById("pack_price")?.value ? parseFloat(document.getElementById("pack_price").value) : null,
+        pack_old_price:document.getElementById("pack_old_price")?.value ? parseFloat(document.getElementById("pack_old_price").value) : null,
+        pack_images:pendingPackImages.slice()});
 }
 
 /* reads the Design tab form fields into a settings-shaped partial object (only when that tab is on screen) */
@@ -1015,6 +1180,7 @@ async function renderAdminDashboard(tab){
           <button type="button" id="btn-preview">👁 معاينة</button>
           <a href="#view" id="view-site-link">🌐 مشاهدة الموقع</a>
           <button type="button" id="btn-change-pass">🔒 كلمة السر</button>
+          <label class="admin-lang-label" style="display:flex;align-items:center;gap:6px;">🌐 <select id="admin-lang-select" style="padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);"><option value="ar">العربية</option><option value="fr">Français</option></select></label>
           <a href="#" id="logout-link">خروج</a>
         </div>
       </div>
@@ -1034,6 +1200,9 @@ async function renderAdminDashboard(tab){
   document.getElementById("logout-link").onclick = (e)=>{ e.preventDefault(); clearSession(); location.hash=""; };
   document.getElementById("btn-preview").onclick = openPreview;
   document.getElementById("btn-change-pass").onclick = openChangePasswordModal;
+  const langSelect=document.getElementById("admin-lang-select");
+  if(langSelect){ langSelect.value=ADMIN_LANG; langSelect.onchange=()=>setAdminLanguage(langSelect.value); }
+  watchAdminTranslations();
 
   if(tab==="product") renderProductTab();
   if(tab==="upsell") renderUpsellTab();
@@ -1046,6 +1215,7 @@ function renderProductTab(){
   const p = UNSAVED_DRAFT.product || adminData.product || {};
   pendingImages = (p.images||[]).filter(Boolean).slice();
   pendingVideoUrl = p.video_url || "";
+  pendingPackImages = (p.pack_images||[]).filter(Boolean).slice();
   const c = document.getElementById("tab-content");
   c.innerHTML = `
     <div id="save-msg"></div>
@@ -1084,6 +1254,35 @@ function renderProductTab(){
     </div>
 
     <div class="toggle"><input type="checkbox" id="p_active" ${p.is_active!==false?'checked':''}><label>المنتج ظاهر فالموقع</label></div>
+
+    <div class="pack-admin-box">
+      <div class="pack-admin-title">Pack</div>
+      <div class="small-muted">ضيف Pack للمنتج، تقدر تخليه ظاهر، تخبيه مؤقتاً، أو تمسحو نهائياً.</div>
+      <div class="toggle"><input type="checkbox" id="pack_enabled" ${p.pack_enabled?'checked':''}><label>تفعيل الـPack</label></div>
+      <div class="toggle"><input type="checkbox" id="pack_visible" ${p.pack_visible!==false && p.pack_enabled?'checked':''}><label>الـPack ظاهر للزبون</label></div>
+      <div class="field-row">
+        <div class="field"><label>عنوان الـPack (عربي)</label><input id="pack_title_ar" value="${p.pack_title_ar||''}"></div>
+        <div class="field"><label>Titre du Pack (français)</label><input id="pack_title_fr" value="${p.pack_title_fr||''}"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>وصف الـPack (عربي)</label><textarea id="pack_desc_ar">${p.pack_description_ar||''}</textarea></div>
+        <div class="field"><label>Description du Pack (français)</label><textarea id="pack_desc_fr">${p.pack_description_fr||''}</textarea></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>ثمن الـPack</label><input id="pack_price" type="number" value="${p.pack_price??''}"></div>
+        <div class="field"><label>الثمن القديم للـPack (اختياري)</label><input id="pack_old_price" type="number" value="${p.pack_old_price??''}"></div>
+      </div>
+      <div class="field">
+        <label>صور الـPack</label>
+        <div class="upload-row"><button type="button" class="upload-btn" id="btn-add-pack-images">📷 إضافة صور الـPack</button><input type="file" id="input-pack-images" accept="image/*" multiple style="display:none"></div>
+        <div class="pack-gallery-preview" id="pack-images-preview"></div>
+        <div class="upload-status" id="pack-images-status"></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="save-btn" id="save-pack">حفظ الـPack</button>
+        <button type="button" class="upload-btn" id="delete-pack">حذف الـPack</button>
+      </div>
+    </div>
     <button class="save-btn" id="save-product">حفظ المنتج</button>
   `;
 
@@ -1101,6 +1300,46 @@ function renderProductTab(){
   };
 
   document.getElementById("save-product").onclick = saveProduct;
+  document.getElementById("btn-add-pack-images").onclick = ()=>document.getElementById("input-pack-images").click();
+  document.getElementById("input-pack-images").onchange = onPackImagesSelected;
+  document.getElementById("save-pack").onclick = savePack;
+  document.getElementById("delete-pack").onclick = deletePack;
+  renderPackImagesPreview();
+}
+
+function renderPackImagesPreview(){
+  const box=document.getElementById("pack-images-preview"); if(!box) return;
+  box.innerHTML=pendingPackImages.map((url,idx)=>`<div class="img-thumb"><img src="${url}"><button type="button" class="rm-btn" data-pack-rm="${idx}">✕</button><div class="mv-btns">${idx>0?`<button type="button" data-pack-mv="${idx}:-1">◀</button>`:""}${idx<pendingPackImages.length-1?`<button type="button" data-pack-mv="${idx}:1">▶</button>`:""}</div></div>`).join("");
+  box.querySelectorAll("[data-pack-rm]").forEach(b=>b.onclick=()=>{pendingPackImages.splice(+b.dataset.packRm,1);renderPackImagesPreview();});
+  box.querySelectorAll("[data-pack-mv]").forEach(b=>b.onclick=()=>{const [i,d]=b.dataset.packMv.split(":").map(Number),n=i+d;if(n<0||n>=pendingPackImages.length)return;[pendingPackImages[i],pendingPackImages[n]]=[pendingPackImages[n],pendingPackImages[i]];renderPackImagesPreview();});
+}
+async function onPackImagesSelected(e){
+  const files=Array.from(e.target.files||[]); e.target.value=""; if(!files.length)return;
+  const status=document.getElementById("pack-images-status");
+  for(const file of files){
+    if(!file.type.startsWith("image/"))continue;
+    if(file.size>MAX_IMAGE_MB*1024*1024){status.textContent=`الصورة "${file.name}" كبيرة بزاف`;continue;}
+    status.textContent=`جاري رفع ${file.name}...`;
+    const res=await sbUploadFile(file,"images");
+    if(res.ok){pendingPackImages.push(res.url);renderPackImagesPreview();status.textContent="";}else status.textContent=`فشل رفع "${file.name}"`;
+  }
+}
+function collectPackBody(){
+  const enabled=document.getElementById("pack_enabled")?.checked||false;
+  const visible=document.getElementById("pack_visible")?.checked||false;
+  return {pack_enabled:enabled,pack_visible:enabled&&visible,pack_title_ar:document.getElementById("pack_title_ar")?.value||"",pack_title_fr:document.getElementById("pack_title_fr")?.value||"",pack_description_ar:document.getElementById("pack_desc_ar")?.value||"",pack_description_fr:document.getElementById("pack_desc_fr")?.value||"",pack_price:document.getElementById("pack_price")?.value?parseFloat(document.getElementById("pack_price").value):null,pack_old_price:document.getElementById("pack_old_price")?.value?parseFloat(document.getElementById("pack_old_price").value):null,pack_images:pendingPackImages.slice()};
+}
+async function savePack(){
+  if(!adminData.product)return; const msg=document.getElementById("save-msg"),btn=document.getElementById("save-pack"); if(btn)btn.disabled=true;
+  try{const res=await sbUpdate("products",`id=eq.${adminData.product.id}`,collectPackBody()); const ok=res.ok&&res.status>=200&&res.status<300; msg.innerHTML=ok?`<div class="msg ok">تم حفظ الـPack ✅</div>`:`<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`; if(ok){UNSAVED_DRAFT.product=null;await loadAdminData();renderProductTab();}}catch(e){msg.innerHTML=`<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;}
+  if(btn)btn.disabled=false;
+}
+async function deletePack(){
+  if(!adminData.product)return; if(!confirm(ADMIN_LANG==="fr"?"Supprimer définitivement le Pack ?":"حذف الـPack نهائياً؟"))return;
+  const body={pack_enabled:false,pack_visible:false,pack_title_ar:"",pack_title_fr:"",pack_description_ar:"",pack_description_fr:"",pack_price:null,pack_old_price:null,pack_images:[]};
+  const res=await sbUpdate("products",`id=eq.${adminData.product.id}`,body);
+  const msg=document.getElementById("save-msg"); msg.innerHTML=res.ok?`<div class="msg ok">تم حذف الـPack</div>`:`<div class="msg err">وقع مشكل، حاول مرة أخرى</div>`;
+  if(res.ok){UNSAVED_DRAFT.product=null;await loadAdminData();renderProductTab();}
 }
 
 function renderImagesPreview(){
@@ -1202,7 +1441,8 @@ async function saveProduct(){
     old_price: document.getElementById("p_old_price").value ? parseFloat(document.getElementById("p_old_price").value) : null,
     video_url: pendingVideoUrl || "",
     images: pendingImages.slice(),
-    is_active: document.getElementById("p_active").checked
+    is_active: document.getElementById("p_active").checked,
+    ...collectPackBody()
   };
   const msg = document.getElementById("save-msg");
   const btn = document.getElementById("save-product");
@@ -1490,7 +1730,7 @@ function renderOrdersTab(){
       <div class="meta">
         📞 ${o.phone}<br>
         📍 ${o.city||''} ${o.address||''}<br>
-        الكمية: ${o.quantity} ${o.upsell_accepted ? '+ العرض الإضافي 🎁' : ''}<br>
+        الكمية: ${o.quantity} ${o.pack_selected ? '+ Pack' : ''} ${o.upsell_accepted ? '+ العرض الإضافي 🎁' : ''}<br>
         🕒 ${new Date(o.created_at).toLocaleString('ar-MA')}
       </div>
       <div style="display:flex; gap:8px; margin-top:10px;">
@@ -1529,6 +1769,7 @@ function openChangePasswordModal(){
     </div>
   `;
   document.body.appendChild(overlay);
+  translateAdminDom(overlay);
   document.getElementById("cp-close").onclick = ()=> overlay.remove();
   overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
   document.getElementById("cp-save-btn").onclick = async ()=>{
