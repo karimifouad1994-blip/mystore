@@ -160,7 +160,8 @@
   .admin-nav-links button, .admin-nav-links a{ font-size:.82rem; color:var(--muted); text-decoration:underline; background:none; padding:0; }
 
   /* ===== NEW: preview overlay ===== */
-  .preview-overlay{ position:fixed; inset:0; background:var(--bg); z-index:2000; overflow-y:auto; }
+  .video-section{margin:18px 0}.section-mini-title{font-weight:900;margin-bottom:10px}.cart-bar{display:flex;justify-content:flex-end;margin:10px 0 14px}.cart-button{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px;border-radius:999px;font-weight:800}.cart-button b{min-width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;font-size:.75rem}.purchase-selector{margin:18px 0}.purchase-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.purchase-option{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);font-weight:800;cursor:pointer}.purchase-option.selected{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 15%,transparent)}.purchase-option input{accent-color:var(--accent)}
+.preview-overlay{ position:fixed; inset:0; background:var(--bg); z-index:2000; overflow-y:auto; }
   .preview-bar{ position:sticky; top:0; z-index:5; display:flex; justify-content:space-between; align-items:center; padding:12px 18px; background:var(--card); border-bottom:1px solid var(--line); }
   .preview-bar .tag{ font-size:.78rem; font-weight:800; color:var(--accent); }
   .preview-bar button{ padding:9px 16px; border-radius:999px; background:var(--ink); color:var(--bg); font-weight:700; font-size:.82rem; }
@@ -789,17 +790,9 @@ function buildFormMarkup(settings, product, lang, qty){
   const desc = lang==="ar" ? product.description_ar : product.description_fr;
   const images = (product.images||[]).filter(Boolean);
 
-  let mediaHtml = "";
-  if(product.video_url){
-    mediaHtml = `
-      <div class="video-wrap">
-        <video class="product-video" src="${product.video_url}" autoplay playsinline preload="auto"></video>
-        <button type="button" class="video-sound-btn" aria-label="الصوت">🔊</button>
-      </div>`;
-  } else if(images[0]){
-    mediaHtml = `<img src="${images[0]}" alt="${title||''}">`;
-  }
+  const mediaHtml = images[0] ? `<img src="${images[0]}" alt="${title||''}">` : "";
   const thumbsHtml = images.length>1 ? `<div class="thumbs">${images.map(i=>`<img src="${i}">`).join("")}</div>` : "";
+  const videoHtml = product.video_url ? `<div class="video-section"><div class="section-mini-title">${lang==='ar'?'🎥 فيديو المنتج':'🎥 Vidéo du produit'}</div><div class="video-wrap"><video class="product-video" src="${product.video_url}" playsinline preload="metadata"></video><button type="button" class="video-sound-btn" aria-label="${lang==='ar'?'الصوت':'Son'}">🔊</button></div></div>` : "";
   const num = (settings.whatsapp_number||"").replace(/\D/g,"");
   const showWaBefore = settings.whatsapp_enabled && settings.whatsapp_timing === "before";
   const waHref = (txt)=> `https://wa.me/${num}?text=${encodeURIComponent(txt)}`;
@@ -821,10 +814,12 @@ function buildFormMarkup(settings, product, lang, qty){
         <span class="price">${product.price||0} ${t.currency}</span>
         ${product.old_price ? `<span class="old-price">${product.old_price} ${t.currency}</span>` : ""}
       </div>
-      ${buildClothingOptions(product, lang)}
-      ${product.pack_enabled && product.pack_visible ? buildPackPublicMarkup(product, lang) : ""}
-
+      ${product.pack_enabled && product.pack_visible ? `<div class="purchase-selector" id="purchase-selector"><div class="section-mini-title">${lang==='ar'?'🛒 اختار طريقة الشراء':'🛒 Choisissez votre achat'}</div><div class="purchase-grid"><label class="purchase-option selected"><input type="radio" name="purchase-choice" id="product-choice" value="product" checked><span>${lang==='ar'?'قطعة واحدة':'Une pièce'}</span></label><label class="purchase-option"><input type="radio" name="purchase-choice" id="pack-choice" value="pack"><span>${lang==='ar'?'Pack':'Pack'}</span></label></div></div>` : `<div class="purchase-selector" id="purchase-selector"><div class="section-mini-title">${lang==='ar'?'🛒 الشراء':'🛒 Achat'}</div><div class="purchase-grid"><label class="purchase-option selected"><input type="radio" name="purchase-choice" id="product-choice" value="product" checked><span>${lang==='ar'?'قطعة واحدة':'Une pièce'}</span></label></div></div>`}
+      <div id="product-options-wrap">${buildClothingOptions(product, lang)}</div>
+      ${product.pack_enabled && product.pack_visible ? `<div id="pack-options-wrap">${buildPackPublicMarkup(product, lang)}</div>` : ""}
+      ${videoHtml}
       ${showWaBefore ? `<a class="cta secondary wa-btn" href="${waHref((lang==='ar'?'مرحبا، عندي سؤال على ':'Bonjour, j\'ai une question sur ')+(title||''))}" target="_blank">💬 ${t.contact_whatsapp}</a>` : ""}
+      <div class="cart-bar"><button type="button" class="cart-button" id="cart-button">🛒 <span>${lang==='ar'?'السلة':'Panier'}</span><b id="cart-count">0</b></button></div>
 
       <div class="card">
         <div class="field">
@@ -890,7 +885,7 @@ function buildPackPublicMarkup(product, lang){
   let options="";
   if(product.product_type==="clothing" && c.mode==="choice"){const sizes=csvList(product.sizes),colors=csvList(product.colors);options=`<div style="margin-top:12px"><strong>${lang==="ar"?'اختيارات كل قطعة':'Choix de chaque pièce'}</strong>${Array.from({length:Math.max(1,Number(c.pieces)||1)},(_,i)=>`<div class="pack-piece-choice"><strong>${lang==="ar"?'القطعة':'Pièce'} ${i+1}</strong><div class="field" style="margin-top:8px"><label>${lang==="ar"?'المقاس':'Taille'}</label><div class="choice-grid pack-sizes" data-piece="${i}">${sizes.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div><div class="field"><label>${lang==="ar"?'اللون':'Couleur'}</label><div class="choice-grid pack-colors" data-piece="${i}">${colors.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div></div>`).join("")}</div>`;}
   if(product.product_type==="clothing" && c.mode==="ready"){options=`<div class="small-muted" style="margin-top:10px">${lang==="ar"?'تشكيلة متنوعة جاهزة — ما كاين حتى اختيار للزبون':'Assortiment varié prêt — aucun choix pour le client'}</div>`;}
-  return `<div class="pack-public"><div class="pack-public-head"><div class="pack-public-title">${escHtml(title)}</div><div class="pack-public-badge">PACK</div></div>${img}<div class="pack-public-desc">${escHtml(desc)}</div><div class="price-row"><span class="price">${product.pack_price||0} DH</span>${old}</div>${options}<label class="pack-choice"><input type="radio" name="purchase-choice" id="pack-choice" value="pack"> <span>${lang==="ar"?"اختيار الـPack":"Choisir le Pack"}</span></label></div>`;
+  return `<div class="pack-public"><div class="pack-public-head"><div class="pack-public-title">${escHtml(title)}</div><div class="pack-public-badge">PACK</div></div>${img}<div class="pack-public-desc">${escHtml(desc)}</div><div class="price-row"><span class="price">${product.pack_price||0} DH</span>${old}</div>${options}</div>`;
 }
 function initPackGallery(){
   const p=STATE.product, imgs=(p&&p.pack_images||[]).filter(Boolean); if(imgs.length<2)return;
@@ -952,9 +947,59 @@ function renderLanding(){
     initProductVideo(document);
     initClothingOptions(document);
     initPackGallery();
+    initPurchaseSelector(document);
+    initCart(document);
   }
 
   maybeShowAdminReturn(SHOW_ADMIN_RETURN);
+}
+
+async function initPurchaseSelector(root){
+  const radios=root.querySelectorAll('input[name="purchase-choice"]');
+  const productWrap=root.querySelector('#product-options-wrap');
+  const packWrap=root.querySelector('#pack-options-wrap');
+  const update=()=>{
+    const selected=root.querySelector('input[name="purchase-choice"]:checked')?.value || 'product';
+    root.querySelectorAll('.purchase-option').forEach(x=>x.classList.toggle('selected', x.querySelector('input')?.checked));
+    if(productWrap) productWrap.style.display=selected==='product'?'block':'none';
+    if(packWrap) packWrap.style.display=selected==='pack'?'block':'none';
+    STATE.purchaseType=selected;
+  };
+  radios.forEach(r=>r.addEventListener('change',update));
+  update();
+}
+
+function getCurrentCartItem(){
+  const root=document;
+  const purchase=root.querySelector('input[name="purchase-choice"]:checked')?.value || 'product';
+  const qty=LANDING_QTY;
+  const productOptions={size:selectedValue(root,'product-sizes'),color:selectedValue(root,'product-colors')};
+  let packOptions=[];
+  if(purchase==='pack' && STATE.product?.product_type==='clothing'){
+    const c=getPackConfig(STATE.product);
+    if(c.mode==='choice'){
+      const pieces=Math.max(1,Number(c.pieces)||1);
+      for(let i=0;i<pieces;i++){
+        const sg=root.querySelector(`.pack-sizes[data-piece="${i}"] .selected`);
+        const cg=root.querySelector(`.pack-colors[data-piece="${i}"] .selected`);
+        packOptions.push({piece:i+1,size:sg?.dataset.value||'',color:cg?.dataset.value||''});
+      }
+    } else packOptions=c.items||[];
+  }
+  return {purchaseType:purchase,quantity:qty,productOptions,packOptions};
+}
+
+function initCart(root){
+  const btn=root.querySelector('#cart-button'); if(!btn)return;
+  let cartCount=0;
+  btn.onclick=()=>{
+    const item=getCurrentCartItem();
+    cartCount=Math.max(1,cartCount);
+    const msg=root.querySelector('#order-msg');
+    if(msg) msg.innerHTML=`<div class="msg ok">${STATE.lang==='ar'?'تمت إضافة الاختيار للسلة ✅':'Ajouté au panier ✅'}</div>`;
+    const count=root.querySelector('#cart-count'); if(count) count.textContent=cartCount;
+    STATE.cartItem=item;
+  };
 }
 
 async function onSubmitOrder(){
@@ -970,13 +1015,16 @@ async function onSubmitOrder(){
     msgBox.innerHTML = `<div class="msg err">${t.required}</div>`;
     return;
   }
-  const packChoice = document.getElementById("pack-choice");
-  STATE.purchaseType = (packChoice && packChoice.checked) ? "pack" : "product";
-  const packSelected = !!document.getElementById("pack-choice")?.checked;
+  const selectedPurchase = document.querySelector('input[name="purchase-choice"]:checked');
+  STATE.purchaseType = selectedPurchase?.value === "pack" ? "pack" : "product";
+  const packSelected = STATE.purchaseType === "pack";
   const productOptions = {size:selectedValue(document,"product-sizes"),color:selectedValue(document,"product-colors")};
   let packOptions=[];
   if(packSelected && STATE.product.product_type==="clothing"){ const c=getPackConfig(STATE.product); if(c.mode==="choice"){ const pieces=Math.max(1,Number(c.pieces)||1); for(let i=0;i<pieces;i++){ const sg=document.querySelector(`.pack-sizes[data-piece=\"${i}\"] .selected`), cg=document.querySelector(`.pack-colors[data-piece=\"${i}\"] .selected`); packOptions.push({piece:i+1,size:sg?sg.dataset.value:"",color:cg?cg.dataset.value:""}); }} else { packOptions=c.items||[]; }}
   STATE.purchaseType = packSelected ? "pack" : "product";
+  if(STATE.purchaseType==='product' && STATE.product.product_type==='clothing'){
+    if(!productOptions.size || !productOptions.color){ msgBox.innerHTML=`<div class="msg err">${STATE.lang==='ar'?'اختار المقاس واللون من فضلك':'Veuillez choisir la taille et la couleur'}</div>`; return; }
+  }
   STATE.order = { customer_name:name, phone, city, address, quantity:qty, product_options:productOptions, pack_options:packOptions };
 
   if(STATE.upsell){
