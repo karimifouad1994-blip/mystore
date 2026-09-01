@@ -1733,7 +1733,7 @@ function renderProductTab(){
 
   renderImagesPreview();renderVideoPreview();
   document.getElementById('btn-add-images').onclick=()=>document.getElementById('input-images').click();document.getElementById('input-images').onchange=onImagesSelected;document.getElementById('btn-add-video').onclick=()=>document.getElementById('input-video').click();document.getElementById('input-video').onchange=onVideoSelected;document.getElementById('btn-remove-video').onclick=()=>{pendingVideoUrl='';document.getElementById('btn-remove-video').style.display='none';renderVideoPreview();};
-  function renderStdColors(){const box=document.getElementById('std-colors');if(!box)return;const n=Math.max(1,parseInt(document.getElementById('std_pieces')?.value||'3',10)),colors=csvList(document.getElementById('p_colors')?.value||p.colors),prev=std.colors||[];box.innerHTML=`<div class="small-muted" style="margin-top:8px">حدد لون كل قطعة. المقاس غادي يختاره الزبون بنفسه (مقاس واحد للـPack كامل).</div>`+Array.from({length:n},(_,i)=>`<div class="pack-piece-choice"><strong>القطعة ${i+1}</strong><div class="field"><label>اللون</label><select class="std-color">${colors.map(x=>`<option ${x===prev[i]?'selected':''}>${escHtml(x)}</option>`).join('')}</select></div></div>`).join('')}
+  function renderStdColors(){const box=document.getElementById('std-colors');if(!box)return;const n=Math.max(1,parseInt(document.getElementById('std_pieces')?.value||'3',10)),colors=csvList(document.getElementById('p_colors')?.value ?? p.colors);const liveSelected=Array.from(box.querySelectorAll('.std-color')).map(s=>s.value);const prev=liveSelected.length?liveSelected:(std.colors||[]);box.innerHTML=`<div class="small-muted" style="margin-top:8px">حدد لون كل قطعة. المقاس غادي يختاره الزبون بنفسه (مقاس واحد للـPack كامل).</div>`+Array.from({length:n},(_,i)=>`<div class="pack-piece-choice"><strong>القطعة ${i+1}</strong><div class="field"><label>اللون</label><select class="std-color">${colors.map(x=>`<option ${x===prev[i]?'selected':''}>${escHtml(x)}</option>`).join('')}</select></div></div>`).join('')}
   document.getElementById('std_pieces').oninput=renderStdColors;document.getElementById('p_colors')?.addEventListener('input',renderStdColors);renderStdColors();
   const toggleFields=(id,box)=>{document.getElementById(id)?.addEventListener('change',()=>{box.style.display=document.getElementById(id).checked?'block':'none';setPreviewApproval(false)});box.style.display=document.getElementById(id).checked?'block':'none'};toggleFields('std_enabled',document.getElementById('std-fields'));toggleFields('cus_enabled',document.getElementById('cus-fields'));
   document.getElementById('save-product').onclick=saveProduct;document.getElementById('delete-product').onclick=deleteProduct;bindPreviewRequired();
@@ -2160,12 +2160,12 @@ function renderOrdersTab(){
   c.innerHTML = adminData.orders.map(o=>`
     <div class="order-item">
       <div class="row1">
-        <span>${o.customer_name}</span>
+        <span>${escHtml(o.customer_name)}</span>
         <span class="status-pill ${badgeClass[o.status]||'badge-new'}">${statusLabel[o.status]||o.status}</span>
       </div>
       <div class="meta">
-        📞 ${o.phone}<br>
-        📍 ${o.city||''} ${o.address||''}<br>
+        📞 ${escHtml(o.phone)}<br>
+        📍 ${escHtml(o.city||'')} ${escHtml(o.address||'')}<br>
         الكمية: ${o.quantity} ${o.upsell_accepted ? '+ العرض الإضافي 🎁' : ''}<br>
         🕒 ${new Date(o.created_at).toLocaleString('ar-MA')}
       </div>
