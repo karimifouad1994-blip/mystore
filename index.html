@@ -819,13 +819,15 @@ function getPackConfig(p){
 }
 function getStandardPackConfig(p){
   const c=parseJsonObj(p?.pack_config,{});
-  if(c&&c.standard) return c.standard;
-  return {enabled:false,visible:false,pieces:3,title_ar:p?.pack_title_ar||"",title_fr:p?.pack_title_fr||"",description_ar:p?.pack_description_ar||"",description_fr:p?.pack_description_fr||"",price:p?.pack_price??null,old_price:p?.pack_old_price??null,images:p?.pack_images||[],items:p?.pack_items||[]};
+  const base={enabled:false,visible:false,pieces:3,price:null,old_price:null,colors:[]};
+  if(c&&c.standard) return {...base,...c.standard};
+  return base;
 }
 function getCustomPackConfig(p){
   const c=parseJsonObj(p?.pack_config,{});
-  if(c&&c.custom) return c.custom;
-  return {enabled:false,visible:false,pieces:3,title_ar:"",title_fr:"",description_ar:"",description_fr:"",price:null,old_price:null,images:[]};
+  const base={enabled:false,visible:false,pieces:3,price:null,old_price:null};
+  if(c&&c.custom) return {...base,...c.custom};
+  return base;
 }
 function getSingleConfig(p){
   const c=parseJsonObj(p?.pack_config,{});
@@ -840,135 +842,47 @@ function buildClothingOptions(product,lang){
 function initClothingOptions(root){if(!root)return;root.querySelectorAll('#product-options .choice-grid').forEach(g=>g.querySelectorAll('.choice-btn').forEach(b=>b.onclick=()=>{g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')}))}
 function selectedChoice(root,id){const b=root?.querySelector(`#${id} .choice-btn.selected`);return b?b.dataset.value:""}
 
-function buildPackPublicMarkup(product, lang, type){
-  const c=type==='standard'?getStandardPackConfig(product):getCustomPackConfig(product);
-  const title=lang==='ar'?(c.title_ar||'Pack'):(c.title_fr||c.title_ar||'Pack');
-  const desc=lang==='ar'?(c.description_ar||''):(c.description_fr||c.description_ar||'');
-  const imgs=(c.images||[]).filter(Boolean);
-  const old=c.old_price?`<span class="old-price">${c.old_price} DH</span>`:"";
-  const img=imgs[0]?`<div class="pack-gallery" id="${type}-pack-gallery">
-    <img id="${type}-pack-gallery-img" src="${escHtml(imgs[0])}" alt="${escHtml(title)}">
-    ${imgs.length>1?`<button type="button" class="pack-gallery-btn pack-gallery-prev" data-gallery="${type}" id="${type}-pack-prev">‹</button>
-    <button type="button" class="pack-gallery-btn pack-gallery-next" data-gallery="${type}" id="${type}-pack-next">›</button>`:""}
-  </div><div class="pack-gallery-dots" id="${type}-pack-dots">${imgs.length>1?`1 / ${imgs.length} · ${lang==='ar'?'دير السحب باش تشوف باقي الصور':'Faites glisser pour voir les autres images'}`:""}</div>`:"";
-
-  const productSizes=csvList(product?.sizes||"");
-  const productColors=csvList(product?.colors||"");
-  const packSizes=csvList(c?.sizes||"");
-  const packColors=csvList(c?.colors||"");
-  const sizes=packSizes.length?packSizes:productSizes;
-  const colors=packColors.length?packColors:productColors;
-
-  const btns=(arr,selectedFirst=true)=>arr.map((x,j)=>
-    `<button type="button" class="choice-btn ${selectedFirst&&j===0?'selected':''}"
-      data-value="${escHtml(x)}"
-      style="pointer-events:auto !important;position:relative;z-index:20;color:${selectedFirst&&j===0?'#fff':'#2b2622'} !important;background:${selectedFirst&&j===0?'#a85b2a':'#fff'} !important;border:1.5px solid ${selectedFirst&&j===0?'#a85b2a':'#d8d0c8'} !important;cursor:pointer;">
-      ${escHtml(x)}
-    </button>`).join('');
-
-  let options="";
-  if(type==='custom'){
-    const n=Math.max(1,Number(c.pieces)||1);
-    const sizeBlock=sizes.length
-      ? `<div class="field">
-          <label style="display:block;color:#2b2622 !important;font-weight:800;">${lang==='ar'?'المقاس (موحد للـPack كامل)':'Taille (unique pour tout le pack)'}</label>
-          <div class="choice-grid pack-common-size" id="pack-custom-common-size">${btns(sizes)}</div>
-        </div>`
-      : `<div class="small-muted" style="color:#7a7169 !important;">${lang==='ar'?'ما كايناش مقاسات محددة':'Aucune taille définie'}</div>`;
-
-    const colorBlock=colors.length
-      ? Array.from({length:n},(_,i)=>`<div class="pack-piece-choice" style="position:relative;z-index:5;">
-          <strong style="color:#2b2622 !important;">${lang==='ar'?'القطعة':'Pièce'} ${i+1}</strong>
-          <div class="field">
-            <label style="display:block;color:#2b2622 !important;font-weight:800;">${lang==='ar'?'اللون':'Couleur'}</label>
-            <div class="choice-grid pack-colors" data-piece="${i}">${btns(colors)}</div>
-          </div>
-        </div>`).join('')
-      : `<div class="small-muted" style="color:#7a7169 !important;">${lang==='ar'?'ما كايناش ألوان محددة':'Aucune couleur définie'}</div>`;
-
-    options=`<div style="margin-top:12px;position:relative;z-index:5;">
-      <strong style="color:#2b2622 !important;">${lang==='ar'?'التشكيلة المتنوعة':'Assortiment varié'}</strong>
-      ${sizeBlock}
-      <div class="small-muted" style="margin:8px 0 12px;color:#6d645c !important;">
-        ${lang==='ar'?'اختار اللون لكل قطعة بشكل مستقل، والمقاس يبقى موحداً للـPack كامل':'Choisissez la couleur séparément pour chaque pièce. La taille reste la même pour tout le pack.'}
-      </div>
-      ${colorBlock}
-    </div>`;
-  } else {
-    const items=(c.items||[]);
-    const sizeBlock=sizes.length
-      ? `<div class="field">
-          <label style="display:block;color:#2b2622 !important;font-weight:800;">${lang==='ar'?'المقاس':'Taille'}</label>
-          <div class="choice-grid pack-common-size" id="pack-standard-common-size">${btns(sizes)}</div>
-        </div>`:"";
-    const colorsList=items.length
-      ? `<div class="small-muted" style="margin-top:8px;color:#6d645c !important;">${items.map((it,i)=>`${lang==='ar'?'القطعة':'Pièce'} ${i+1}: ${escHtml(it.color||'-')}`).join(' · ')}</div>`:"";
-    options=`<div style="margin-top:12px;position:relative;z-index:5;">${sizeBlock}
-      <div class="small-muted" style="margin:8px 0 4px;color:#6d645c !important;">
-        ${lang==='ar'?'الألوان محددة من طرف المتجر لكل قطعة، وغادي تختار غير المقاس':'Les couleurs sont fixées par la boutique pour chaque pièce, vous choisissez uniquement la taille'}
-      </div>${colorsList}</div>`;
-  }
-
-  return `<div class="pack-public" style="position:relative;z-index:2;">
-    <div class="pack-public-head">
-      <div class="pack-public-title" style="color:#2b2622 !important;">${escHtml(title)}</div>
-      <div class="pack-public-badge" style="color:#a85b2a !important;">${type==='custom'?'PACK PERSONNALISÉ':'PACK STANDARD'}</div>
-    </div>
-    ${img}
-    <div class="pack-public-desc" style="color:#6d645c !important;">${escHtml(desc)}</div>
-    <div class="price-row"><span class="price">${c.price||0} DH</span>${old}</div>
-    ${options}
-    <div class="pack-qty-wrap" data-pack-qty-type="${type}" style="margin-top:16px;position:relative;z-index:30;">
-      <div class="section-mini-title" style="color:#2b2622 !important;">${lang==='ar'?'الكمية':'Quantité'}</div>
-      <div class="qty-stepper">
-        <button type="button" data-pack-qty-minus="${type}">−</button>
-        <span data-pack-qty-value="${type}">1</span>
-        <button type="button" data-pack-qty-plus="${type}">+</button>
-      </div>
-    </div>
-  </div>`;
+function buildStandardPackOptions(product,lang,c){
+  const t=T[lang]||T.ar;
+  const sizes=csvList(product.sizes||"");
+  const colors=(c.colors||[]).filter(x=>x);
+  const sizeBlock=sizes.length?`<div class="field"><label>${lang==='ar'?'المقاس':'Taille'}</label><div class="choice-grid pack-common-size" id="pack-standard-common-size">${sizes.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:`<div class="small-muted">${lang==='ar'?'ما كايناش مقاسات محددة':'Aucune taille définie'}</div>`;
+  const colorsInfo=colors.length?`<div class="small-muted" style="margin-top:8px">${colors.map((c2,i)=>`${lang==='ar'?'القطعة':'Pièce'} ${i+1}: ${escHtml(c2||'-')}`).join(' · ')}</div>`:"";
+  return `<div class="price-row"><span class="price">${c.price||0} ${t.currency}</span>${c.old_price?`<span class="old-price">${c.old_price} ${t.currency}</span>`:''}</div><div class="selection-info" id="std-options"><div class="selection-info-title">${lang==='ar'?'معلومات الاختيار':'Informations du choix'}</div>${sizeBlock}<div class="small-muted" style="margin:8px 0 4px">${lang==='ar'?'الألوان محددة من طرف المتجر لكل قطعة':'Les couleurs sont fixées par la boutique pour chaque pièce'}</div>${colorsInfo}</div>`;
 }
-function initPackGallery(){
-  const p=STATE.product;if(!p)return;
-  ['standard','custom'].forEach(type=>{
-    const c=type==='standard'?getStandardPackConfig(p):getCustomPackConfig(p),imgs=(c.images||[]).filter(Boolean);if(imgs.length<2)return;
-    const img=document.getElementById(`${type}-pack-gallery-img`),dots=document.getElementById(`${type}-pack-dots`);let i=0;
-    const go=n=>{i=(n+imgs.length)%imgs.length;if(img)img.src=imgs[i];if(dots)dots.textContent=`${i+1} / ${imgs.length} · ${STATE.lang==='ar'?'دير السحب باش تشوف باقي الصور':'Faites glisser pour voir les autres images'}`};
-    document.getElementById(`${type}-pack-prev`)?.addEventListener('click',()=>go(i-1));document.getElementById(`${type}-pack-next`)?.addEventListener('click',()=>go(i+1));
-    let sx=0;document.getElementById(`${type}-pack-gallery`)?.addEventListener('touchstart',e=>sx=e.changedTouches[0].clientX,{passive:true});document.getElementById(`${type}-pack-gallery`)?.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>35)go(i+(dx<0?1:-1))},{passive:true});
-  });
+function buildCustomPackOptions(product,lang,c){
+  const t=T[lang]||T.ar;
+  const sizes=csvList(product.sizes||""),colors=csvList(product.colors||""),n=Math.max(1,Number(c.pieces)||1);
+  const sizeBlock=sizes.length?`<div class="field"><label>${lang==='ar'?'المقاس (موحد للـPack كامل)':'Taille (unique pour tout le pack)'}</label><div class="choice-grid pack-common-size" id="pack-custom-common-size">${sizes.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:`<div class="small-muted">${lang==='ar'?'ما كايناش مقاسات محددة':'Aucune taille définie'}</div>`;
+  const pieces=colors.length?Array.from({length:n},(_,i)=>`<div class="pack-piece-choice"><strong>${lang==='ar'?'القطعة':'Pièce'} ${i+1}</strong><div class="field"><label>${lang==='ar'?'اللون':'Couleur'}</label><div class="choice-grid pack-colors" data-piece="${i}">${colors.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div></div>`).join(''):`<div class="small-muted">${lang==='ar'?'ما كايناش ألوان محددة':'Aucune couleur définie'}</div>`;
+  return `<div class="price-row"><span class="price">${c.price||0} ${t.currency}</span>${c.old_price?`<span class="old-price">${c.old_price} ${t.currency}</span>`:''}</div><div class="selection-info" id="cus-options"><div class="selection-info-title">${lang==='ar'?'معلومات الاختيار':'Informations du choix'}</div>${sizeBlock}<div class="small-muted" style="margin:8px 0 12px">${lang==='ar'?'اختار اللون لكل قطعة بشكل مستقل. المقاس موحد للـPack كامل.':'Choisissez la couleur séparément pour chaque pièce. La taille reste la même pour tout le pack.'}</div>${pieces}</div>`;
 }
-
-function buildSingleMarkup(product,lang,qty){
-  const t=T[lang]||T.ar,title=lang==='ar'?product.title_ar:product.title_fr,desc=lang==='ar'?product.description_ar:product.description_fr;
-  const images=(product.images||[]).filter(Boolean),mediaHtml=images[0]?`<img src="${escHtml(images[0])}" alt="${escHtml(title||'')}">`:"",thumbsHtml=images.length>1?`<div class="thumbs">${images.map(i=>`<img src="${escHtml(i)}">`).join('')}</div>`:"";
-  return `<div class="hero-media">${mediaHtml}</div>${thumbsHtml}<h1 class="title">${escHtml(title||'')}</h1><p class="desc">${escHtml(desc||'')}</p><div class="price-row"><span class="price">${product.price||0} ${t.currency}</span>${product.old_price?`<span class="old-price">${product.old_price} ${t.currency}</span>`:''}</div><div id="product-options-wrap">${buildClothingOptions(product,lang)}<div class="single-qty-wrap" id="single-qty-wrap"><div class="section-mini-title">${lang==='ar'?'الكمية':'Quantité'}</div><div class="qty-stepper"><button type="button" id="qty-minus">−</button><span id="qty-value">${qty||1}</span><button type="button" id="qty-plus">+</button></div></div></div>`;
+function buildPurchaseSection(product,lang,qty){
+  const t=T[lang]||T.ar;
+  const std=getStandardPackConfig(product),cus=getCustomPackConfig(product),single=getSingleConfig(product);
+  const hasSingle=single.enabled&&single.visible;
+  const hasStd=std.enabled&&std.visible;
+  const hasCus=cus.enabled&&cus.visible;
+  const opts=[];
+  if(hasSingle) opts.push({value:'product',label:lang==='ar'?'قطعة واحدة':'Une pièce',price:product.price||0});
+  if(hasStd) opts.push({value:'pack_standard',label:'Pack Standard',price:std.price||0});
+  if(hasCus) opts.push({value:'pack_custom',label:lang==='ar'?'Pack مخصص':'Pack personnalisé',price:cus.price||0});
+  const finalOpts=opts.length?opts:[{value:'product',label:lang==='ar'?'قطعة واحدة':'Une pièce',price:product.price||0}];
+  const showSingle=hasSingle||!opts.length;
+  const selectorHtml=finalOpts.length>1?`<div class="purchase-selector" id="purchase-selector"><div class="section-mini-title">${lang==='ar'?'🛒 اختار طريقة الشراء':'🛒 Choisissez la méthode d’achat'}</div><div class="purchase-grid">${finalOpts.map((o,i)=>`<label class="purchase-option ${i===0?'selected':''}"><input type="radio" name="purchase-choice" value="${o.value}" ${i===0?'checked':''}><span>${escHtml(o.label)} — ${o.price} ${t.currency}</span></label>`).join('')}</div></div>`:"";
+  const singlePanel=showSingle?`<div id="single-wrap" style="display:none"><div class="price-row"><span class="price">${product.price||0} ${t.currency}</span>${product.old_price?`<span class="old-price">${product.old_price} ${t.currency}</span>`:''}</div>${buildClothingOptions(product,lang)}</div>`:"";
+  const stdPanel=hasStd?`<div id="pack-standard-wrap" style="display:none">${buildStandardPackOptions(product,lang,std)}</div>`:"";
+  const cusPanel=hasCus?`<div id="pack-custom-wrap" style="display:none">${buildCustomPackOptions(product,lang,cus)}</div>`:"";
+  const qtyHtml=`<div class="single-qty-wrap" id="single-qty-wrap"><div class="section-mini-title">${lang==='ar'?'الكمية':'Quantité'}</div><div class="qty-stepper"><button type="button" id="qty-minus">−</button><span id="qty-value">${qty||1}</span><button type="button" id="qty-plus">+</button></div></div>`;
+  return selectorHtml+singlePanel+stdPanel+cusPanel+qtyHtml;
 }
 function buildFormMarkup(settings, product, lang, qty){
-  const t=T[lang]||T.ar;
+  const t=T[lang]||T.ar,title=lang==='ar'?product.title_ar:product.title_fr,desc=lang==='ar'?product.description_ar:product.description_fr;
+  const images=(product.images||[]).filter(Boolean),mediaHtml=images[0]?`<img src="${escHtml(images[0])}" alt="${escHtml(title||'')}">`:"",thumbsHtml=images.length>1?`<div class="thumbs">${images.map(i=>`<img src="${escHtml(i)}">`).join('')}</div>`:"";
   const videoHtml=product.video_url?`<div class="video-section"><div class="video-wrap"><video class="product-video" src="${escHtml(product.video_url)}" playsinline autoplay loop preload="auto"></video><button type="button" class="video-sound-btn">🔊</button></div></div>`:"";
   const isClothing=product.product_type==='clothing';
-  const std=getStandardPackConfig(product),cus=getCustomPackConfig(product),single=getSingleConfig(product);
-  const hasStd=isClothing && std.enabled && std.visible;
-  const hasCus=isClothing && cus.enabled && cus.visible;
-  const hasSingle=!isClothing || (single.enabled && single.visible);
-  let bodyHtml="";
-  if(!isClothing){
-    bodyHtml=buildSingleMarkup(product,lang,qty);
-  } else {
-    const opts=[];
-    if(hasSingle) opts.push({value:'product',label:lang==='ar'?'قطعة واحدة':'Une pièce'});
-    if(hasStd) opts.push({value:'pack_standard',label:lang==='ar'?(std.title_ar||'Pack Standard'):(std.title_fr||std.title_ar||'Pack Standard')});
-    if(hasCus) opts.push({value:'pack_custom',label:lang==='ar'?(cus.title_ar||'Pack مخصص'):(cus.title_fr||cus.title_ar||'Pack personnalisé')});
-    const finalOpts=opts.length?opts:[{value:'product',label:lang==='ar'?'قطعة واحدة':'Une pièce'}];
-    const showSingle=hasSingle||!opts.length;
-    const purchaseSelector=finalOpts.length>1?`<div class="purchase-selector" id="purchase-selector"><div class="section-mini-title">${lang==='ar'?'🛒 اختار شنو بغيتي تشري':'🛒 Choisissez ce que vous voulez acheter'}</div><div class="purchase-grid">${finalOpts.map((o,i)=>`<label class="purchase-option ${i===0?'selected':''}"><input type="radio" name="purchase-choice" value="${o.value}" ${i===0?'checked':''}><span>${escHtml(o.label)}</span></label>`).join('')}</div></div>`:"";
-    const singlePanel=showSingle?`<div id="single-wrap" style="display:none">${buildSingleMarkup(product,lang,qty)}</div>`:"";
-    const stdPanel=hasStd?`<div id="pack-standard-wrap" style="display:none">${buildPackPublicMarkup(product,lang,'standard')}</div>`:"";
-    const cusPanel=hasCus?`<div id="pack-custom-wrap" style="display:none">${buildPackPublicMarkup(product,lang,'custom')}</div>`:"";
-    bodyHtml=purchaseSelector+singlePanel+stdPanel+cusPanel;
-  }
-  return `<div class="topbar"><div class="brand">${escHtml(settings.store_name||'')}</div><div class="lang-switch"><button data-lang="ar" class="${lang==='ar'?'active':''}">AR</button><button data-lang="fr" class="${lang==='fr'?'active':''}">FR</button></div></div><div class="wrap">${bodyHtml}${videoHtml}<div class="cart-bar"><button type="button" class="cart-button" id="cart-button">🛒 <span>${lang==='ar'?'السلة':'Panier'}</span><b id="cart-count">0</b></button></div><div class="card"><div class="field"><label>${t.full_name}</label><input id="f_name" type="text"></div><div class="field"><label>${t.phone}</label><input id="f_phone" type="tel"></div><div class="field"><label>${t.city}</label><input id="f_city" type="text"></div><div class="field"><label>${t.address}</label><textarea id="f_address"></textarea></div><div id="order-msg"></div><button class="cta" id="submit-btn">${t.place_order}</button></div><div class="footer-note">${escHtml(settings.store_name||'')}</div></div>`;
+  const purchaseHtml=isClothing?buildPurchaseSection(product,lang,qty):`<div class="price-row"><span class="price">${product.price||0} ${t.currency}</span>${product.old_price?`<span class="old-price">${product.old_price} ${t.currency}</span>`:''}</div><div class="single-qty-wrap" id="single-qty-wrap"><div class="section-mini-title">${lang==='ar'?'الكمية':'Quantité'}</div><div class="qty-stepper"><button type="button" id="qty-minus">−</button><span id="qty-value">${qty||1}</span><button type="button" id="qty-plus">+</button></div></div>`;
+  return `<div class="topbar"><div class="brand">${escHtml(settings.store_name||'')}</div><div class="lang-switch"><button data-lang="ar" class="${lang==='ar'?'active':''}">AR</button><button data-lang="fr" class="${lang==='fr'?'active':''}">FR</button></div></div><div class="wrap"><div class="hero-media">${mediaHtml}</div>${thumbsHtml}<h1 class="title">${escHtml(title||'')}</h1><p class="desc">${escHtml(desc||'')}</p>${videoHtml}${purchaseHtml}<div class="cart-bar"><button type="button" class="cart-button" id="cart-button">🛒 <span>${lang==='ar'?'السلة':'Panier'}</span><b id="cart-count">0</b></button></div><div class="cart-summary" id="cart-summary" style="display:none"></div><div class="card"><div class="field"><label>${t.full_name}</label><input id="f_name" type="text"></div><div class="field"><label>${t.phone}</label><input id="f_phone" type="tel"></div><div class="field"><label>${t.city}</label><input id="f_city" type="text"></div><div class="field"><label>${t.address}</label><textarea id="f_address"></textarea></div><div id="order-msg"></div><button class="cta" id="submit-btn">${t.place_order}</button></div><div class="footer-note">${escHtml(settings.store_name||'')}</div></div>`;
 }
 
 function initPurchaseSelector(root){
@@ -986,7 +900,7 @@ function initPurchaseSelector(root){
   };
 
   const update=()=>{
-    const selected=root.querySelector('input[name="purchase-choice"]:checked')?.value||'product';
+    const selected=root.querySelector('input[name="purchase-choice"]:checked')?.value||Object.keys(panels).find(k=>panels[k])||'product';
     root.querySelectorAll('#purchase-selector .purchase-option').forEach(x=>{
       x.classList.toggle('selected',x.querySelector('input')?.checked);
     });
@@ -997,54 +911,25 @@ function initPurchaseSelector(root){
   radios.forEach(r=>r.addEventListener('change',update));
   update();
 
-  // One delegated handler for ALL size/color buttons in this preview.
-  // This avoids losing handlers when a panel is shown/hidden.
-  if(!root.__choiceHandlerBound){
-    root.__choiceHandlerBound=true;
-    root.addEventListener('click',(e)=>{
-      const b=e.target.closest('.choice-btn');
-      if(!b || !root.contains(b)) return;
-      const group=b.closest('.choice-grid');
-      if(!group) return;
-      e.preventDefault();
-      e.stopPropagation();
-      group.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));
-      b.classList.add('selected');
-    },true);
-  }
-
-  root.querySelectorAll('.choice-grid .choice-btn').forEach(b=>{
-    b.style.pointerEvents='auto';
-    b.style.position='relative';
-    b.style.zIndex='20';
+  // One delegated click handler for every size/color choice-btn in this root.
+  root.querySelectorAll('.choice-grid').forEach(g=>{
+    g.querySelectorAll('.choice-btn').forEach(b=>{
+      b.onclick=(e)=>{
+        e.preventDefault();
+        g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));
+        b.classList.add('selected');
+      };
+    });
   });
 }
 function initSingleQuantity(root){
   if(!root)return;
-  const setValue=(type,val)=>{
-    val=Math.max(1,parseInt(val||'1',10));
-    if(type==='product') LANDING_QTY=val;
-    const el=root.querySelector(type==='product'?'#qty-value':`[data-pack-qty-value="${type}"]`);
-    if(el)el.textContent=val;
-  };
-  const getValue=(type)=>{
-    if(type==='product') return LANDING_QTY;
-    const el=root.querySelector(`[data-pack-qty-value="${type}"]`);
-    return Math.max(1,parseInt(el?.textContent||'1',10));
-  };
-  const bind=(minusSel,plusSel,type)=>{
-    const minus=root.querySelector(minusSel),plus=root.querySelector(plusSel);
-    if(minus)minus.onclick=(e)=>{e.preventDefault();e.stopPropagation();setValue(type,getValue(type)-1);};
-    if(plus)plus.onclick=(e)=>{e.preventDefault();e.stopPropagation();setValue(type,getValue(type)+1);};
-  };
-  bind('#qty-minus','#qty-plus','product');
-  bind('[data-pack-qty-minus="standard"]','[data-pack-qty-plus="standard"]','standard');
-  bind('[data-pack-qty-minus="custom"]','[data-pack-qty-plus="custom"]','custom');
-}
-function getSelectedPurchaseQuantity(root,purchase){
-  if(purchase==='product') return LANDING_QTY;
-  const el=root.querySelector(`[data-pack-qty-value="${purchase==='pack_standard'?'standard':'custom'}"]`);
-  return Math.max(1,parseInt(el?.textContent||'1',10));
+  const el=root.querySelector('#qty-value');
+  const setValue=(val)=>{val=Math.max(1,parseInt(val||'1',10));LANDING_QTY=val;if(el)el.textContent=val;};
+  const minus=root.querySelector('#qty-minus'),plus=root.querySelector('#qty-plus');
+  if(minus)minus.onclick=(e)=>{e.preventDefault();setValue(LANDING_QTY-1);};
+  if(plus)plus.onclick=(e)=>{e.preventDefault();setValue(LANDING_QTY+1);};
+  if(el)el.textContent=LANDING_QTY;
 }
 function getCurrentCartItem(){
   const root=document;
@@ -1055,29 +940,63 @@ function getCurrentCartItem(){
     else if(root.querySelector('#pack-custom-wrap')) purchase='pack_custom';
     else purchase='product';
   }
-  const qty=getSelectedPurchaseQuantity(root,purchase);
+  const qty=LANDING_QTY;
   const productOptions={
     size:purchase==='product'?selectedChoice(root,'product-sizes'):'',
     color:purchase==='product'?selectedChoice(root,'product-colors'):''
   };
-  let packOptions=[];
-  if(purchase==='pack_custom'){
+  let packOptions=[],unitPrice=0;
+  if(purchase==='product'){
+    unitPrice=STATE.product.price||0;
+  } else if(purchase==='pack_custom'){
     const c=getCustomPackConfig(STATE.product),n=Math.max(1,Number(c.pieces)||1);
-    const commonSize=root.querySelector('#pack-custom-wrap .pack-common-size .selected')?.dataset.value||'';
+    unitPrice=c.price||0;
+    const commonSize=root.querySelector('#pack-custom-common-size .selected')?.dataset.value||'';
     for(let i=0;i<n;i++){
-      const cg=root.querySelector(`#pack-custom-wrap .pack-colors[data-piece="${i}"] .selected`);
+      const cg=root.querySelector(`.pack-colors[data-piece="${i}"] .selected`);
       packOptions.push({piece:i+1,size:commonSize,color:cg?.dataset.value||''});
     }
+  } else if(purchase==='pack_standard'){
+    const c=getStandardPackConfig(STATE.product);
+    unitPrice=c.price||0;
+    const commonSize=root.querySelector('#pack-standard-common-size .selected')?.dataset.value||'';
+    packOptions=(c.colors||[]).map((color,i)=>({piece:i+1,size:commonSize,color:color||''}));
   }
-  if(purchase==='pack_standard'){
-    const items=getStandardPackConfig(STATE.product).items||[];
-    const commonSize=root.querySelector('#pack-standard-wrap .pack-common-size .selected')?.dataset.value||'';
-    packOptions=items.map(it=>({piece:it.piece,size:commonSize,color:it.color||''}));
-  }
-  return {purchaseType:purchase,quantity:qty,productOptions,packOptions};
+  return {purchaseType:purchase,quantity:qty,productOptions,packOptions,unitPrice};
 }
 
-function initCart(root){const btn=root.querySelector('#cart-button');if(!btn)return;btn.onclick=()=>{STATE.cartItem=getCurrentCartItem();const count=root.querySelector('#cart-count');if(count)count.textContent=String(STATE.cartItem.quantity||1);const msg=root.querySelector('#order-msg');if(msg)msg.innerHTML=`<div class="msg ok">${STATE.lang==='ar'?`تمت إضافة ${STATE.cartItem.quantity||1} إلى السلة ✅`:`${STATE.cartItem.quantity||1} article(s) ajouté(s) au panier ✅`}</div>`;}}
+function purchaseLabel(purchase,lang){
+  if(purchase==='pack_standard') return 'Pack Standard';
+  if(purchase==='pack_custom') return lang==='ar'?'Pack مخصص':'Pack personnalisé';
+  return lang==='ar'?'قطعة واحدة':'Une pièce';
+}
+function renderCartSummaryHtml(item,lang){
+  const t=T[lang]||T.ar;
+  const total=(item.unitPrice||0)*(item.quantity||1);
+  let rows=`<div><strong>${escHtml(purchaseLabel(item.purchaseType,lang))}</strong> — ${item.unitPrice||0} ${t.currency}</div>`;
+  if(item.purchaseType==='product'){
+    if(item.productOptions?.size) rows+=`<div>${lang==='ar'?'المقاس':'Taille'}: ${escHtml(item.productOptions.size)}</div>`;
+    if(item.productOptions?.color) rows+=`<div>${lang==='ar'?'اللون':'Couleur'}: ${escHtml(item.productOptions.color)}</div>`;
+  } else {
+    const commonSize=item.packOptions?.[0]?.size;
+    if(commonSize) rows+=`<div>${lang==='ar'?'المقاس':'Taille'}: ${escHtml(commonSize)}</div>`;
+    (item.packOptions||[]).forEach((po,i)=>{rows+=`<div>${lang==='ar'?'القطعة':'Pièce'} ${i+1}: ${escHtml(po.color||'-')}</div>`;});
+  }
+  if((item.quantity||1)>1) rows+=`<div>${lang==='ar'?'الكمية':'Quantité'}: ${item.quantity}</div>`;
+  rows+=`<div style="margin-top:6px"><strong>${lang==='ar'?'المجموع':'Total'}: ${total} ${t.currency}</strong></div>`;
+  return rows;
+}
+function initCart(root){
+  const btn=root.querySelector('#cart-button');if(!btn)return;
+  btn.onclick=()=>{
+    const item=getCurrentCartItem();
+    STATE.cartItem=item;
+    const count=root.querySelector('#cart-count');if(count)count.textContent=String(item.quantity||1);
+    const summary=root.querySelector('#cart-summary');
+    if(summary){summary.innerHTML=renderCartSummaryHtml(item,STATE.lang);summary.style.display='block';}
+    const msg=root.querySelector('#order-msg');if(msg)msg.innerHTML=`<div class="msg ok">${STATE.lang==='ar'?'تمت إضافة الاختيار للسلة ✅':'Ajouté au panier ✅'}</div>`;
+  };
+}
 
 function maybeShowAdminReturn(show){
   const old = document.getElementById("admin-return-btn");
@@ -1121,13 +1040,10 @@ function renderLanding(){
     document.querySelectorAll("[data-lang]").forEach(b=>{
       b.onclick = ()=>{ STATE.lang = b.dataset.lang; renderLanding(); };
     });
-    initSingleQuantity(document);
-    initPurchaseSelector(document);
-    initCart(document);
     document.getElementById("submit-btn").onclick = onSubmitOrder;
     initProductVideo(document);
     initClothingOptions(document);
-    initPackGallery();
+    initSingleQuantity(document);
     initPurchaseSelector(document);
     initCart(document);
   }
@@ -1187,7 +1103,7 @@ async function finalizeOrder(upsellAccepted, upsellId){
     quantity: STATE.order.quantity,
     pack_selected: STATE.purchaseType !== "product",
     pack_price: STATE.purchaseType === "pack_standard" ? (getStandardPackConfig(STATE.product).price||0) : STATE.purchaseType === "pack_custom" ? (getCustomPackConfig(STATE.product).price||0) : null,
-    pack_title: STATE.purchaseType === "pack_standard" ? (STATE.lang === "ar" ? getStandardPackConfig(STATE.product).title_ar : getStandardPackConfig(STATE.product).title_fr) : STATE.purchaseType === "pack_custom" ? (STATE.lang === "ar" ? getCustomPackConfig(STATE.product).title_ar : getCustomPackConfig(STATE.product).title_fr) : null,
+    pack_title: STATE.purchaseType === "pack_standard" ? "Pack Standard" : STATE.purchaseType === "pack_custom" ? (STATE.lang === "ar" ? "Pack مخصص" : "Pack personnalisé") : null,
     pack_options: STATE.order.pack_options || [],
     product_options: STATE.order.product_options || {},
     upsell_accepted: upsellAccepted,
@@ -1477,11 +1393,11 @@ function renderProductTab(){
 
     <div id="clothing-editor" style="display:${p.product_type==='clothing'?'block':'none'}">
       <div class="card" style="margin-bottom:16px"><div class="section-title">🔠 المقاسات والألوان</div><div class="small-muted">هاد اللائحة مشتركة بين المونطاجات الثلاثة: قطعة واحدة، Pack Standard (ألوان كل قطعة)، Pack personnalisé. عمرها قبل ما تدخل للمونطاجات تحت.</div><div class="field-row"><div class="field"><label>المقاسات</label><input id="p_sizes" value="${escHtml(p.sizes||'')}" placeholder="S, M, L, XL"></div><div class="field"><label>الألوان</label><input id="p_colors" value="${escHtml(p.colors||'')}" placeholder="Noir, Blanc, Beige"></div></div></div>
-      <div class="card" style="margin-bottom:16px"><div class="section-title">قطعة واحدة (Une pièce)</div><div class="small-muted">هادي هي المونطاج ديال شرا قطعة وحدة. تقدر تخفيها بلا ما تحيدها إلا بغيتي غير Packs.</div><div class="toggle"><input type="checkbox" id="single_enabled" ${single.enabled?'checked':''}><label>تفعيل قطعة واحدة</label></div><div class="toggle"><input type="checkbox" id="single_visible" ${single.visible?'checked':''}><label>ظاهرة للزبون</label></div><div class="field-row"><div class="field"><label>الكمية</label><input id="p_stock_clothing" type="number" min="0" value="${p.stock_quantity??''}"></div><div class="field"><label>الثمن</label><input id="p_price_clothing" type="number" min="0" value="${p.price??''}"></div></div><div class="field"><label>الثمن القديم (اختياري)</label><input id="p_old_price_clothing" type="number" min="0" value="${p.old_price??''}"></div><div class="small-muted">صور وعنوان ووصف قطعة واحدة هوما نفس الصور والعنوان والوصف اللي كاينين فقسم «معلومات المنتج» و«الصور والفيديو» تحت.</div></div>
+      <div class="card" style="margin-bottom:16px"><div class="section-title">قطعة واحدة (Une pièce)</div><div class="small-muted">هادي هي المونطاج ديال شرا قطعة وحدة. الزبون من بعد يختار مقاس + لون. تقدر تخفيها بلا ما تحيدها إلا بغيتي غير Packs.</div><div class="toggle"><input type="checkbox" id="single_enabled" ${single.enabled?'checked':''}><label>تفعيل قطعة واحدة</label></div><div class="toggle"><input type="checkbox" id="single_visible" ${single.visible?'checked':''}><label>ظاهرة للزبون</label></div><div class="field-row"><div class="field"><label>الكمية</label><input id="p_stock_clothing" type="number" min="0" value="${p.stock_quantity??''}"></div><div class="field"><label>الثمن</label><input id="p_price_clothing" type="number" min="0" value="${p.price??''}"></div></div><div class="field"><label>الثمن القديم (اختياري)</label><input id="p_old_price_clothing" type="number" min="0" value="${p.old_price??''}"></div><div class="small-muted">الصورة والعنوان والوصف والفيديو ديال قطعة واحدة هوما نفس اللي كاينين فقسم «معلومات المنتج» و«الصور والفيديو» تحت.</div></div>
 
-      <div class="card" style="margin-bottom:16px"><div class="section-title">Pack Standard</div><div class="small-muted">التشكيلة والثمن والصور كيتحكمو فيهم نتا. الزبون ما كيختارش القطع.</div><div class="toggle"><input type="checkbox" id="std_enabled" ${std.enabled?'checked':''}><label>إظهار/تفعيل Pack Standard</label></div><div id="std-fields"><div class="toggle"><input type="checkbox" id="std_visible" ${std.visible?'checked':''}><label>ظاهر للزبون</label></div><div class="field-row"><div class="field"><label>عدد القطع</label><input id="std_pieces" type="number" min="1" value="${std.pieces||3}"></div><div class="field"><label>الثمن</label><input id="std_price" type="number" min="0" value="${std.price??''}"></div></div><div class="field"><label>الثمن القديم (اختياري)</label><input id="std_old_price" type="number" min="0" value="${std.old_price??''}"></div><div class="field-row"><div class="field"><label>عنوان Pack (عربي)</label><input id="std_title_ar" value="${escHtml(std.title_ar||'')}"></div><div class="field"><label>Titre du Pack (français)</label><input id="std_title_fr" value="${escHtml(std.title_fr||'')}"></div></div><div class="field-row"><div class="field"><label>وصف Pack (عربي)</label><textarea id="std_desc_ar">${escHtml(std.description_ar||'')}</textarea></div><div class="field"><label>Description du Pack</label><textarea id="std_desc_fr">${escHtml(std.description_fr||'')}</textarea></div></div><div class="field"><label>صور Pack Standard</label><div class="upload-row"><button type="button" class="upload-btn" id="std-add-images">📷 إضافة الصور</button><input type="file" id="std-images" accept="image/*" multiple style="display:none"></div><div class="thumbs" id="std-images-preview"></div><button type="button" class="upload-btn" id="std-delete">🗑️ حذف Pack Standard</button></div><div id="std-ready-items"></div></div></div>
+      <div class="card" style="margin-bottom:16px"><div class="section-title">Pack Standard</div><div class="small-muted">أنت كتحدد لون كل قطعة. الزبون كيختار غير مقاس واحد للـPack كامل.</div><div class="toggle"><input type="checkbox" id="std_enabled" ${std.enabled?'checked':''}><label>تفعيل Pack Standard</label></div><div id="std-fields"><div class="toggle"><input type="checkbox" id="std_visible" ${std.visible?'checked':''}><label>ظاهر للزبون</label></div><div class="field-row"><div class="field"><label>عدد القطع</label><input id="std_pieces" type="number" min="1" value="${std.pieces||3}"></div><div class="field"><label>ثمن الـPack</label><input id="std_price" type="number" min="0" value="${std.price??''}"></div></div><div class="field"><label>الثمن القديم (اختياري)</label><input id="std_old_price" type="number" min="0" value="${std.old_price??''}"></div><div id="std-colors"></div></div></div>
 
-      <div class="card" style="margin-bottom:16px"><div class="section-title">Pack personnalisé</div><div class="small-muted">الزبون هو اللي كيختار المقاس واللون ديال كل قطعة.</div><div class="toggle"><input type="checkbox" id="cus_enabled" ${cus.enabled?'checked':''}><label>إظهار/تفعيل Pack personnalisé</label></div><div id="cus-fields"><div class="toggle"><input type="checkbox" id="cus_visible" ${cus.visible?'checked':''}><label>ظاهر للزبون</label></div><div class="field-row"><div class="field"><label>عدد القطع</label><input id="cus_pieces" type="number" min="1" value="${cus.pieces||3}"></div><div class="field"><label>الثمن</label><input id="cus_price" type="number" min="0" value="${cus.price??''}"></div></div><div class="field"><label>الثمن القديم (اختياري)</label><input id="cus_old_price" type="number" min="0" value="${cus.old_price??''}"></div><div class="field-row"><div class="field"><label>عنوان Pack (عربي)</label><input id="cus_title_ar" value="${escHtml(cus.title_ar||'')}"></div><div class="field"><label>Titre du Pack (français)</label><input id="cus_title_fr" value="${escHtml(cus.title_fr||'')}"></div></div><div class="field-row"><div class="field"><label>وصف Pack (عربي)</label><textarea id="cus_desc_ar">${escHtml(cus.description_ar||'')}</textarea></div><div class="field"><label>Description du Pack</label><textarea id="cus_desc_fr">${escHtml(cus.description_fr||'')}</textarea></div></div><div class="field"><label>صور Pack personnalisé</label><div class="upload-row"><button type="button" class="upload-btn" id="cus-add-images">📷 إضافة الصور</button><input type="file" id="cus-images" accept="image/*" multiple style="display:none"></div><div class="thumbs" id="cus-images-preview"></div><button type="button" class="upload-btn" id="cus-delete">🗑️ حذف Pack personnalisé</button></div></div></div>
+      <div class="card" style="margin-bottom:16px"><div class="section-title">Pack personnalisé</div><div class="small-muted">الزبون هو اللي كيختار مقاس واحد للـPack كامل، ولون كل قطعة بوحدها.</div><div class="toggle"><input type="checkbox" id="cus_enabled" ${cus.enabled?'checked':''}><label>تفعيل Pack personnalisé</label></div><div id="cus-fields"><div class="toggle"><input type="checkbox" id="cus_visible" ${cus.visible?'checked':''}><label>ظاهر للزبون</label></div><div class="field-row"><div class="field"><label>عدد القطع</label><input id="cus_pieces" type="number" min="1" value="${cus.pieces||3}"></div><div class="field"><label>ثمن الـPack</label><input id="cus_price" type="number" min="0" value="${cus.price??''}"></div></div><div class="field"><label>الثمن القديم (اختياري)</label><input id="cus_old_price" type="number" min="0" value="${cus.old_price??''}"></div></div></div>
     </div>
 
     <div class="card" style="margin-bottom:16px"><div class="section-title">معلومات المنتج</div><div class="field-row"><div class="field"><label>عنوان المنتج (عربي)</label><input id="p_title_ar" value="${escHtml(p.title_ar||'')}"></div><div class="field"><label>Titre (français)</label><input id="p_title_fr" value="${escHtml(p.title_fr||'')}"></div></div><div class="field-row"><div class="field"><label>الوصف (عربي)</label><textarea id="p_desc_ar">${escHtml(p.description_ar||'')}</textarea></div><div class="field"><label>Description (français)</label><textarea id="p_desc_fr">${escHtml(p.description_fr||'')}</textarea></div></div></div>
@@ -1505,31 +1421,34 @@ function renderProductTab(){
     updateProductTypeUI();
   }
 
-  const stdImgs=(std.images||[]).filter(Boolean),cusImgs=(cus.images||[]).filter(Boolean);
-  let stdPending=stdImgs.slice(),cusPending=cusImgs.slice();
-  function previewImgs(boxId,arr){const box=document.getElementById(boxId);if(!box)return;box.innerHTML=arr.map((u,i)=>`<div class="img-thumb"><img src="${escHtml(u)}"><button type="button" class="rm-btn" data-rm="${i}">✕</button></div>`).join('');box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{arr.splice(+b.dataset.rm,1);previewImgs(boxId,arr);});}
-  previewImgs('std-images-preview',stdPending);previewImgs('cus-images-preview',cusPending);renderImagesPreview();renderVideoPreview();
+  renderImagesPreview();renderVideoPreview();
   document.getElementById('btn-add-images').onclick=()=>document.getElementById('input-images').click();document.getElementById('input-images').onchange=onImagesSelected;document.getElementById('btn-add-video').onclick=()=>document.getElementById('input-video').click();document.getElementById('input-video').onchange=onVideoSelected;document.getElementById('btn-remove-video').onclick=()=>{pendingVideoUrl='';document.getElementById('btn-remove-video').style.display='none';renderVideoPreview();};
-  document.getElementById('std-add-images').onclick=()=>document.getElementById('std-images').click();document.getElementById('cus-add-images').onclick=()=>document.getElementById('cus-images').click();
-  async function uploadPackImages(input,arr,boxId){const files=Array.from(input.files||[]);input.value='';for(const file of files){if(!file.type.startsWith('image/')||file.size>MAX_IMAGE_MB*1024*1024)continue;const res=await sbUploadFile(file,'images');if(res.ok){arr.push(res.url);previewImgs(boxId,arr)}}}
-  document.getElementById('std-images').onchange=e=>uploadPackImages(e.target,stdPending,'std-images-preview');document.getElementById('cus-images').onchange=e=>uploadPackImages(e.target,cusPending,'cus-images-preview');
-  function renderStdItems(){const box=document.getElementById('std-ready-items');if(!box)return;const n=Math.max(1,parseInt(document.getElementById('std_pieces')?.value||'3',10)),colors=csvList(document.getElementById('p_colors')?.value||p.colors),items=std.items||[];box.innerHTML=`<div class="small-muted" style="margin-top:8px">حدد لون كل قطعة. المقاس غادي يختاره الزبون بنفسه (مقاس واحد للـPack كامل).</div>`+Array.from({length:n},(_,i)=>{const it=items[i]||{};return `<div class="pack-piece-choice"><strong>القطعة ${i+1}</strong><div class="field"><label>اللون</label><select class="std-color">${colors.map(x=>`<option ${x===it.color?'selected':''}>${escHtml(x)}</option>`).join('')}</select></div></div>`}).join('')}
-  document.getElementById('std_pieces').oninput=renderStdItems;document.getElementById('p_colors')?.addEventListener('input',renderStdItems);renderStdItems();
+  function renderStdColors(){const box=document.getElementById('std-colors');if(!box)return;const n=Math.max(1,parseInt(document.getElementById('std_pieces')?.value||'3',10)),colors=csvList(document.getElementById('p_colors')?.value||p.colors),prev=std.colors||[];box.innerHTML=`<div class="small-muted" style="margin-top:8px">حدد لون كل قطعة. المقاس غادي يختاره الزبون بنفسه (مقاس واحد للـPack كامل).</div>`+Array.from({length:n},(_,i)=>`<div class="pack-piece-choice"><strong>القطعة ${i+1}</strong><div class="field"><label>اللون</label><select class="std-color">${colors.map(x=>`<option ${x===prev[i]?'selected':''}>${escHtml(x)}</option>`).join('')}</select></div></div>`).join('')}
+  document.getElementById('std_pieces').oninput=renderStdColors;document.getElementById('p_colors')?.addEventListener('input',renderStdColors);renderStdColors();
   const toggleFields=(id,box)=>{document.getElementById(id)?.addEventListener('change',()=>{box.style.display=document.getElementById(id).checked?'block':'none';setPreviewApproval(false)});box.style.display=document.getElementById(id).checked?'block':'none'};toggleFields('std_enabled',document.getElementById('std-fields'));toggleFields('cus_enabled',document.getElementById('cus-fields'));
-  document.getElementById('std-delete').onclick=()=>{stdPending=[];document.getElementById('std_enabled').checked=false;document.getElementById('std_visible').checked=false;setPreviewApproval(false);previewImgs('std-images-preview',stdPending)};document.getElementById('cus-delete').onclick=()=>{cusPending=[];document.getElementById('cus_enabled').checked=false;document.getElementById('cus_visible').checked=false;setPreviewApproval(false);previewImgs('cus-images-preview',cusPending)};
   document.getElementById('save-product').onclick=saveProduct;document.getElementById('delete-product').onclick=deleteProduct;bindPreviewRequired();
-  window.__packAdminDraft=()=>({stdPending:stdPending.slice(),cusPending:cusPending.slice()});
 }
 function collectPackBody(){
   const type=document.getElementById('p_type')?.value||'standard';
-  if(type!=='clothing') return {pack_enabled:false,pack_visible:false,pack_standard_config:null,pack_custom_config:null,pack_mode:'choice',pack_pieces:3,pack_items:[],pack_config:{mode:'choice',pieces:3,items:[]}};
-  const imgs=window.__packAdminDraft?window.__packAdminDraft():{stdPending:[],cusPending:[]};
-  const read=(prefix,enabledKey,visibleKey,piecesKey,priceKey,oldKey,titleAr,titleFr,descAr,descFr,images,items)=>({enabled:!!document.getElementById(enabledKey)?.checked,visible:!!document.getElementById(visibleKey)?.checked,pieces:Math.max(1,parseInt(document.getElementById(piecesKey)?.value||'3',10)),price:document.getElementById(priceKey)?.value?parseFloat(document.getElementById(priceKey).value):null,old_price:document.getElementById(oldKey)?.value?parseFloat(document.getElementById(oldKey).value):null,title_ar:document.getElementById(titleAr)?.value||'',title_fr:document.getElementById(titleFr)?.value||'',description_ar:document.getElementById(descAr)?.value||'',description_fr:document.getElementById(descFr)?.value||'',images:images.slice(),items:items||[],sizes:document.getElementById('p_sizes')?.value||'',colors:document.getElementById('p_colors')?.value||''});
-  const stdItems=Array.from(document.querySelectorAll('#std-ready-items .pack-piece-choice')).map((el,i)=>({piece:i+1,color:el.querySelector('.std-color')?.value||''}));
-  const std=read('std','std_enabled','std_visible','std_pieces','std_price','std_old_price','std_title_ar','std_title_fr','std_desc_ar','std_desc_fr',imgs.stdPending,stdItems);
-  const cus=read('cus','cus_enabled','cus_visible','cus_pieces','cus_price','cus_old_price','cus_title_ar','cus_title_fr','cus_desc_ar','cus_desc_fr',imgs.cusPending,[]);
+  if(type!=='clothing') return {pack_config:{single:{enabled:true,visible:true}}};
+  const stdColors=Array.from(document.querySelectorAll('#std-colors .std-color')).map(s=>s.value||'');
+  const std={
+    enabled:!!document.getElementById('std_enabled')?.checked,
+    visible:!!document.getElementById('std_visible')?.checked,
+    pieces:Math.max(1,parseInt(document.getElementById('std_pieces')?.value||'3',10)),
+    price:document.getElementById('std_price')?.value?parseFloat(document.getElementById('std_price').value):null,
+    old_price:document.getElementById('std_old_price')?.value?parseFloat(document.getElementById('std_old_price').value):null,
+    colors:stdColors
+  };
+  const cus={
+    enabled:!!document.getElementById('cus_enabled')?.checked,
+    visible:!!document.getElementById('cus_visible')?.checked,
+    pieces:Math.max(1,parseInt(document.getElementById('cus_pieces')?.value||'3',10)),
+    price:document.getElementById('cus_price')?.value?parseFloat(document.getElementById('cus_price').value):null,
+    old_price:document.getElementById('cus_old_price')?.value?parseFloat(document.getElementById('cus_old_price').value):null
+  };
   const single={enabled:!!document.getElementById('single_enabled')?.checked,visible:!!document.getElementById('single_visible')?.checked};
-  return {pack_enabled:std.enabled||cus.enabled,pack_visible:(std.enabled&&std.visible)||(cus.enabled&&cus.visible),pack_mode:cus.enabled?'choice':'ready',pack_pieces:cus.pieces,pack_items:[],pack_title_ar:std.title_ar||cus.title_ar||'',pack_title_fr:std.title_fr||cus.title_fr||'',pack_description_ar:std.description_ar||cus.description_ar||'',pack_description_fr:std.description_fr||cus.description_fr||'',pack_price:std.price??cus.price??null,pack_old_price:std.old_price??cus.old_price??null,pack_images:(std.images&&std.images.length?std.images:cus.images)||[],pack_config:{standard:std,custom:cus,single}};
+  return {pack_config:{standard:std,custom:cus,single}};
 }
 async function saveProduct(){
   if(!PREVIEW_APPROVED){document.getElementById('save-msg').innerHTML='<div class="msg err">خاصك تدير المعاينة قبل الحفظ</div>';return;}
