@@ -174,26 +174,27 @@
   .admin-nav-links button, .admin-nav-links a{ font-size:.82rem; color:var(--muted); text-decoration:underline; background:none; padding:0; }
 
   /* ===== NEW: preview overlay ===== */
+  /* Preview and public storefront use separate namespaces so their option styles cannot leak into each other. */
   .video-section{margin:18px 0}.section-mini-title{font-weight:900;margin-bottom:10px}.cart-bar{display:flex;justify-content:flex-end;margin:10px 0 14px}.cart-button{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px;border-radius:999px;font-weight:800}.cart-button b{min-width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;font-size:.75rem}.purchase-selector{margin:20px 0}.purchase-selector .section-mini-title{font-size:1.12rem;color:var(--ink);margin-bottom:12px}.purchase-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.purchase-option{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;padding:13px 12px;border:1.5px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink)!important;font-weight:800;cursor:pointer;text-align:center}.purchase-option span{color:var(--ink)!important}.purchase-option.selected{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 15%,transparent)}.purchase-option input{accent-color:var(--accent);width:18px;height:18px}.variety-choice-wrap{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}.variety-choice-wrap .small-muted{color:var(--ink);font-weight:800;margin:0 0 10px}.variety-grid{grid-template-columns:1fr}.selection-info{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--card)}.selection-info-title{font-weight:900;color:var(--ink);font-size:1rem;margin-bottom:12px}
-.preview-overlay .purchase-option,
-.preview-overlay .purchase-option span,
-.preview-overlay .selection-info,
-.preview-overlay .selection-info-title,
-.preview-overlay .selection-info .field label,
-.preview-overlay .card .field label,
-.preview-overlay .cart-button,
-.preview-overlay .pack-public,
-.preview-overlay .pack-public-title{
+.preview-storefront .purchase-option,
+.preview-storefront .purchase-option span,
+.preview-storefront .selection-info,
+.preview-storefront .selection-info-title,
+.preview-storefront .selection-info .field label,
+.preview-storefront .card .field label,
+.preview-storefront .cart-button,
+.preview-storefront .pack-public,
+.preview-storefront .pack-public-title{
   color:#2b2622 !important;
 }
-.preview-overlay .pack-public-desc{
+.preview-storefront .pack-public-desc{
   color:#6d645c !important;
 }
-.preview-overlay .purchase-selector .section-mini-title{
+.preview-storefront .purchase-selector .section-mini-title{
   color:#2b2622 !important;
 }
 .selection-info .field label{color:var(--ink);font-weight:800}.selection-info .choice-btn{color:var(--ink)}
-.preview-overlay .choice-grid .choice-btn{display:inline-flex !important;visibility:visible !important;opacity:1 !important;pointer-events:auto !important;position:relative;z-index:3;align-items:center;justify-content:center;}
+.preview-storefront .choice-grid .choice-btn{display:inline-flex !important;visibility:visible !important;opacity:1 !important;pointer-events:auto !important;position:relative;z-index:3;align-items:center;justify-content:center;}
 .preview-overlay{ position:fixed; inset:0; background:var(--bg); z-index:2000; overflow-y:auto; }
   .preview-bar{ position:sticky; top:0; z-index:5; display:flex; justify-content:space-between; align-items:center; padding:12px 18px; background:var(--card); border-bottom:1px solid var(--line); }
   .preview-bar .tag{ font-size:.78rem; font-weight:800; color:var(--accent); }
@@ -253,37 +254,82 @@
   .modal-box{ background:var(--card); color:var(--ink); border-radius:16px; padding:22px; max-width:380px; width:100%; max-height:88vh; overflow-y:auto; }
   .modal-box .close-x{ float:left; background:none; color:var(--muted); font-size:1.1rem; }
 
-  .choice-btn.color-choice{display:inline-flex;align-items:center;gap:8px;color:var(--ink)!important;background:var(--card);border-color:var(--line);}
-  .choice-btn.color-choice .color-dot{width:18px;height:18px;min-width:18px;border-radius:50%;background:var(--choice-color,#d8d2cc);border:1.5px solid var(--choice-border,#aaa);box-shadow:inset 0 0 0 1px rgba(0,0,0,.05);}
-  .choice-btn.color-choice.selected{background:var(--accent);color:var(--accent-ink)!important;border-color:var(--accent);}
-  .choice-btn.color-choice.selected .color-dot{border-color:rgba(255,255,255,.9);box-shadow:0 0 0 2px rgba(255,255,255,.35);}
-  .preview-overlay .choice-btn:not(.selected){color:#17130f!important;background:#fff!important;}
-  .preview-overlay .choice-btn.selected{color:#fff!important;}
+  .storefront-page .choice-btn.color-choice, .preview-storefront .choice-btn.color-choice{display:inline-flex;align-items:center;gap:8px;color:var(--ink)!important;background:var(--card);border-color:var(--line);}
+  .storefront-page .choice-btn.color-choice .color-dot, .preview-storefront .choice-btn.color-choice .color-dot{width:18px;height:18px;min-width:18px;border-radius:50%;background:var(--choice-color,#d8d2cc);border:1.5px solid var(--choice-border,#aaa);box-shadow:inset 0 0 0 1px rgba(0,0,0,.05);}
+  .storefront-page .choice-btn.color-choice.selected, .preview-storefront .choice-btn.color-choice.selected{background:var(--accent);color:var(--accent-ink)!important;border-color:var(--accent);}
+  .storefront-page .choice-btn.color-choice.selected .color-dot, .preview-storefront .choice-btn.color-choice.selected .color-dot{border-color:rgba(255,255,255,.9);box-shadow:0 0 0 2px rgba(255,255,255,.35);}
+  .preview-storefront .choice-btn:not(.selected){color:#17130f!important;background:#fff!important;}
+  .preview-storefront .choice-btn.selected{color:#fff!important;}
   .method-add-cart{display:flex;align-items:center;justify-content:center;width:100%;margin-top:16px;min-height:50px;border:0;border-radius:14px;background:var(--accent);color:var(--accent-ink);font-weight:900;font-size:1rem;cursor:pointer;box-shadow:0 5px 14px rgba(0,0,0,.08)}
   .method-add-cart:active{transform:scale(.99)}
   .purchase-panel .single-qty-wrap{margin-bottom:0}
   .purchase-panel{position:relative}
 
 /* ===== CUSTOMER-FACING OPTIONS: clean storefront UI ===== */
-.customer-options{margin-top:14px;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
-.customer-choice-section{margin-bottom:16px}
-.customer-choice-section:last-child{margin-bottom:0}
-.customer-choice-section>label,.customer-fixed-colors>label{display:block;margin-bottom:9px;font-size:.9rem;font-weight:900;color:var(--ink)}
-.customer-options .choice-grid{display:flex;flex-wrap:wrap;gap:9px}
-.customer-options .choice-btn{display:inline-flex!important;align-items:center;justify-content:center;gap:8px;min-width:52px;min-height:44px;padding:9px 14px;border:1.5px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink)!important;font-weight:800;cursor:pointer;pointer-events:auto!important;opacity:1!important;visibility:visible!important}
-.customer-options .choice-btn:not(.selected){color:var(--ink)!important;background:var(--bg)!important}
-.customer-options .choice-btn.selected{color:var(--accent-ink)!important;background:var(--accent)!important;border-color:var(--accent)!important}
-.customer-options .color-choice .color-dot{width:18px;height:18px;border-radius:50%;display:inline-block;background:var(--choice-color,#d8d2cc);border:1.5px solid var(--choice-border,#aaa);flex:0 0 18px}
-.customer-options .color-choice.selected .color-dot{border-color:rgba(255,255,255,.85)}
-.customer-fixed-colors{margin-top:2px}
-.fixed-color-list{display:grid;gap:8px}
-.fixed-color-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--bg);color:var(--ink);font-weight:800}
-.fixed-color-value{display:inline-flex;align-items:center;gap:8px}
-.fixed-color-value .color-dot{width:18px;height:18px;border-radius:50%;display:inline-block;background:var(--choice-color,#d8d2cc);border:1.5px solid var(--choice-border,#aaa)}
-.customer-pieces{display:grid;gap:10px}
-.customer-piece{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
-.customer-piece-title{font-size:.95rem;font-weight:900;color:var(--ink);margin-bottom:10px}
-.customer-piece .customer-choice-section{margin-bottom:0}
+.storefront-page .customer-options, .preview-storefront .customer-options{margin-top:14px;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.storefront-page .customer-choice-section, .preview-storefront .customer-choice-section{margin-bottom:16px}
+.storefront-page .customer-choice-section:last-child, .preview-storefront .customer-choice-section:last-child{margin-bottom:0}
+.storefront-page .customer-choice-section>label,.preview-storefront .customer-choice-section>label,.storefront-page .customer-fixed-colors>label,.preview-storefront .customer-fixed-colors>label{display:block;margin-bottom:9px;font-size:.9rem;font-weight:900;color:var(--ink)}
+.storefront-page .customer-options .choice-grid, .preview-storefront .customer-options .choice-grid{display:flex;flex-wrap:wrap;gap:9px}
+.storefront-page .customer-options .choice-btn, .preview-storefront .customer-options .choice-btn{display:inline-flex!important;align-items:center;justify-content:center;gap:8px;min-width:52px;min-height:44px;padding:9px 14px;border:1.5px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink)!important;font-weight:800;cursor:pointer;pointer-events:auto!important;opacity:1!important;visibility:visible!important}
+.storefront-page .customer-options .choice-btn:not(.selected), .preview-storefront .customer-options .choice-btn:not(.selected){color:var(--ink)!important;background:var(--bg)!important}
+.storefront-page .customer-options .choice-btn.selected, .preview-storefront .customer-options .choice-btn.selected{color:var(--accent-ink)!important;background:var(--accent)!important;border-color:var(--accent)!important}
+.storefront-page .customer-options .color-choice .color-dot, .preview-storefront .customer-options .color-choice .color-dot{width:18px;height:18px;border-radius:50%;display:inline-block;background:var(--choice-color,#d8d2cc);border:1.5px solid var(--choice-border,#aaa);flex:0 0 18px}
+.storefront-page .customer-options .color-choice.selected .color-dot, .preview-storefront .customer-options .color-choice.selected .color-dot{border-color:rgba(255,255,255,.85)}
+.storefront-page .customer-fixed-colors, .preview-storefront .customer-fixed-colors{margin-top:2px}
+.storefront-page .fixed-color-list, .preview-storefront .fixed-color-list{display:grid;gap:8px}
+.storefront-page .fixed-color-item, .preview-storefront .fixed-color-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--bg);color:var(--ink);font-weight:800}
+.storefront-page .fixed-color-value, .preview-storefront .fixed-color-value{display:inline-flex;align-items:center;gap:8px}
+.storefront-page .fixed-color-value .color-dot, .preview-storefront .fixed-color-value .color-dot{width:18px;height:18px;border-radius:50%;display:inline-block;background:var(--choice-color,#d8d2cc);border:1.5px solid var(--choice-border,#aaa)}
+.storefront-page .customer-pieces, .preview-storefront .customer-pieces{display:grid;gap:10px}
+.storefront-page .customer-piece, .preview-storefront .customer-piece{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.storefront-page .customer-piece-title, .preview-storefront .customer-piece-title{font-size:.95rem;font-weight:900;color:var(--ink);margin-bottom:10px}
+.storefront-page .customer-piece .customer-choice-section, .preview-storefront .customer-piece .customer-choice-section{margin-bottom:0}
+
+
+  /* ===== CUSTOMER STOREFRONT: readable, independent UI ===== */
+  .storefront-page .purchase-selector .section-mini-title,
+  .storefront-page .purchase-option,
+  .storefront-page .purchase-option span,
+  .storefront-page .customer-options,
+  .storefront-page .customer-options label,
+  .storefront-page .customer-piece-title,
+  .storefront-page .fixed-color-item,
+  .storefront-page .fixed-color-value,
+  .storefront-page .method-add-cart {
+    color:#2b2622 !important;
+  }
+  .storefront-page .purchase-option { background:#fff !important; }
+  .storefront-page .purchase-option.selected { color:#2b2622 !important; }
+  .storefront-page .purchase-option.selected span { color:#2b2622 !important; }
+  .storefront-page .customer-options { background:#fff !important; }
+  .storefront-page .customer-options .choice-btn:not(.selected) {
+    color:#17130f !important; background:#fff !important;
+  }
+  .storefront-page .customer-options .choice-btn.selected {
+    color:#fff !important;
+  }
+  .storefront-page .customer-options .color-choice:not(.selected) {
+    color:#17130f !important; background:#fff !important;
+  }
+  .storefront-page .method-add-cart {
+    background:var(--accent) !important; color:var(--accent-ink) !important;
+  }
+  .storefront-footer {
+    margin:28px -18px -40px; padding:24px 18px 30px;
+    text-align:center; background:rgba(255,255,255,.96);
+    border-top:1px solid var(--line);
+  }
+  .storefront-footer .delivery-lines {
+    display:grid; gap:7px; font-size:.9rem; line-height:1.6; font-weight:800; color:#2b2622;
+  }
+  .storefront-footer .wa-footer {
+    display:inline-flex; align-items:center; justify-content:center; gap:9px;
+    margin-top:16px; min-height:48px; padding:12px 20px;
+    border-radius:999px; background:#25D366; color:#fff; font-weight:900;
+    box-shadow:0 5px 14px rgba(0,0,0,.10);
+  }
+  .storefront-footer .wa-icon { width:22px; height:22px; flex:0 0 22px; }
 
 </style>
 </head>
@@ -598,7 +644,7 @@ function initProductVideo(root=document){
 }
 
 /* ============ STATE ============ */
-let STATE = { settings:null, product:null, upsell:null, lang:"ar", step:"form", order:{}, upsellAccepted:false, purchaseType:"product", packGalleryIndex:0 };
+let STATE = { settings:null, product:null, upsell:null, lang:"ar", step:"form", order:{}, upsellAccepted:false, purchaseType:"product", packGalleryIndex:0, cartItems:[], cartItem:null };
 let LANDING_QTY = {product:1, pack_standard:1, pack_custom:1};
 let SHOW_ADMIN_RETURN = false;
 
@@ -972,7 +1018,19 @@ function buildPurchaseSection(product,lang,qtyObj){
   const cusPanel=hasCus?`<div id="pack-custom-wrap" style="display:none">${buildCustomPackOptions(product,lang,cus)}<button type="button" class="method-add-cart" data-purchase-add="pack_custom">🛒 ${lang==='ar'?'أضف إلى السلة':'Ajouter au panier'}</button></div>`:"";
   return selectorHtml+singlePanel+stdPanel+cusPanel;
 }
-function buildFormMarkup(settings, product, lang, qtyObj){
+function buildStorefrontFooter(settings,lang){
+  const wa=(settings.whatsapp_number||'').replace(/\D/g,'');
+  const isAr=lang==='ar';
+  const lines=isAr
+    ? ['🚚 التوصيل بالمجان داخل الدار البيضاء','📦 التوصيل متوفر في جميع أنحاء المغرب']
+    : ['🚚 Livraison gratuite à Casablanca','📦 Livraison partout au Maroc'];
+  const waText=isAr?'تواصل معنا عبر واتساب':'Contactez-nous sur WhatsApp';
+  const waMsg=isAr?'مرحبا، أريد الاستفسار عن المنتج':'Bonjour, je souhaite avoir des informations sur le produit';
+  const waHtml=wa ? `<a class="wa-footer" href="${waLink(waMsg)}" target="_blank" rel="noopener"><svg class="wa-icon" viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M19.11 17.2c-.27-.14-1.6-.79-1.85-.88-.25-.09-.43-.14-.61.14-.18.27-.7.88-.86 1.06-.16.18-.32.2-.59.07-.27-.14-1.14-.42-2.17-1.34-.8-.71-1.34-1.59-1.5-1.86-.16-.27-.02-.42.12-.55.12-.12.27-.32.41-.48.14-.16.18-.27.27-.45.09-.18.05-.34-.02-.48-.07-.14-.61-1.47-.84-2.02-.22-.53-.45-.46-.61-.47h-.52c-.18 0-.48.07-.73.34-.25.27-.95.93-.95 2.27s.97 2.63 1.11 2.81c.14.18 1.9 2.9 4.61 4.07.64.28 1.14.44 1.53.56.64.2 1.22.17 1.68.1.51-.08 1.6-.65 1.83-1.28.23-.63.23-1.17.16-1.28-.07-.11-.25-.18-.52-.32z"/><path fill="currentColor" d="M16.03 3.2a12.77 12.77 0 0 0-10.9 19.42L3.4 28.7l6.23-1.63a12.77 12.77 0 1 0 6.4-23.87zm0 23.3c-2.05 0-4.05-.55-5.81-1.59l-.42-.25-3.7.97.99-3.6-.27-.43a10.6 10.6 0 1 1 9.21 4.9z"/></svg><span>${waText}</span></a>` : '';
+  return `<footer class="storefront-footer"><div class="delivery-lines">${lines.map(x=>`<div>${x}</div>`).join('')}</div>${waHtml}</footer>`;
+}
+
+function buildFormMarkup(settings, product, lang, qtyObj, scopeClass="storefront-page"){
   const t=T[lang]||T.ar,title=lang==='ar'?product.title_ar:product.title_fr,desc=lang==='ar'?product.description_ar:product.description_fr;
   const images=(product.images||[]).filter(Boolean);
   const hero=images[0]||'';
@@ -982,7 +1040,7 @@ function buildFormMarkup(settings, product, lang, qtyObj){
   const isClothing=product.product_type==='clothing';
   const qty=qtyObj||{};
   const purchaseHtml=isClothing?buildPurchaseSection(product,lang,qty):`<div class="price-row"><span class="price">${product.price||0} ${t.currency}</span>${product.old_price?`<span class="old-price">${product.old_price} ${t.currency}</span>`:''}</div>${buildQtyStepper('product',lang,qty.product)}<button type="button" class="method-add-cart" data-purchase-add="product">🛒 ${lang==='ar'?'أضف إلى السلة':'Ajouter au panier'}</button>`;
-  return `<div class="topbar"><div class="brand">${escHtml(settings.store_name||'')}</div><div class="lang-switch"><button type="button" data-lang="ar" class="${lang==='ar'?'active':''}">AR</button><button type="button" data-lang="fr" class="${lang==='fr'?'active':''}">FR</button></div></div><div class="wrap"><div class="hero-media">${mediaHtml}</div>${galleryHtml}<h1 class="title">${escHtml(title||'')}</h1><p class="desc">${escHtml(desc||'')}</p>${videoHtml}${purchaseHtml}<div class="cart-bar"><button type="button" class="cart-button" id="cart-button">🛒 <span>${lang==='ar'?'السلة':'Panier'}</span><b id="cart-count">0</b></button></div><div class="cart-summary" id="cart-summary" style="display:none"></div><div class="card"><div class="field"><label>${t.full_name}</label><input id="f_name" type="text"></div><div class="field"><label>${t.phone}</label><input id="f_phone" type="tel"></div><div class="field"><label>${t.city}</label><input id="f_city" type="text"></div><div class="field"><label>${t.address}</label><textarea id="f_address"></textarea></div><div id="order-msg"></div><button class="cta" id="submit-btn">${t.place_order}</button></div><div class="footer-note">${escHtml(settings.store_name||'')}</div></div>`;
+  return `<div class="topbar"><div class="brand">${escHtml(settings.store_name||'')}</div><div class="lang-switch"><button type="button" data-lang="ar" class="${lang==='ar'?'active':''}">AR</button><button type="button" data-lang="fr" class="${lang==='fr'?'active':''}">FR</button></div></div><div class="wrap ${scopeClass}"><div class="hero-media">${mediaHtml}</div>${galleryHtml}<h1 class="title">${escHtml(title||'')}</h1><p class="desc">${escHtml(desc||'')}</p>${videoHtml}${purchaseHtml}<div class="cart-bar"><button type="button" class="cart-button" id="cart-button">🛒 <span>${lang==='ar'?'السلة':'Panier'}</span><b id="cart-count">0</b></button></div><div class="cart-summary" id="cart-summary" style="display:none"></div><div class="card"><div class="field"><label>${t.full_name}</label><input id="f_name" type="text"></div><div class="field"><label>${t.phone}</label><input id="f_phone" type="tel"></div><div class="field"><label>${t.city}</label><input id="f_city" type="text"></div><div class="field"><label>${t.address}</label><textarea id="f_address"></textarea></div><div id="order-msg"></div><button class="cta" id="submit-btn">${t.place_order}</button></div><div class="footer-note">${escHtml(settings.store_name||'')}</div>${buildStorefrontFooter(settings,lang)}</div>`;
 }
 
 function initCustomerGallery(root){
@@ -1039,7 +1097,11 @@ function initPurchaseSelector(root){
     STATE.purchaseType=selected;
   };
 
-  radios.forEach(r=>r.addEventListener('change',update));
+  radios.forEach(r=>r.addEventListener('change',()=>{
+    update();
+    // Any change of purchase method requires a fresh Add to cart.
+    if(!(root.closest && root.closest('#preview-overlay'))) STATE.cartItem=null;
+  }));
   update();
 
   // One delegated click handler for every size/color choice-btn in this root.
@@ -1049,6 +1111,7 @@ function initPurchaseSelector(root){
         e.preventDefault();
         g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));
         b.classList.add('selected');
+        if(!(root.closest && root.closest('#preview-overlay'))) STATE.cartItem=null;
       };
     });
   });
@@ -1058,6 +1121,7 @@ function initSingleQuantity(root){
   const setValue=(type,val)=>{
     val=Math.max(1,parseInt(val||'1',10));
     LANDING_QTY[type]=val;
+    if(!(root.closest && root.closest('#preview-overlay'))) STATE.cartItem=null;
     const el=root.querySelector(`.qty-value[data-type="${type}"]`);
     if(el)el.textContent=val;
   };
@@ -1075,6 +1139,7 @@ function initSingleQuantity(root){
   });
 }
 function getCurrentCartItem(root=document){
+  const currentProduct = root?.__previewProduct || STATE.product;
   let purchase=root.querySelector('input[name="purchase-choice"]:checked')?.value;
   if(!purchase){
     if(root.querySelector('#single-wrap')) purchase='product';
@@ -1089,9 +1154,9 @@ function getCurrentCartItem(root=document){
   };
   let packOptions=[],unitPrice=0;
   if(purchase==='product'){
-    unitPrice=STATE.product.price||0;
+    unitPrice=currentProduct?.price||0;
   } else if(purchase==='pack_custom'){
-    const c=getCustomPackConfig(STATE.product),n=Math.max(1,Number(c.pieces)||1);
+    const c=getCustomPackConfig(currentProduct),n=Math.max(1,Number(c.pieces)||1);
     unitPrice=c.price||0;
     const commonSize=root.querySelector('#pack-custom-common-size .selected')?.dataset.value||'';
     for(let i=0;i<n;i++){
@@ -1099,7 +1164,7 @@ function getCurrentCartItem(root=document){
       packOptions.push({piece:i+1,size:commonSize,color:cg?.dataset.value||''});
     }
   } else if(purchase==='pack_standard'){
-    const c=getStandardPackConfig(STATE.product);
+    const c=getStandardPackConfig(currentProduct);
     unitPrice=c.price||0;
     const commonSize=root.querySelector('#pack-standard-common-size .selected')?.dataset.value||'';
     packOptions=(c.colors||[]).map((color,i)=>({piece:i+1,size:commonSize,color:color||''}));
@@ -1111,6 +1176,30 @@ function purchaseLabel(purchase,lang){
   if(purchase==='pack_standard') return 'Pack Standard';
   if(purchase==='pack_custom') return lang==='ar'?'تشكيلة متنوعة':'Assortiment varié';
   return lang==='ar'?'قطعة واحدة':'Une pièce';
+}
+function syncCartItem(){ STATE.cartItem = STATE.cartItems.length ? STATE.cartItems[STATE.cartItems.length-1] : null; }
+function addCartItem(item){ const copy=JSON.parse(JSON.stringify(item)); STATE.cartItems.push(copy); syncCartItem(); return copy; }
+function cartTotal(){ return STATE.cartItems.reduce((sum,item)=>sum + Number(item.unitPrice||0)*Math.max(1,Number(item.quantity||1)),0); }
+function cartQuantity(){ return STATE.cartItems.reduce((sum,item)=>sum + Math.max(1,Number(item.quantity||1)),0); }
+function renderFullCartSummaryHtml(items,lang){
+  const t=T[lang]||T.ar;
+  if(!items.length) return `<div class="small-muted">${lang==='ar'?'السلة فارغة':'Votre panier est vide'}</div>`;
+  let html=items.map((item,i)=>{
+    const label=purchaseLabel(item.purchaseType,lang);
+    const total=Number(item.unitPrice||0)*Math.max(1,Number(item.quantity||1));
+    let details='';
+    if(item.purchaseType==='product'){
+      if(item.productOptions?.size) details+=`<div>${lang==='ar'?'المقاس':'Taille'}: ${escHtml(item.productOptions.size)}</div>`;
+      if(item.productOptions?.color) details+=`<div>${lang==='ar'?'اللون':'Couleur'}: ${escHtml(item.productOptions.color)}</div>`;
+    }else{
+      const size=item.packOptions?.[0]?.size;
+      if(size) details+=`<div>${lang==='ar'?'المقاس':'Taille'}: ${escHtml(size)}</div>`;
+      (item.packOptions||[]).forEach((po,j)=>{ if(po.color) details+=`<div>${lang==='ar'?'القطعة':'Pièce'} ${j+1}: ${escHtml(po.color)}</div>`; });
+    }
+    return `<div class="cart-line" style="padding:10px 0;border-bottom:1px solid var(--line)"><strong>${i+1}. ${escHtml(label)}</strong> — ${total} ${t.currency}${details}</div>`;
+  }).join('');
+  html+=`<div style="margin-top:12px;font-weight:900">${lang==='ar'?'المجموع':'Total'}: ${cartTotal()} ${t.currency}</div>`;
+  return html;
 }
 function renderCartSummaryHtml(item,lang){
   const t=T[lang]||T.ar;
@@ -1129,23 +1218,24 @@ function renderCartSummaryHtml(item,lang){
   return rows;
 }
 function initCart(root){
+  const currentProduct = root?.__previewProduct || STATE.product;
   const basket=root.querySelector('#cart-button');
   const addItem=(purchaseOverride)=>{
     const item=getCurrentCartItem(root);
     const lang = (root.closest && root.closest('#preview-overlay')) ? PREVIEW_LANG : STATE.lang;
     const err=(ar,fr)=>{ const msg=root.querySelector('#order-msg'); if(msg) msg.innerHTML=`<div class="msg err">${lang==='ar'?ar:fr}</div>`; };
-    if(item.purchaseType==='product' && STATE.product?.product_type==='clothing'){
-      const sizes=csvList(STATE.product.sizes||'');
-      const colors=csvList(STATE.product.colors||'');
+    if(item.purchaseType==='product' && currentProduct?.product_type==='clothing'){
+      const sizes=csvList(currentProduct.sizes||'');
+      const colors=csvList(currentProduct.colors||'');
       if(sizes.length && !item.productOptions.size){ err('اختار المقاس من فضلك','Veuillez choisir la taille'); return; }
       if(colors.length && !item.productOptions.color){ err('اختار اللون من فضلك','Veuillez choisir la couleur'); return; }
     }
     if(item.purchaseType==='pack_standard'){
-      const sizes=csvList(STATE.product?.sizes||'');
+      const sizes=csvList(currentProduct?.sizes||'');
       if(sizes.length && !(item.packOptions?.[0]?.size)){ err('اختار المقاس من فضلك','Veuillez choisir la taille'); return; }
     }
     if(item.purchaseType==='pack_custom'){
-      const sizes=csvList(STATE.product?.sizes||'');
+      const sizes=csvList(currentProduct?.sizes||'');
       if(sizes.length && !(item.packOptions?.[0]?.size)){ err('اختار المقاس من فضلك','Veuillez choisir la taille'); return; }
       if((item.packOptions||[]).some(x=>!x.color)){ err('اختار لون كل قطعة من فضلك','Veuillez choisir la couleur de chaque pièce'); return; }
     }
@@ -1156,10 +1246,10 @@ function initCart(root){
     }
     // Packs are always quantity 1; only the single-piece method has +/- quantity.
     if(item.purchaseType!=='product') item.quantity=1;
-    STATE.cartItem=item;
-    const count=root.querySelector('#cart-count'); if(count) count.textContent=String(item.quantity||1);
+    addCartItem(item);
+    const count=root.querySelector('#cart-count'); if(count) count.textContent=String(cartQuantity());
     const summary=root.querySelector('#cart-summary');
-    if(summary){summary.innerHTML=renderCartSummaryHtml(item,STATE.lang);summary.style.display='block';}
+    if(summary){summary.innerHTML=renderFullCartSummaryHtml(STATE.cartItems,lang);summary.style.display='block';}
     const msg=root.querySelector('#order-msg');
     if(msg) msg.innerHTML=`<div class="msg ok">${STATE.lang==='ar'?'تمت إضافة الاختيار للسلة ✅':'Ajouté au panier ✅'}</div>`;
   };
@@ -1168,11 +1258,12 @@ function initCart(root){
   });
   if(basket){
     basket.onclick=()=>{
-      const item=STATE.cartItem||getCurrentCartItem();
-      STATE.cartItem=item;
-      const count=root.querySelector('#cart-count');if(count)count.textContent=String(item.quantity||1);
+      const basketLang = (root.closest && root.closest('#preview-overlay')) ? PREVIEW_LANG : STATE.lang;
+      const items = (root.closest && root.closest('#preview-overlay')) ? (PREVIEW_CART_ITEM ? [PREVIEW_CART_ITEM] : []) : STATE.cartItems;
+      if(!items.length) return;
+      const count=root.querySelector('#cart-count');if(count)count.textContent=String(items.reduce((n,x)=>n+Math.max(1,Number(x.quantity||1)),0));
       const summary=root.querySelector('#cart-summary');
-      if(summary){summary.innerHTML=renderCartSummaryHtml(item,STATE.lang);summary.style.display='block';}
+      if(summary){summary.innerHTML=renderFullCartSummaryHtml(items,basketLang);summary.style.display='block';}
     };
   }
 }
@@ -1217,7 +1308,40 @@ function renderLanding(){
     app.innerHTML = buildFormMarkup(STATE.settings, STATE.product, STATE.lang, LANDING_QTY);
 
     document.querySelectorAll("[data-lang]").forEach(b=>{
-      b.onclick = ()=>{ STATE.lang = b.dataset.lang; renderLanding(); };
+      b.onclick = ()=>{
+        const root=document.getElementById('app');
+        const currentPurchase=root.querySelector('input[name="purchase-choice"]:checked')?.value || STATE.purchaseType || 'product';
+        const savedCart=STATE.cartItems.length ? JSON.parse(JSON.stringify(STATE.cartItems)) : [];
+        const savedSize=selectedChoice(root,'product-sizes') || root.querySelector('#pack-standard-common-size .selected, #pack-custom-common-size .selected')?.dataset.value || savedCart?.productOptions?.size || savedCart?.packOptions?.[0]?.size || '';
+        const savedColor=selectedChoice(root,'product-colors') || savedCart?.productOptions?.color || '';
+        const savedPackColors=(savedCart?.packOptions||[]).map(x=>x.color||'');
+        STATE.purchaseType=currentPurchase;
+        STATE.lang = b.dataset.lang;
+        renderLanding();
+        const restored=document.getElementById('app');
+        const radio=restored.querySelector(`input[name="purchase-choice"][value="${currentPurchase}"]`);
+        if(radio){ radio.checked=true; radio.dispatchEvent(new Event('change',{bubbles:true})); }
+        if(savedSize){
+          const esc=CSS.escape(savedSize);
+          const el=restored.querySelector(`#product-sizes .choice-btn[data-value="${esc}"], #pack-standard-common-size .choice-btn[data-value="${esc}"], #pack-custom-common-size .choice-btn[data-value="${esc}"]`);
+          if(el) el.click();
+        }
+        if(savedColor){
+          const el=restored.querySelector(`#product-colors .choice-btn[data-value="${CSS.escape(savedColor)}"]`);
+          if(el) el.click();
+        }
+        savedPackColors.forEach((color,i)=>{
+          if(!color) return;
+          const el=restored.querySelector(`.pack-colors[data-piece="${i}"] .choice-btn[data-value="${CSS.escape(color)}"]`);
+          if(el) el.click();
+        });
+        if(savedCart.length){
+          STATE.cartItems=savedCart; syncCartItem();
+          const count=restored.querySelector('#cart-count'); if(count) count.textContent=String(cartQuantity());
+          const summary=restored.querySelector('#cart-summary');
+          if(summary){ summary.innerHTML=renderFullCartSummaryHtml(savedCart,STATE.lang); summary.style.display='block'; }
+        }
+      };
     });
     document.getElementById("submit-btn").onclick = onSubmitOrder;
     initProductVideo(document);
@@ -1234,15 +1358,19 @@ function renderLanding(){
 async function onSubmitOrder(){
   const t=T[STATE.lang],name=document.getElementById("f_name").value.trim(),phone=document.getElementById("f_phone").value.trim(),city=document.getElementById("f_city").value.trim(),address=document.getElementById("f_address").value.trim(),msgBox=document.getElementById("order-msg");
   if(!name||!phone){msgBox.innerHTML=`<div class="msg err">${t.required}</div>`;return;}
-  const item=getCurrentCartItem();
-  const selected=item.purchaseType;
-  STATE.purchaseType=selected;
-  if(!STATE.cartItem) STATE.cartItem=item;
-  const productOptions=item.productOptions||{};
-  if(selected==='product'&&STATE.product.product_type==='clothing'&&(!productOptions.size||!productOptions.color)){msgBox.innerHTML=`<div class="msg err">${STATE.lang==='ar'?'اختار المقاس واللون من فضلك':'Veuillez choisir la taille et la couleur'}</div>`;return;}
-  if((selected==='pack_standard'||selected==='pack_custom')&&csvList(STATE.product.sizes).length&&(item.packOptions||[]).some(x=>!x.size)){msgBox.innerHTML=`<div class="msg err">${STATE.lang==='ar'?'اختار المقاس من فضلك':'Veuillez choisir la taille'}</div>`;return;}
-  if(selected==='pack_custom'&&(item.packOptions||[]).some(x=>!x.color)){msgBox.innerHTML=`<div class="msg err">${STATE.lang==='ar'?'اختار لون كل قطعة من فضلك':'Veuillez choisir la couleur de chaque pièce'}</div>`;return;}
-  STATE.order={customer_name:name,phone,city,address,quantity:item.quantity,product_options:productOptions,pack_options:item.packOptions||[]};
+  if(!STATE.cartItems.length){
+    msgBox.innerHTML=`<div class="msg err">${STATE.lang==='ar'?'اختار المنتج وضيفو للسلة من فضلك':'Veuillez ajouter votre choix au panier'}</div>`;
+    return;
+  }
+  for(const item of STATE.cartItems){
+    const selected=item.purchaseType;
+    if(selected==='product'&&STATE.product.product_type==='clothing'&&(!item.productOptions?.size||!item.productOptions?.color)){msgBox.innerHTML=`<div class="msg err">${STATE.lang==='ar'?'اختار المقاس واللون من فضلك':'Veuillez choisir la taille et la couleur'}</div>`;return;}
+    if((selected==='pack_standard'||selected==='pack_custom')&&csvList(STATE.product.sizes).length&&(item.packOptions||[]).some(x=>!x.size)){msgBox.innerHTML=`<div class="msg err">${STATE.lang==='ar'?'اختار المقاس من فضلك':'Veuillez choisir la taille'}</div>`;return;}
+    if(selected==='pack_custom'&&(item.packOptions||[]).some(x=>!x.color)){msgBox.innerHTML=`<div class="msg err">${STATE.lang==='ar'?'اختار لون كل قطعة من فضلك':'Veuillez choisir la couleur de chaque pièce'}</div>`;return;}
+  }
+  const first=STATE.cartItems[0];
+  STATE.purchaseType=first.purchaseType;
+  STATE.order={customer_name:name,phone,city,address,quantity:cartQuantity(),product_options:{cart_items:STATE.cartItems},pack_options:[],cart_items:STATE.cartItems};
   if(STATE.upsell) renderUpsellStep(); else await finalizeOrder(false,null);
 }
 
@@ -1281,11 +1409,11 @@ async function finalizeOrder(upsellAccepted, upsellId){
     address: STATE.order.address,
     city: STATE.order.city,
     quantity: STATE.order.quantity,
-    pack_selected: STATE.purchaseType !== "product",
-    pack_price: STATE.purchaseType === "pack_standard" ? (getStandardPackConfig(STATE.product).price||0) : STATE.purchaseType === "pack_custom" ? (getCustomPackConfig(STATE.product).price||0) : null,
-    pack_title: STATE.purchaseType === "pack_standard" ? "Pack Standard" : STATE.purchaseType === "pack_custom" ? (STATE.lang === "ar" ? "Pack مخصص" : "Pack personnalisé") : null,
-    pack_options: STATE.order.pack_options || [],
-    product_options: STATE.order.product_options || {},
+    pack_selected: STATE.cartItems.some(x=>x.purchaseType!=='product'),
+    pack_price: STATE.cartItems.filter(x=>x.purchaseType!=='product').reduce((sum,x)=>sum+Number(x.unitPrice||0)*Math.max(1,Number(x.quantity||1)),0) || null,
+    pack_title: STATE.cartItems.length>1 ? (STATE.lang === "ar" ? "طلب متعدد" : "Commande multiple") : (STATE.purchaseType === "pack_standard" ? "Pack Standard" : STATE.purchaseType === "pack_custom" ? (STATE.lang === "ar" ? "Pack مخصص" : "Pack personnalisé") : null),
+    pack_options: STATE.cartItems.length===1 && STATE.cartItems[0].purchaseType!=='product' ? (STATE.cartItems[0].packOptions||[]) : [],
+    product_options: { cart_items: STATE.cartItems },
     upsell_accepted: upsellAccepted,
     upsell_id: upsellId
   };
@@ -1304,6 +1432,8 @@ async function finalizeOrder(upsellAccepted, upsellId){
   }
 
   if(insertedOk){
+    STATE.cartItems = [];
+    syncCartItem();
     STATE.step = "success";
     renderLanding();
   } else {
@@ -2116,6 +2246,7 @@ function openChangePasswordModal(){
 
 /* ================= ADMIN: PREVIEW (no DB writes) ================= */
 let PREVIEW_LANG = "ar";
+let PREVIEW_CART_ITEM = null;
 let PREVIEW_APPROVED = false;
 function setPreviewApproval(ok){
   PREVIEW_APPROVED=!!ok;
@@ -2171,6 +2302,7 @@ function openPreview(){
 
 function renderPreviewOverlay(settings, product, preservePurchaseType){
   let overlay = document.getElementById("preview-overlay");
+  const previousPreviewCart = PREVIEW_CART_ITEM;
   if(!overlay){
     overlay = document.createElement("div");
     overlay.id = "preview-overlay";
@@ -2183,7 +2315,7 @@ function renderPreviewOverlay(settings, product, preservePurchaseType){
   const hasProduct = product && (product.title_ar || product.title_fr);
   const t = T[PREVIEW_LANG] || T.ar;
   const bodyHtml = hasProduct
-    ? buildFormMarkup(settings, product, PREVIEW_LANG, {product:1, pack_standard:1, pack_custom:1})
+    ? buildFormMarkup(settings, product, PREVIEW_LANG, {product:1, pack_standard:1, pack_custom:1}, "preview-storefront")
     : `<div class="wrap" style="padding-top:80px; text-align:center; color:var(--muted)">${t.no_product}</div>`;
 
   overlay.innerHTML = `
@@ -2196,16 +2328,72 @@ function renderPreviewOverlay(settings, product, preservePurchaseType){
   document.getElementById("close-preview").onclick = closePreview;
 
   if(hasProduct){
+    overlay.__previewProduct = product;
     initProductVideo(overlay);
     initCustomerGallery(overlay);
     initSingleQuantity(overlay);
     initClothingOptions(overlay);
     initPurchaseSelector(overlay);
     if(preservePurchaseType){ const r=overlay.querySelector(`input[name="purchase-choice"][value="${preservePurchaseType}"]`); if(r){ r.checked=true; r.dispatchEvent(new Event('change',{bubbles:true})); } }
+    PREVIEW_CART_ITEM = previousPreviewCart ? JSON.parse(JSON.stringify(previousPreviewCart)) : null;
+    const realCartItem = STATE.cartItem;
+    STATE.cartItem = PREVIEW_CART_ITEM;
     initCart(overlay);
+    PREVIEW_CART_ITEM = STATE.cartItem ? JSON.parse(JSON.stringify(STATE.cartItem)) : null;
+    STATE.cartItem = realCartItem;
     overlay.querySelectorAll("[data-lang]").forEach(b=>{
       b.onclick = ()=>{ const current=overlay.querySelector('input[name="purchase-choice"]:checked')?.value||''; PREVIEW_LANG = b.dataset.lang; renderPreviewOverlay(settings, product, current); };
     });
+
+    overlay.querySelectorAll("[data-purchase-add]").forEach(btn=>{
+      btn.onclick = (e)=>{
+        e.preventDefault();
+        const savedReal = STATE.cartItem;
+        STATE.cartItem = PREVIEW_CART_ITEM;
+        const item = getCurrentCartItem(overlay);
+        const currentProduct = overlay.__previewProduct || product;
+        const lang = PREVIEW_LANG;
+        const err=(ar,fr)=>{ const msg=overlay.querySelector("#order-msg"); if(msg) msg.innerHTML=`<div class="msg err">${lang==='ar'?ar:fr}</div>`; };
+        if(item.purchaseType==='product' && currentProduct?.product_type==='clothing'){
+          const sizes=csvList(currentProduct.sizes||'');
+          const colors=csvList(currentProduct.colors||'');
+          if(sizes.length && !item.productOptions.size){ err('اختار المقاس من فضلك','Veuillez choisir la taille'); STATE.cartItem=savedReal; return; }
+          if(colors.length && !item.productOptions.color){ err('اختار اللون من فضلك','Veuillez choisir la couleur'); STATE.cartItem=savedReal; return; }
+        }
+        if(item.purchaseType==='pack_standard'){
+          const sizes=csvList(currentProduct?.sizes||'');
+          if(sizes.length && !(item.packOptions?.[0]?.size)){ err('اختار المقاس من فضلك','Veuillez choisir la taille'); STATE.cartItem=savedReal; return; }
+        }
+        if(item.purchaseType==='pack_custom'){
+          const sizes=csvList(currentProduct?.sizes||'');
+          if(sizes.length && !(item.packOptions?.[0]?.size)){ err('اختار المقاس من فضلك','Veuillez choisir la taille'); STATE.cartItem=savedReal; return; }
+          if((item.packOptions||[]).some(x=>!x.color)){ err('اختار لون كل قطعة من فضلك','Veuillez choisir la couleur de chaque pièce'); STATE.cartItem=savedReal; return; }
+        }
+        if(btn.dataset.purchaseAdd && item.purchaseType!==btn.dataset.purchaseAdd){
+          const radio=overlay.querySelector(`input[name="purchase-choice"][value="${btn.dataset.purchaseAdd}"]`);
+          if(radio){radio.checked=true; radio.dispatchEvent(new Event('change',{bubbles:true}));}
+          item.purchaseType=btn.dataset.purchaseAdd;
+        }
+        if(item.purchaseType!=='product') item.quantity=1;
+        PREVIEW_CART_ITEM = JSON.parse(JSON.stringify(item));
+        const count=overlay.querySelector("#cart-count"); if(count) count.textContent=String(item.quantity||1);
+        const summary=overlay.querySelector("#cart-summary");
+        if(summary){summary.innerHTML=renderCartSummaryHtml(item,PREVIEW_LANG);summary.style.display="block";}
+        const msg=overlay.querySelector("#order-msg");
+        if(msg) msg.innerHTML=`<div class="msg ok">${PREVIEW_LANG==='ar'?'تمت إضافة الاختيار للسلة ✅':'Ajouté au panier ✅'}`;
+        STATE.cartItem=savedReal;
+      };
+    });
+    const previewBasket = overlay.querySelector("#cart-button");
+    if(previewBasket){
+      previewBasket.onclick=()=>{
+        const item=PREVIEW_CART_ITEM||getCurrentCartItem(overlay);
+        PREVIEW_CART_ITEM=JSON.parse(JSON.stringify(item));
+        const count=overlay.querySelector("#cart-count"); if(count) count.textContent=String(item.quantity||1);
+        const summary=overlay.querySelector("#cart-summary");
+        if(summary){summary.innerHTML=renderCartSummaryHtml(item,PREVIEW_LANG);summary.style.display="block";}
+      };
+    }
 
     const submitBtn = overlay.querySelector("#submit-btn");
     if(submitBtn) submitBtn.onclick = (e)=>{
@@ -2219,6 +2407,7 @@ function renderPreviewOverlay(settings, product, preservePurchaseType){
 function closePreview(){
   const overlay = document.getElementById("preview-overlay");
   if(overlay) overlay.remove();
+  PREVIEW_CART_ITEM = null;
   resetAdminChrome();
   document.documentElement.dir = "rtl";
 }
