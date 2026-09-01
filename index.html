@@ -263,6 +263,28 @@
   .method-add-cart:active{transform:scale(.99)}
   .purchase-panel .single-qty-wrap{margin-bottom:0}
   .purchase-panel{position:relative}
+
+/* ===== CUSTOMER-FACING OPTIONS: clean storefront UI ===== */
+.customer-options{margin-top:14px;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.customer-choice-section{margin-bottom:16px}
+.customer-choice-section:last-child{margin-bottom:0}
+.customer-choice-section>label,.customer-fixed-colors>label{display:block;margin-bottom:9px;font-size:.9rem;font-weight:900;color:var(--ink)}
+.customer-options .choice-grid{display:flex;flex-wrap:wrap;gap:9px}
+.customer-options .choice-btn{display:inline-flex!important;align-items:center;justify-content:center;gap:8px;min-width:52px;min-height:44px;padding:9px 14px;border:1.5px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink)!important;font-weight:800;cursor:pointer;pointer-events:auto!important;opacity:1!important;visibility:visible!important}
+.customer-options .choice-btn:not(.selected){color:var(--ink)!important;background:var(--bg)!important}
+.customer-options .choice-btn.selected{color:var(--accent-ink)!important;background:var(--accent)!important;border-color:var(--accent)!important}
+.customer-options .color-choice .color-dot{width:18px;height:18px;border-radius:50%;display:inline-block;background:var(--choice-color,#d8d2cc);border:1.5px solid var(--choice-border,#aaa);flex:0 0 18px}
+.customer-options .color-choice.selected .color-dot{border-color:rgba(255,255,255,.85)}
+.customer-fixed-colors{margin-top:2px}
+.fixed-color-list{display:grid;gap:8px}
+.fixed-color-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:var(--bg);color:var(--ink);font-weight:800}
+.fixed-color-value{display:inline-flex;align-items:center;gap:8px}
+.fixed-color-value .color-dot{width:18px;height:18px;border-radius:50%;display:inline-block;background:var(--choice-color,#d8d2cc);border:1.5px solid var(--choice-border,#aaa)}
+.customer-pieces{display:grid;gap:10px}
+.customer-piece{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.customer-piece-title{font-size:.95rem;font-weight:900;color:var(--ink);margin-bottom:10px}
+.customer-piece .customer-choice-section{margin-bottom:0}
+
 </style>
 </head>
 <body data-theme="1">
@@ -896,30 +918,37 @@ function colorChoiceButton(label,index,selected=false){
 function buildClothingOptions(product,lang){
   if(product.product_type!=="clothing") return "";
   const sizes=csvList(product.sizes), colors=csvList(product.colors);
-  const sizeField=sizes.length?`<div class="field"><label>${lang==="ar"?'المقاس':'Taille'}</label><div class="choice-grid" id="product-sizes">${sizes.map((x,i)=>`<button type="button" class="choice-btn" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div>`:"";
-  const colorField=colors.length?`<div class="field"><label>${lang==="ar"?'اللون':'Couleur'}</label><div class="choice-grid" id="product-colors">${colors.map((x,i)=>colorChoiceButton(x,i,false)).join("")}</div></div>`:"";
+  const sizeField=sizes.length?`<div class="customer-choice-section"><label>${lang==="ar"?'المقاس':'Taille'}</label><div class="choice-grid" id="product-sizes">${sizes.map(x=>`<button type="button" class="choice-btn" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:"";
+  const colorField=colors.length?`<div class="customer-choice-section"><label>${lang==="ar"?'اللون':'Couleur'}</label><div class="choice-grid" id="product-colors">${colors.map((x,i)=>colorChoiceButton(x,i,false)).join('')}</div></div>`:"";
   if(!sizeField&&!colorField) return "";
-  return `<div class="selection-info" id="product-options">${sizeField}${colorField}</div>`;
+  return `<div class="customer-options" id="product-options">${sizeField}${colorField}</div>`;
 }
-function initClothingOptions(root){if(!root)return;root.querySelectorAll('#product-options .choice-grid').forEach(g=>g.querySelectorAll('.choice-btn').forEach(b=>b.onclick=()=>{g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')}))}
+function initClothingOptions(root){
+  if(!root)return;
+  root.querySelectorAll('#product-options .choice-grid, #std-options .choice-grid, #cus-options .choice-grid').forEach(g=>{
+    g.querySelectorAll('.choice-btn').forEach(b=>b.onclick=(e)=>{
+      e.preventDefault(); e.stopPropagation();
+      g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+    });
+  });
+}
 function selectedChoice(root,id){const b=root?.querySelector(`#${id} .choice-btn.selected`);return b?b.dataset.value:""}
 
 function buildStandardPackOptions(product,lang,c){
   const t=T[lang]||T.ar;
   const sizes=csvList(product.sizes||"");
   const colors=(c.colors||[]).filter(x=>x);
-  const sizeBlock=sizes.length?`<div class="field"><label>${lang==='ar'?'المقاس':'Taille'}</label><div class="choice-grid pack-common-size" id="pack-standard-common-size">${sizes.map((x,j)=>`<button type="button" class="choice-btn" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:"";
-  const colorsInfo=colors.length?`<div class="field"><label>${lang==='ar'?'الألوان':'Couleurs'}</label><div class="choice-grid">${colors.map((c2,i)=>`<span class="choice-btn">${lang==='ar'?'القطعة':'Pièce'} ${i+1} — ${escHtml(c2||'-')}</span>`).join('')}</div></div>`:"";
-  const infoBlock=(sizeBlock||colorsInfo)?`<div class="selection-info" id="std-options">${sizeBlock}${colorsInfo}</div>`:"";
-  return `<div class="price-row"><span class="price">${c.price||0} ${t.currency}</span>${c.old_price?`<span class="old-price">${c.old_price} ${t.currency}</span>`:''}</div>${infoBlock}`;
+  const sizeBlock=sizes.length?`<div class="customer-choice-section"><label>${lang==='ar'?'المقاس':'Taille'}</label><div class="choice-grid pack-common-size" id="pack-standard-common-size">${sizes.map(x=>`<button type="button" class="choice-btn" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:"";
+  const colorsInfo=colors.length?`<div class="customer-fixed-colors"><label>${lang==='ar'?'الألوان':'Couleurs'}</label><div class="fixed-color-list">${colors.map((c2,i)=>`<div class="fixed-color-item"><span>${lang==='ar'?'القطعة':'Pièce'} ${i+1}</span><span class="fixed-color-value"><i class="color-dot" style="--choice-color:${escHtml(colorToCss(c2))};--choice-border:${escHtml(colorToCss(c2))}"></i>${escHtml(c2)}</span></div>`).join('')}</div></div>`:"";
+  return `<div class="customer-options pack-options" id="std-options">${sizeBlock}${colorsInfo}</div><div class="price-row"><span class="price">${c.price||0} ${t.currency}</span>${c.old_price?`<span class="old-price">${c.old_price} ${t.currency}</span>`:''}</div>`;
 }
 function buildCustomPackOptions(product,lang,c){
   const t=T[lang]||T.ar;
   const sizes=csvList(product.sizes||""),colors=csvList(product.colors||""),n=Math.max(1,Number(c.pieces)||1);
-  const sizeBlock=sizes.length?`<div class="field"><label>${lang==='ar'?'المقاس (موحد للـPack كامل)':'Taille (unique pour tout le pack)'}</label><div class="choice-grid pack-common-size" id="pack-custom-common-size">${sizes.map((x,j)=>`<button type="button" class="choice-btn" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:"";
-  const pieces=colors.length?Array.from({length:n},(_,i)=>`<div class="pack-piece-choice"><strong>${lang==='ar'?'القطعة':'Pièce'} ${i+1}</strong><div class="field"><label>${lang==='ar'?'اللون':'Couleur'}</label><div class="choice-grid pack-colors" data-piece="${i}">${colors.map((x,j)=>colorChoiceButton(x,j,false)).join('')}</div></div></div>`).join(''):"";
-  const infoBlock=(sizeBlock||pieces)?`<div class="selection-info" id="cus-options">${sizeBlock}${pieces}</div>`:"";
-  return `<div class="price-row"><span class="price">${c.price||0} ${t.currency}</span>${c.old_price?`<span class="old-price">${c.old_price} ${t.currency}</span>`:''}</div>${infoBlock}`;
+  const sizeBlock=sizes.length?`<div class="customer-choice-section"><label>${lang==='ar'?'المقاس':'Taille'}</label><div class="choice-grid pack-common-size" id="pack-custom-common-size">${sizes.map(x=>`<button type="button" class="choice-btn" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:"";
+  const pieces=colors.length?`<div class="customer-pieces">${Array.from({length:n},(_,i)=>`<div class="customer-piece"><div class="customer-piece-title">${lang==='ar'?'القطعة':'Pièce'} ${i+1}</div><div class="customer-choice-section"><label>${lang==='ar'?'اللون':'Couleur'}</label><div class="choice-grid pack-colors" data-piece="${i}">${colors.map((x,j)=>colorChoiceButton(x,j,false)).join('')}</div></div></div>`).join('')}</div>`:"";
+  return `<div class="customer-options pack-options" id="cus-options">${sizeBlock}${pieces}</div><div class="price-row"><span class="price">${c.price||0} ${t.currency}</span>${c.old_price?`<span class="old-price">${c.old_price} ${t.currency}</span>`:''}</div>`;
 }
 function buildQtyStepper(type,lang,qty){
   return `<div class="single-qty-wrap" id="qty-wrap-${type}"><div class="section-mini-title">${lang==='ar'?'الكمية':'Quantité'}</div><div class="qty-stepper"><button type="button" class="qty-minus" data-type="${type}">−</button><span class="qty-value" data-type="${type}">${qty||1}</span><button type="button" class="qty-plus" data-type="${type}">+</button></div></div>`;
