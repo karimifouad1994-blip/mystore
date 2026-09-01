@@ -866,15 +866,15 @@ function buildPurchaseSection(product,lang,qty){
   const opts=[];
   if(hasSingle) opts.push({value:'product',label:lang==='ar'?'قطعة واحدة':'Une pièce',price:product.price||0});
   if(hasStd) opts.push({value:'pack_standard',label:'Pack Standard',price:std.price||0});
-  if(hasCus) opts.push({value:'pack_custom',label:lang==='ar'?'Pack مخصص':'Pack personnalisé',price:cus.price||0});
+  if(hasCus) opts.push({value:'pack_custom',label:lang==='ar'?'تشكيلة متنوعة':'Assortiment varié',price:cus.price||0});
   const finalOpts=opts.length?opts:[{value:'product',label:lang==='ar'?'قطعة واحدة':'Une pièce',price:product.price||0}];
   const showSingle=hasSingle||!opts.length;
   const selectorHtml=finalOpts.length>1?`<div class="purchase-selector" id="purchase-selector"><div class="section-mini-title">${lang==='ar'?'🛒 اختار طريقة الشراء':'🛒 Choisissez la méthode d’achat'}</div><div class="purchase-grid">${finalOpts.map((o,i)=>`<label class="purchase-option ${i===0?'selected':''}"><input type="radio" name="purchase-choice" value="${o.value}" ${i===0?'checked':''}><span>${escHtml(o.label)} — ${o.price} ${t.currency}</span></label>`).join('')}</div></div>`:"";
-  const singlePanel=showSingle?`<div id="single-wrap" style="display:none"><div class="price-row"><span class="price">${product.price||0} ${t.currency}</span>${product.old_price?`<span class="old-price">${product.old_price} ${t.currency}</span>`:''}</div>${buildClothingOptions(product,lang)}</div>`:"";
+  const qtyHtml=`<div class="single-qty-wrap" id="single-qty-wrap"><div class="section-mini-title">${lang==='ar'?'الكمية':'Quantité'}</div><div class="qty-stepper"><button type="button" id="qty-minus">−</button><span id="qty-value">${qty||1}</span><button type="button" id="qty-plus">+</button></div></div>`;
+  const singlePanel=showSingle?`<div id="single-wrap" style="display:none"><div class="price-row"><span class="price">${product.price||0} ${t.currency}</span>${product.old_price?`<span class="old-price">${product.old_price} ${t.currency}</span>`:''}</div>${buildClothingOptions(product,lang)}${qtyHtml}</div>`:"";
   const stdPanel=hasStd?`<div id="pack-standard-wrap" style="display:none">${buildStandardPackOptions(product,lang,std)}</div>`:"";
   const cusPanel=hasCus?`<div id="pack-custom-wrap" style="display:none">${buildCustomPackOptions(product,lang,cus)}</div>`:"";
-  const qtyHtml=`<div class="single-qty-wrap" id="single-qty-wrap"><div class="section-mini-title">${lang==='ar'?'الكمية':'Quantité'}</div><div class="qty-stepper"><button type="button" id="qty-minus">−</button><span id="qty-value">${qty||1}</span><button type="button" id="qty-plus">+</button></div></div>`;
-  return selectorHtml+singlePanel+stdPanel+cusPanel+qtyHtml;
+  return selectorHtml+singlePanel+stdPanel+cusPanel;
 }
 function buildFormMarkup(settings, product, lang, qty){
   const t=T[lang]||T.ar,title=lang==='ar'?product.title_ar:product.title_fr,desc=lang==='ar'?product.description_ar:product.description_fr;
@@ -940,7 +940,7 @@ function getCurrentCartItem(){
     else if(root.querySelector('#pack-custom-wrap')) purchase='pack_custom';
     else purchase='product';
   }
-  const qty=LANDING_QTY;
+  const qty=purchase==='product'?LANDING_QTY:1;
   const productOptions={
     size:purchase==='product'?selectedChoice(root,'product-sizes'):'',
     color:purchase==='product'?selectedChoice(root,'product-colors'):''
@@ -967,7 +967,7 @@ function getCurrentCartItem(){
 
 function purchaseLabel(purchase,lang){
   if(purchase==='pack_standard') return 'Pack Standard';
-  if(purchase==='pack_custom') return lang==='ar'?'Pack مخصص':'Pack personnalisé';
+  if(purchase==='pack_custom') return lang==='ar'?'تشكيلة متنوعة':'Assortiment varié';
   return lang==='ar'?'قطعة واحدة':'Une pièce';
 }
 function renderCartSummaryHtml(item,lang){
@@ -1397,7 +1397,7 @@ function renderProductTab(){
 
       <div class="card" style="margin-bottom:16px"><div class="section-title">Pack Standard</div><div class="small-muted">أنت كتحدد لون كل قطعة. الزبون كيختار غير مقاس واحد للـPack كامل.</div><div class="toggle"><input type="checkbox" id="std_enabled" ${std.enabled?'checked':''}><label>تفعيل Pack Standard</label></div><div id="std-fields"><div class="toggle"><input type="checkbox" id="std_visible" ${std.visible?'checked':''}><label>ظاهر للزبون</label></div><div class="field-row"><div class="field"><label>عدد القطع</label><input id="std_pieces" type="number" min="1" value="${std.pieces||3}"></div><div class="field"><label>ثمن الـPack</label><input id="std_price" type="number" min="0" value="${std.price??''}"></div></div><div class="field"><label>الثمن القديم (اختياري)</label><input id="std_old_price" type="number" min="0" value="${std.old_price??''}"></div><div id="std-colors"></div></div></div>
 
-      <div class="card" style="margin-bottom:16px"><div class="section-title">Pack personnalisé</div><div class="small-muted">الزبون هو اللي كيختار مقاس واحد للـPack كامل، ولون كل قطعة بوحدها.</div><div class="toggle"><input type="checkbox" id="cus_enabled" ${cus.enabled?'checked':''}><label>تفعيل Pack personnalisé</label></div><div id="cus-fields"><div class="toggle"><input type="checkbox" id="cus_visible" ${cus.visible?'checked':''}><label>ظاهر للزبون</label></div><div class="field-row"><div class="field"><label>عدد القطع</label><input id="cus_pieces" type="number" min="1" value="${cus.pieces||3}"></div><div class="field"><label>ثمن الـPack</label><input id="cus_price" type="number" min="0" value="${cus.price??''}"></div></div><div class="field"><label>الثمن القديم (اختياري)</label><input id="cus_old_price" type="number" min="0" value="${cus.old_price??''}"></div></div></div>
+      <div class="card" style="margin-bottom:16px"><div class="section-title">تشكيلة متنوعة</div><div class="small-muted">الزبون كيختار مقاس واحد للـPack كامل، ومن بعد كيختار اللون اللي بغا لكل قطعة بوحدها.</div><div class="toggle"><input type="checkbox" id="cus_enabled" ${cus.enabled?'checked':''}><label>تفعيل Pack personnalisé</label></div><div id="cus-fields"><div class="toggle"><input type="checkbox" id="cus_visible" ${cus.visible?'checked':''}><label>ظاهر للزبون</label></div><div class="field-row"><div class="field"><label>عدد القطع</label><input id="cus_pieces" type="number" min="1" value="${cus.pieces||3}"></div><div class="field"><label>ثمن الـPack</label><input id="cus_price" type="number" min="0" value="${cus.price??''}"></div></div><div class="field"><label>الثمن القديم (اختياري)</label><input id="cus_old_price" type="number" min="0" value="${cus.old_price??''}"></div></div></div>
     </div>
 
     <div class="card" style="margin-bottom:16px"><div class="section-title">معلومات المنتج</div><div class="field-row"><div class="field"><label>عنوان المنتج (عربي)</label><input id="p_title_ar" value="${escHtml(p.title_ar||'')}"></div><div class="field"><label>Titre (français)</label><input id="p_title_fr" value="${escHtml(p.title_fr||'')}"></div></div><div class="field-row"><div class="field"><label>الوصف (عربي)</label><textarea id="p_desc_ar">${escHtml(p.description_ar||'')}</textarea></div><div class="field"><label>Description (français)</label><textarea id="p_desc_fr">${escHtml(p.description_fr||'')}</textarea></div></div></div>
