@@ -918,6 +918,14 @@ function buildPackPublicMarkup(product, lang, type){
     <div class="pack-public-desc" style="color:#6d645c !important;">${escHtml(desc)}</div>
     <div class="price-row"><span class="price">${c.price||0} DH</span>${old}</div>
     ${options}
+    <div class="pack-qty-wrap" data-pack-qty-type="${type}" style="margin-top:16px;position:relative;z-index:30;">
+      <div class="section-mini-title" style="color:#2b2622 !important;">${lang==='ar'?'الكمية':'Quantité'}</div>
+      <div class="qty-stepper">
+        <button type="button" data-pack-qty-minus="${type}">−</button>
+        <span data-pack-qty-value="${type}">1</span>
+        <button type="button" data-pack-qty-plus="${type}">+</button>
+      </div>
+    </div>
   </div>`;
 }
 function initPackGallery(){
@@ -1012,11 +1020,31 @@ function initPurchaseSelector(root){
   });
 }
 function initSingleQuantity(root){
-  const minus=root.querySelector('#qty-minus'),plus=root.querySelector('#qty-plus'),value=root.querySelector('#qty-value');
-  if(!minus||!plus||!value)return;
-  value.textContent=LANDING_QTY;
-  minus.onclick=()=>{if(LANDING_QTY>1){LANDING_QTY--;value.textContent=LANDING_QTY;}};
-  plus.onclick=()=>{LANDING_QTY++;value.textContent=LANDING_QTY;};
+  if(!root)return;
+  const setValue=(type,val)=>{
+    val=Math.max(1,parseInt(val||'1',10));
+    if(type==='product') LANDING_QTY=val;
+    const el=root.querySelector(type==='product'?'#qty-value':`[data-pack-qty-value="${type}"]`);
+    if(el)el.textContent=val;
+  };
+  const getValue=(type)=>{
+    if(type==='product') return LANDING_QTY;
+    const el=root.querySelector(`[data-pack-qty-value="${type}"]`);
+    return Math.max(1,parseInt(el?.textContent||'1',10));
+  };
+  const bind=(minusSel,plusSel,type)=>{
+    const minus=root.querySelector(minusSel),plus=root.querySelector(plusSel);
+    if(minus)minus.onclick=(e)=>{e.preventDefault();e.stopPropagation();setValue(type,getValue(type)-1);};
+    if(plus)plus.onclick=(e)=>{e.preventDefault();e.stopPropagation();setValue(type,getValue(type)+1);};
+  };
+  bind('#qty-minus','#qty-plus','product');
+  bind('[data-pack-qty-minus="standard"]','[data-pack-qty-plus="standard"]','standard');
+  bind('[data-pack-qty-minus="custom"]','[data-pack-qty-plus="custom"]','custom');
+}
+function getSelectedPurchaseQuantity(root,purchase){
+  if(purchase==='product') return LANDING_QTY;
+  const el=root.querySelector(`[data-pack-qty-value="${purchase==='pack_standard'?'standard':'custom'}"]`);
+  return Math.max(1,parseInt(el?.textContent||'1',10));
 }
 function getCurrentCartItem(){
   const root=document;
@@ -1027,7 +1055,7 @@ function getCurrentCartItem(){
     else if(root.querySelector('#pack-custom-wrap')) purchase='pack_custom';
     else purchase='product';
   }
-  const qty=purchase==='product'?LANDING_QTY:1;
+  const qty=getSelectedPurchaseQuantity(root,purchase);
   const productOptions={
     size:purchase==='product'?selectedChoice(root,'product-sizes'):'',
     color:purchase==='product'?selectedChoice(root,'product-colors'):''
@@ -1049,7 +1077,7 @@ function getCurrentCartItem(){
   return {purchaseType:purchase,quantity:qty,productOptions,packOptions};
 }
 
-function initCart(root){const btn=root.querySelector('#cart-button');if(!btn)return;btn.onclick=()=>{STATE.cartItem=getCurrentCartItem();const count=root.querySelector('#cart-count');if(count)count.textContent='1';const msg=root.querySelector('#order-msg');if(msg)msg.innerHTML=`<div class="msg ok">${STATE.lang==='ar'?'تمت إضافة الاختيار للسلة ✅':'Ajouté au panier ✅'}</div>`;}}
+function initCart(root){const btn=root.querySelector('#cart-button');if(!btn)return;btn.onclick=()=>{STATE.cartItem=getCurrentCartItem();const count=root.querySelector('#cart-count');if(count)count.textContent=String(STATE.cartItem.quantity||1);const msg=root.querySelector('#order-msg');if(msg)msg.innerHTML=`<div class="msg ok">${STATE.lang==='ar'?`تمت إضافة ${STATE.cartItem.quantity||1} إلى السلة ✅`:`${STATE.cartItem.quantity||1} article(s) ajouté(s) au panier ✅`}</div>`;}}
 
 function maybeShowAdminReturn(show){
   const old = document.getElementById("admin-return-btn");
