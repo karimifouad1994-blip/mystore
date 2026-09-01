@@ -846,21 +846,80 @@ function buildPackPublicMarkup(product, lang, type){
   const desc=lang==='ar'?(c.description_ar||''):(c.description_fr||c.description_ar||'');
   const imgs=(c.images||[]).filter(Boolean);
   const old=c.old_price?`<span class="old-price">${c.old_price} DH</span>`:"";
-  const img=imgs[0]?`<div class="pack-gallery" id="${type}-pack-gallery"><img id="${type}-pack-gallery-img" src="${escHtml(imgs[0])}" alt="${escHtml(title)}">${imgs.length>1?`<button type="button" class="pack-gallery-btn pack-gallery-prev" data-gallery="${type}" id="${type}-pack-prev">‹</button><button type="button" class="pack-gallery-btn pack-gallery-next" data-gallery="${type}" id="${type}-pack-next">›</button>`:""}</div><div class="pack-gallery-dots" id="${type}-pack-dots">${imgs.length>1?`1 / ${imgs.length} · ${lang==='ar'?'دير السحب باش تشوف باقي الصور':'Faites glisser pour voir les autres images'}`:""}</div>`:"";
+  const img=imgs[0]?`<div class="pack-gallery" id="${type}-pack-gallery">
+    <img id="${type}-pack-gallery-img" src="${escHtml(imgs[0])}" alt="${escHtml(title)}">
+    ${imgs.length>1?`<button type="button" class="pack-gallery-btn pack-gallery-prev" data-gallery="${type}" id="${type}-pack-prev">‹</button>
+    <button type="button" class="pack-gallery-btn pack-gallery-next" data-gallery="${type}" id="${type}-pack-next">›</button>`:""}
+  </div><div class="pack-gallery-dots" id="${type}-pack-dots">${imgs.length>1?`1 / ${imgs.length} · ${lang==='ar'?'دير السحب باش تشوف باقي الصور':'Faites glisser pour voir les autres images'}`:""}</div>`:"";
+
+  const productSizes=csvList(product?.sizes||"");
+  const productColors=csvList(product?.colors||"");
+  const packSizes=csvList(c?.sizes||"");
+  const packColors=csvList(c?.colors||"");
+  const sizes=packSizes.length?packSizes:productSizes;
+  const colors=packColors.length?packColors:productColors;
+
+  const btns=(arr,selectedFirst=true)=>arr.map((x,j)=>
+    `<button type="button" class="choice-btn ${selectedFirst&&j===0?'selected':''}"
+      data-value="${escHtml(x)}"
+      style="pointer-events:auto !important;position:relative;z-index:20;color:${selectedFirst&&j===0?'#fff':'#2b2622'} !important;background:${selectedFirst&&j===0?'#a85b2a':'#fff'} !important;border:1.5px solid ${selectedFirst&&j===0?'#a85b2a':'#d8d0c8'} !important;cursor:pointer;">
+      ${escHtml(x)}
+    </button>`).join('');
+
   let options="";
   if(type==='custom'){
-    const sizes=csvList(c.sizes||product.sizes),colors=csvList(c.colors||product.colors),n=Math.max(1,Number(c.pieces)||1);
-    const sizeBlock=sizes.length?`<div class="field"><label>${lang==='ar'?'المقاس (موحد للـPack كامل)':'Taille (unique pour tout le pack)'}</label><div class="choice-grid pack-common-size" id="pack-custom-common-size">${sizes.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:'';
-    options=`<div style="margin-top:12px"><strong>${lang==='ar'?'التشكيلة المتنوعة':'Assortiment varié'}</strong>${sizeBlock}<div class="small-muted" style="margin:8px 0 12px">${lang==='ar'?'اختار اللون لكل قطعة بشكل مستقل، والمقاس يبقى موحداً للـPack كامل':'Choisissez la couleur séparément pour chaque pièce. La taille reste la même pour tout le pack.'}</div>${Array.from({length:n},(_,i)=>`<div class="pack-piece-choice"><strong>${lang==='ar'?'القطعة':'Pièce'} ${i+1}</strong><div class="field"><label>${lang==='ar'?'اللون':'Couleur'}</label><div class="choice-grid pack-colors" data-piece="${i}">${colors.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div></div>`).join('')}</div>`;
-  } else {
-    const sizes=csvList(c.sizes||product.sizes),items=(c.items||[]);
-    const sizeBlock=sizes.length?`<div class="field"><label>${lang==='ar'?'المقاس':'Taille'}</label><div class="choice-grid pack-common-size" id="pack-standard-common-size">${sizes.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:'';
-    const colorsList=items.length?`<div class="small-muted" style="margin-top:8px">${items.map((it,i)=>`${lang==='ar'?'القطعة':'Pièce'} ${i+1}: ${escHtml(it.color||'-')}`).join(' · ')}</div>`:'';
-    options=`<div style="margin-top:12px">${sizeBlock}<div class="small-muted" style="margin:8px 0 4px">${lang==='ar'?'الألوان محددة من طرف المتجر لكل قطعة، وغادي تختار غير المقاس':'Les couleurs sont fixées par la boutique pour chaque pièce, vous choisissez uniquement la taille'}</div>${colorsList}</div>`;
-  }
-  return `<div class="pack-public"><div class="pack-public-head"><div class="pack-public-title">${escHtml(title)}</div><div class="pack-public-badge">${type==='custom'?'PACK PERSONNALISÉ':'PACK STANDARD'}</div></div>${img}<div class="pack-public-desc">${escHtml(desc)}</div><div class="price-row"><span class="price">${c.price||0} DH</span>${old}</div>${options}</div>`;
-}
+    const n=Math.max(1,Number(c.pieces)||1);
+    const sizeBlock=sizes.length
+      ? `<div class="field">
+          <label style="display:block;color:#2b2622 !important;font-weight:800;">${lang==='ar'?'المقاس (موحد للـPack كامل)':'Taille (unique pour tout le pack)'}</label>
+          <div class="choice-grid pack-common-size" id="pack-custom-common-size">${btns(sizes)}</div>
+        </div>`
+      : `<div class="small-muted" style="color:#7a7169 !important;">${lang==='ar'?'ما كايناش مقاسات محددة':'Aucune taille définie'}</div>`;
 
+    const colorBlock=colors.length
+      ? Array.from({length:n},(_,i)=>`<div class="pack-piece-choice" style="position:relative;z-index:5;">
+          <strong style="color:#2b2622 !important;">${lang==='ar'?'القطعة':'Pièce'} ${i+1}</strong>
+          <div class="field">
+            <label style="display:block;color:#2b2622 !important;font-weight:800;">${lang==='ar'?'اللون':'Couleur'}</label>
+            <div class="choice-grid pack-colors" data-piece="${i}">${btns(colors)}</div>
+          </div>
+        </div>`).join('')
+      : `<div class="small-muted" style="color:#7a7169 !important;">${lang==='ar'?'ما كايناش ألوان محددة':'Aucune couleur définie'}</div>`;
+
+    options=`<div style="margin-top:12px;position:relative;z-index:5;">
+      <strong style="color:#2b2622 !important;">${lang==='ar'?'التشكيلة المتنوعة':'Assortiment varié'}</strong>
+      ${sizeBlock}
+      <div class="small-muted" style="margin:8px 0 12px;color:#6d645c !important;">
+        ${lang==='ar'?'اختار اللون لكل قطعة بشكل مستقل، والمقاس يبقى موحداً للـPack كامل':'Choisissez la couleur séparément pour chaque pièce. La taille reste la même pour tout le pack.'}
+      </div>
+      ${colorBlock}
+    </div>`;
+  } else {
+    const items=(c.items||[]);
+    const sizeBlock=sizes.length
+      ? `<div class="field">
+          <label style="display:block;color:#2b2622 !important;font-weight:800;">${lang==='ar'?'المقاس':'Taille'}</label>
+          <div class="choice-grid pack-common-size" id="pack-standard-common-size">${btns(sizes)}</div>
+        </div>`:"";
+    const colorsList=items.length
+      ? `<div class="small-muted" style="margin-top:8px;color:#6d645c !important;">${items.map((it,i)=>`${lang==='ar'?'القطعة':'Pièce'} ${i+1}: ${escHtml(it.color||'-')}`).join(' · ')}</div>`:"";
+    options=`<div style="margin-top:12px;position:relative;z-index:5;">${sizeBlock}
+      <div class="small-muted" style="margin:8px 0 4px;color:#6d645c !important;">
+        ${lang==='ar'?'الألوان محددة من طرف المتجر لكل قطعة، وغادي تختار غير المقاس':'Les couleurs sont fixées par la boutique pour chaque pièce, vous choisissez uniquement la taille'}
+      </div>${colorsList}</div>`;
+  }
+
+  return `<div class="pack-public" style="position:relative;z-index:2;">
+    <div class="pack-public-head">
+      <div class="pack-public-title" style="color:#2b2622 !important;">${escHtml(title)}</div>
+      <div class="pack-public-badge" style="color:#a85b2a !important;">${type==='custom'?'PACK PERSONNALISÉ':'PACK STANDARD'}</div>
+    </div>
+    ${img}
+    <div class="pack-public-desc" style="color:#6d645c !important;">${escHtml(desc)}</div>
+    <div class="price-row"><span class="price">${c.price||0} DH</span>${old}</div>
+    ${options}
+  </div>`;
+}
 function initPackGallery(){
   const p=STATE.product;if(!p)return;
   ['standard','custom'].forEach(type=>{
@@ -905,26 +964,52 @@ function buildFormMarkup(settings, product, lang, qty){
 }
 
 function initPurchaseSelector(root){
-  const singleWrap=root.querySelector('#single-wrap'),stdWrap=root.querySelector('#pack-standard-wrap'),cusWrap=root.querySelector('#pack-custom-wrap');
+  if(!root)return;
+  const singleWrap=root.querySelector('#single-wrap'),
+        stdWrap=root.querySelector('#pack-standard-wrap'),
+        cusWrap=root.querySelector('#pack-custom-wrap');
   const panels={product:singleWrap,pack_standard:stdWrap,pack_custom:cusWrap};
   const radios=root.querySelectorAll('input[name="purchase-choice"]');
-  const showOnly=(key)=>{Object.entries(panels).forEach(([k,el])=>{if(el)el.style.display=(k===key)?'block':'none';});};
-  if(!radios.length){
-    const only=Object.keys(panels).find(k=>panels[k])||'product';
-    showOnly(only);
-    STATE.purchaseType=only;
-    root.querySelectorAll('#pack-custom-wrap .choice-grid, #pack-standard-wrap .choice-grid, #product-options .choice-grid').forEach(g=>g.querySelectorAll('.choice-btn').forEach(b=>b.onclick=()=>{g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')}));
-    return;
-  }
+
+  const showOnly=(key)=>{
+    Object.entries(panels).forEach(([k,el])=>{
+      if(el) el.style.display=(k===key)?'block':'none';
+    });
+  };
+
   const update=()=>{
     const selected=root.querySelector('input[name="purchase-choice"]:checked')?.value||'product';
-    root.querySelectorAll('#purchase-selector .purchase-option').forEach(x=>x.classList.toggle('selected',x.querySelector('input')?.checked));
+    root.querySelectorAll('#purchase-selector .purchase-option').forEach(x=>{
+      x.classList.toggle('selected',x.querySelector('input')?.checked);
+    });
     showOnly(selected);
     STATE.purchaseType=selected;
   };
+
   radios.forEach(r=>r.addEventListener('change',update));
   update();
-  root.querySelectorAll('#pack-custom-wrap .choice-grid, #pack-standard-wrap .choice-grid, #product-options .choice-grid').forEach(g=>g.querySelectorAll('.choice-btn').forEach(b=>{b.onclick=(e)=>{e.preventDefault();e.stopPropagation();g.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');};b.style.pointerEvents='auto';b.style.position='relative';b.style.zIndex='2';}));
+
+  // One delegated handler for ALL size/color buttons in this preview.
+  // This avoids losing handlers when a panel is shown/hidden.
+  if(!root.__choiceHandlerBound){
+    root.__choiceHandlerBound=true;
+    root.addEventListener('click',(e)=>{
+      const b=e.target.closest('.choice-btn');
+      if(!b || !root.contains(b)) return;
+      const group=b.closest('.choice-grid');
+      if(!group) return;
+      e.preventDefault();
+      e.stopPropagation();
+      group.querySelectorAll('.choice-btn').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+    },true);
+  }
+
+  root.querySelectorAll('.choice-grid .choice-btn').forEach(b=>{
+    b.style.pointerEvents='auto';
+    b.style.position='relative';
+    b.style.zIndex='20';
+  });
 }
 function initSingleQuantity(root){
   const minus=root.querySelector('#qty-minus'),plus=root.querySelector('#qty-plus'),value=root.querySelector('#qty-value');
