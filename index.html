@@ -77,6 +77,20 @@
   }
   .thumbs{display:flex; gap:8px; margin-top:8px; overflow-x:auto;}
   .thumbs img{ width:64px; height:64px; object-fit:cover; border-radius:10px; border:1px solid var(--line); flex-shrink:0; }
+  .product-gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:-12px 0 22px;}
+  .product-gallery-item{position:relative;padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card);cursor:pointer;aspect-ratio:1/1;}
+  .product-gallery-item img{width:100%;height:100%;object-fit:cover;}
+  .product-gallery-item:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+  .gallery-label{font-size:.82rem;font-weight:800;color:var(--muted);margin-bottom:7px;}
+  .gallery-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px;}
+  .gallery-dialog{position:relative;width:min(92vw,520px);display:flex;flex-direction:column;align-items:center;}
+  .gallery-main{max-width:100%;max-height:78vh;border-radius:14px;object-fit:contain;background:#111;}
+  .gallery-close,.gallery-nav{position:absolute;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.92);color:#111;font-size:1.3rem;font-weight:900;z-index:2;}
+  .gallery-close{top:-8px;right:-8px;}
+  .gallery-prev{left:-8px;top:50%;transform:translateY(-50%);}
+  .gallery-next{right:-8px;top:50%;transform:translateY(-50%);}
+  .gallery-counter{margin-top:10px;color:#fff;font-weight:800;font-size:.9rem;}
+  @media(max-width:380px){.product-gallery{grid-template-columns:repeat(2,1fr);}}
 
   h1.title{ font-family:var(--font-heading); font-size:var(--title-size); font-weight:var(--title-weight); line-height:var(--title-lh); text-align:var(--text-align); letter-spacing:.1px; margin-bottom:10px; }
   .desc{ font-family:var(--font-body); color:var(--muted); font-size:.98rem; line-height:var(--desc-lh); text-align:var(--text-align); margin-bottom:18px; white-space:pre-line; }
@@ -239,6 +253,12 @@
   .modal-box{ background:var(--card); color:var(--ink); border-radius:16px; padding:22px; max-width:380px; width:100%; max-height:88vh; overflow-y:auto; }
   .modal-box .close-x{ float:left; background:none; color:var(--muted); font-size:1.1rem; }
 
+  .choice-btn.color-choice{display:inline-flex;align-items:center;gap:8px;color:var(--ink)!important;background:var(--card);border-color:var(--line);}
+  .choice-btn.color-choice .color-dot{width:18px;height:18px;min-width:18px;border-radius:50%;background:var(--choice-color,#d8d2cc);border:1.5px solid var(--choice-border,#aaa);box-shadow:inset 0 0 0 1px rgba(0,0,0,.05);}
+  .choice-btn.color-choice.selected{background:var(--accent);color:var(--accent-ink)!important;border-color:var(--accent);}
+  .choice-btn.color-choice.selected .color-dot{border-color:rgba(255,255,255,.9);box-shadow:0 0 0 2px rgba(255,255,255,.35);}
+  .preview-overlay .choice-btn:not(.selected){color:#17130f!important;background:#fff!important;}
+  .preview-overlay .choice-btn.selected{color:#fff!important;}
   .method-add-cart{display:flex;align-items:center;justify-content:center;width:100%;margin-top:16px;min-height:50px;border:0;border-radius:14px;background:var(--accent);color:var(--accent-ink);font-weight:900;font-size:1rem;cursor:pointer;box-shadow:0 5px 14px rgba(0,0,0,.08)}
   .method-add-cart:active{transform:scale(.99)}
   .purchase-panel .single-qty-wrap{margin-bottom:0}
@@ -839,11 +859,45 @@ function getSingleConfig(p){
   if(c&&c.single) return {enabled:c.single.enabled!==false,visible:c.single.visible!==false};
   return {enabled:true,visible:true};
 }
+function colorToCss(value){
+  const raw=String(value||'').trim();
+  if(!raw) return '#d8d2cc';
+  // Accept CSS colors directly (hex, rgb(), hsl(), named CSS colors, etc.).
+  const test=document.createElement('span');
+  test.style.color='';
+  test.style.color=raw;
+  if(test.style.color) return raw;
+  const key=raw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const map={
+    noir:'#111111',black:'#111111',اسود:'#111111',أسود:'#111111',
+    blanc:'#ffffff',white:'#ffffff',ابيض:'#ffffff',أبيض:'#ffffff',
+    beige:'#d8c2a6',beige:'#d8c2a6',بيج:'#d8c2a6',
+    rouge:'#d32f2f',red:'#d32f2f',احمر:'#d32f2f',أحمر:'#d32f2f',
+    bleu:'#2563eb',blue:'#2563eb',ازرق:'#2563eb',أزرق:'#2563eb',
+    vert:'#2e7d32',green:'#2e7d32',اخضر:'#2e7d32',أخضر:'#2e7d32',
+    jaune:'#f2c94c',yellow:'#f2c94c',اصفر:'#f2c94c',أصفر:'#f2c94c',
+    rose:'#e91e63',pink:'#e91e63',وردي:'#e91e63',
+    violet:'#7e57c2',purple:'#7e57c2',بنفسجي:'#7e57c2',
+    orange:'#f57c00',برتقالي:'#f57c00',
+    marron:'#795548',brown:'#795548',بني:'#795548',
+    gris:'#9e9e9e',gray:'#9e9e9e',grey:'#9e9e9e',رمادي:'#9e9e9e',
+    dore:'#d4af37',gold:'#d4af37',ذهبي:'#d4af37',
+    argente:'#bfc3c7',silver:'#bfc3c7',فضي:'#bfc3c7'
+  };
+  if(map[key]) return map[key];
+  for(const k of Object.keys(map)) if(key.includes(k)) return map[k];
+  return '#d8d2cc';
+}
+function colorChoiceButton(label,index,selected=false){
+  const c=colorToCss(label);
+  const border=(c.toLowerCase()==='#ffffff'||c.toLowerCase()==='#fff')?'#aaa':c;
+  return `<button type="button" class="choice-btn color-choice ${selected?'selected':''}" data-value="${escHtml(label)}" aria-label="${escHtml(label)}" style="--choice-color:${escHtml(c)};--choice-border:${escHtml(border)}"><span class="color-dot" aria-hidden="true"></span><span>${escHtml(label)}</span></button>`;
+}
 function buildClothingOptions(product,lang){
   if(product.product_type!=="clothing") return "";
   const sizes=csvList(product.sizes), colors=csvList(product.colors);
-  const sizeField=sizes.length?`<div class="field"><label>${lang==="ar"?'المقاس':'Taille'}</label><div class="choice-grid" id="product-sizes">${sizes.map((x,i)=>`<button type="button" class="choice-btn ${i===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div>`:"";
-  const colorField=colors.length?`<div class="field"><label>${lang==="ar"?'اللون':'Couleur'}</label><div class="choice-grid" id="product-colors">${colors.map((x,i)=>`<button type="button" class="choice-btn ${i===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div>`:"";
+  const sizeField=sizes.length?`<div class="field"><label>${lang==="ar"?'المقاس':'Taille'}</label><div class="choice-grid" id="product-sizes">${sizes.map((x,i)=>`<button type="button" class="choice-btn" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join("")}</div></div>`:"";
+  const colorField=colors.length?`<div class="field"><label>${lang==="ar"?'اللون':'Couleur'}</label><div class="choice-grid" id="product-colors">${colors.map((x,i)=>colorChoiceButton(x,i,false)).join("")}</div></div>`:"";
   if(!sizeField&&!colorField) return "";
   return `<div class="selection-info" id="product-options">${sizeField}${colorField}</div>`;
 }
@@ -854,7 +908,7 @@ function buildStandardPackOptions(product,lang,c){
   const t=T[lang]||T.ar;
   const sizes=csvList(product.sizes||"");
   const colors=(c.colors||[]).filter(x=>x);
-  const sizeBlock=sizes.length?`<div class="field"><label>${lang==='ar'?'المقاس':'Taille'}</label><div class="choice-grid pack-common-size" id="pack-standard-common-size">${sizes.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:"";
+  const sizeBlock=sizes.length?`<div class="field"><label>${lang==='ar'?'المقاس':'Taille'}</label><div class="choice-grid pack-common-size" id="pack-standard-common-size">${sizes.map((x,j)=>`<button type="button" class="choice-btn" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:"";
   const colorsInfo=colors.length?`<div class="field"><label>${lang==='ar'?'الألوان':'Couleurs'}</label><div class="choice-grid">${colors.map((c2,i)=>`<span class="choice-btn">${lang==='ar'?'القطعة':'Pièce'} ${i+1} — ${escHtml(c2||'-')}</span>`).join('')}</div></div>`:"";
   const infoBlock=(sizeBlock||colorsInfo)?`<div class="selection-info" id="std-options">${sizeBlock}${colorsInfo}</div>`:"";
   return `<div class="price-row"><span class="price">${c.price||0} ${t.currency}</span>${c.old_price?`<span class="old-price">${c.old_price} ${t.currency}</span>`:''}</div>${infoBlock}`;
@@ -862,8 +916,8 @@ function buildStandardPackOptions(product,lang,c){
 function buildCustomPackOptions(product,lang,c){
   const t=T[lang]||T.ar;
   const sizes=csvList(product.sizes||""),colors=csvList(product.colors||""),n=Math.max(1,Number(c.pieces)||1);
-  const sizeBlock=sizes.length?`<div class="field"><label>${lang==='ar'?'المقاس (موحد للـPack كامل)':'Taille (unique pour tout le pack)'}</label><div class="choice-grid pack-common-size" id="pack-custom-common-size">${sizes.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:"";
-  const pieces=colors.length?Array.from({length:n},(_,i)=>`<div class="pack-piece-choice"><strong>${lang==='ar'?'القطعة':'Pièce'} ${i+1}</strong><div class="field"><label>${lang==='ar'?'اللون':'Couleur'}</label><div class="choice-grid pack-colors" data-piece="${i}">${colors.map((x,j)=>`<button type="button" class="choice-btn ${j===0?'selected':''}" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div></div>`).join(''):"";
+  const sizeBlock=sizes.length?`<div class="field"><label>${lang==='ar'?'المقاس (موحد للـPack كامل)':'Taille (unique pour tout le pack)'}</label><div class="choice-grid pack-common-size" id="pack-custom-common-size">${sizes.map((x,j)=>`<button type="button" class="choice-btn" data-value="${escHtml(x)}">${escHtml(x)}</button>`).join('')}</div></div>`:"";
+  const pieces=colors.length?Array.from({length:n},(_,i)=>`<div class="pack-piece-choice"><strong>${lang==='ar'?'القطعة':'Pièce'} ${i+1}</strong><div class="field"><label>${lang==='ar'?'اللون':'Couleur'}</label><div class="choice-grid pack-colors" data-piece="${i}">${colors.map((x,j)=>colorChoiceButton(x,j,false)).join('')}</div></div></div>`).join(''):"";
   const infoBlock=(sizeBlock||pieces)?`<div class="selection-info" id="cus-options">${sizeBlock}${pieces}</div>`:"";
   return `<div class="price-row"><span class="price">${c.price||0} ${t.currency}</span>${c.old_price?`<span class="old-price">${c.old_price} ${t.currency}</span>`:''}</div>${infoBlock}`;
 }
@@ -883,7 +937,7 @@ function buildPurchaseSection(product,lang,qtyObj){
   if(hasCus) opts.push({value:'pack_custom',label:lang==='ar'?'تشكيلة متنوعة':'Assortiment varié',price:cus.price||0});
   const finalOpts=opts.length?opts:[{value:'product',label:lang==='ar'?'قطعة واحدة':'Une pièce',price:product.price||0}];
   const showSingle=hasSingle||!opts.length;
-  const selectorHtml=finalOpts.length>1?`<div class="purchase-selector" id="purchase-selector"><div class="section-mini-title">${lang==='ar'?'🛒 اختار طريقة الشراء':'🛒 Choisissez la méthode d’achat'}</div><div class="purchase-grid">${finalOpts.map((o,i)=>`<label class="purchase-option ${i===0?'selected':''}"><input type="radio" name="purchase-choice" value="${o.value}" ${i===0?'checked':''}><span>${escHtml(o.label)} — ${o.price} ${t.currency}</span></label>`).join('')}</div></div>`:"";
+  const selectorHtml=finalOpts.length>1?`<div class="purchase-selector" id="purchase-selector"><div class="section-mini-title">${lang==='ar'?'🛒 اختر طريقة الشراء':'🛒 Choisissez la méthode d’achat'}</div><div class="purchase-grid">${finalOpts.map((o,i)=>`<label class="purchase-option ${i===0?'selected':''}"><input type="radio" name="purchase-choice" value="${o.value}" ${i===0?'checked':''}><span>${escHtml(o.label)} — ${o.price} ${t.currency}</span></label>`).join('')}</div></div>`:"";
   const singlePanel=showSingle?`<div id="single-wrap" style="display:none"><div class="price-row"><span class="price">${product.price||0} ${t.currency}</span>${product.old_price?`<span class="old-price">${product.old_price} ${t.currency}</span>`:''}</div>${buildClothingOptions(product,lang)}${buildQtyStepper('product',lang,qty.product)}<button type="button" class="method-add-cart" data-purchase-add="product">🛒 ${lang==='ar'?'أضف إلى السلة':'Ajouter au panier'}</button></div>`:"";
   const stdPanel=hasStd?`<div id="pack-standard-wrap" style="display:none">${buildStandardPackOptions(product,lang,std)}<button type="button" class="method-add-cart" data-purchase-add="pack_standard">🛒 ${lang==='ar'?'أضف إلى السلة':'Ajouter au panier'}</button></div>`:"";
   const cusPanel=hasCus?`<div id="pack-custom-wrap" style="display:none">${buildCustomPackOptions(product,lang,cus)}<button type="button" class="method-add-cart" data-purchase-add="pack_custom">🛒 ${lang==='ar'?'أضف إلى السلة':'Ajouter au panier'}</button></div>`:"";
@@ -891,12 +945,46 @@ function buildPurchaseSection(product,lang,qtyObj){
 }
 function buildFormMarkup(settings, product, lang, qtyObj){
   const t=T[lang]||T.ar,title=lang==='ar'?product.title_ar:product.title_fr,desc=lang==='ar'?product.description_ar:product.description_fr;
-  const images=(product.images||[]).filter(Boolean),mediaHtml=images[0]?`<img src="${escHtml(images[0])}" alt="${escHtml(title||'')}">`:"",thumbsHtml=images.length>1?`<div class="thumbs">${images.map(i=>`<img src="${escHtml(i)}">`).join('')}</div>`:"";
+  const images=(product.images||[]).filter(Boolean);
+  const hero=images[0]||'';
+  const mediaHtml=hero?`<img src="${escHtml(hero)}" alt="${escHtml(title||'')}" data-gallery-open="0">`:"";
+  const galleryHtml=images.length>1?`<div class="gallery-label">${lang==='ar'?'صور المنتج':'Photos du produit'}</div><div class="product-gallery" aria-label="${lang==='ar'?'معرض صور المنتج':'Galerie photos du produit'}">${images.slice(1).map((i,idx)=>`<button type="button" class="product-gallery-item" data-gallery-open="${idx+1}" aria-label="${lang==='ar'?'فتح الصورة':'Ouvrir la photo'} ${idx+2}"><img src="${escHtml(i)}" alt="${escHtml(title||'')} - ${idx+2}"></button>`).join('')}</div>`:"";
   const videoHtml=product.video_url?`<div class="video-section"><div class="video-wrap"><video class="product-video" src="${escHtml(product.video_url)}" playsinline autoplay loop preload="auto"></video><button type="button" class="video-sound-btn">🔊</button></div></div>`:"";
   const isClothing=product.product_type==='clothing';
   const qty=qtyObj||{};
   const purchaseHtml=isClothing?buildPurchaseSection(product,lang,qty):`<div class="price-row"><span class="price">${product.price||0} ${t.currency}</span>${product.old_price?`<span class="old-price">${product.old_price} ${t.currency}</span>`:''}</div>${buildQtyStepper('product',lang,qty.product)}<button type="button" class="method-add-cart" data-purchase-add="product">🛒 ${lang==='ar'?'أضف إلى السلة':'Ajouter au panier'}</button>`;
-  return `<div class="topbar"><div class="brand">${escHtml(settings.store_name||'')}</div><div class="lang-switch"><button data-lang="ar" class="${lang==='ar'?'active':''}">AR</button><button data-lang="fr" class="${lang==='fr'?'active':''}">FR</button></div></div><div class="wrap"><div class="hero-media">${mediaHtml}</div>${thumbsHtml}<h1 class="title">${escHtml(title||'')}</h1><p class="desc">${escHtml(desc||'')}</p>${videoHtml}${purchaseHtml}<div class="cart-bar"><button type="button" class="cart-button" id="cart-button">🛒 <span>${lang==='ar'?'السلة':'Panier'}</span><b id="cart-count">0</b></button></div><div class="cart-summary" id="cart-summary" style="display:none"></div><div class="card"><div class="field"><label>${t.full_name}</label><input id="f_name" type="text"></div><div class="field"><label>${t.phone}</label><input id="f_phone" type="tel"></div><div class="field"><label>${t.city}</label><input id="f_city" type="text"></div><div class="field"><label>${t.address}</label><textarea id="f_address"></textarea></div><div id="order-msg"></div><button class="cta" id="submit-btn">${t.place_order}</button></div><div class="footer-note">${escHtml(settings.store_name||'')}</div></div>`;
+  return `<div class="topbar"><div class="brand">${escHtml(settings.store_name||'')}</div><div class="lang-switch"><button type="button" data-lang="ar" class="${lang==='ar'?'active':''}">AR</button><button type="button" data-lang="fr" class="${lang==='fr'?'active':''}">FR</button></div></div><div class="wrap"><div class="hero-media">${mediaHtml}</div>${galleryHtml}<h1 class="title">${escHtml(title||'')}</h1><p class="desc">${escHtml(desc||'')}</p>${videoHtml}${purchaseHtml}<div class="cart-bar"><button type="button" class="cart-button" id="cart-button">🛒 <span>${lang==='ar'?'السلة':'Panier'}</span><b id="cart-count">0</b></button></div><div class="cart-summary" id="cart-summary" style="display:none"></div><div class="card"><div class="field"><label>${t.full_name}</label><input id="f_name" type="text"></div><div class="field"><label>${t.phone}</label><input id="f_phone" type="tel"></div><div class="field"><label>${t.city}</label><input id="f_city" type="text"></div><div class="field"><label>${t.address}</label><textarea id="f_address"></textarea></div><div id="order-msg"></div><button class="cta" id="submit-btn">${t.place_order}</button></div><div class="footer-note">${escHtml(settings.store_name||'')}</div></div>`;
+}
+
+function initCustomerGallery(root){
+  if(!root)return;
+  const images=Array.from(root.querySelectorAll('[data-gallery-open]')).map(el=>{
+    const img=el.tagName==='IMG'?el:el.querySelector('img');
+    return img?.src||'';
+  }).filter(Boolean);
+  if(!images.length)return;
+  let overlay=root.querySelector('.gallery-overlay');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.className='gallery-overlay';
+    overlay.setAttribute('role','dialog');
+    overlay.setAttribute('aria-modal','true');
+    overlay.setAttribute('aria-label','معرض الصور');
+    overlay.innerHTML=`<div class="gallery-dialog"><button type="button" class="gallery-close" aria-label="إغلاق">×</button><button type="button" class="gallery-nav gallery-prev" aria-label="الصورة السابقة">‹</button><img class="gallery-main" alt=""><button type="button" class="gallery-nav gallery-next" aria-label="الصورة التالية">›</button><div class="gallery-counter"></div></div>`;
+    root.appendChild(overlay);
+  }
+  const main=overlay.querySelector('.gallery-main'),counter=overlay.querySelector('.gallery-counter');
+  let index=0;
+  const render=()=>{index=(index+images.length)%images.length;main.src=images[index];counter.textContent=`${index+1} / ${images.length}`;};
+  const open=(i)=>{index=Number(i)||0;render();overlay.style.display='flex';};
+  const close=()=>{overlay.style.display='none';};
+  root.querySelectorAll('[data-gallery-open]').forEach(el=>el.onclick=()=>open(el.dataset.galleryOpen));
+  overlay.querySelector('.gallery-close').onclick=close;
+  overlay.querySelector('.gallery-prev').onclick=()=>{index--;render();};
+  overlay.querySelector('.gallery-next').onclick=()=>{index++;render();};
+  overlay.onclick=e=>{if(e.target===overlay)close();};
+  root.addEventListener('keydown',e=>{if(overlay.style.display!=='flex')return;if(e.key==='Escape')close();if(e.key==='ArrowLeft')index--,render();if(e.key==='ArrowRight')index++,render();});
+  overlay.style.display='none';
 }
 
 function initPurchaseSelector(root){
@@ -957,8 +1045,7 @@ function initSingleQuantity(root){
     el.textContent=LANDING_QTY[type]||1;
   });
 }
-function getCurrentCartItem(){
-  const root=document;
+function getCurrentCartItem(root=document){
   let purchase=root.querySelector('input[name="purchase-choice"]:checked')?.value;
   if(!purchase){
     if(root.querySelector('#single-wrap')) purchase='product';
@@ -1015,7 +1102,24 @@ function renderCartSummaryHtml(item,lang){
 function initCart(root){
   const basket=root.querySelector('#cart-button');
   const addItem=(purchaseOverride)=>{
-    const item=getCurrentCartItem();
+    const item=getCurrentCartItem(root);
+    const lang = (root.closest && root.closest('#preview-overlay')) ? PREVIEW_LANG : STATE.lang;
+    const err=(ar,fr)=>{ const msg=root.querySelector('#order-msg'); if(msg) msg.innerHTML=`<div class="msg err">${lang==='ar'?ar:fr}</div>`; };
+    if(item.purchaseType==='product' && STATE.product?.product_type==='clothing'){
+      const sizes=csvList(STATE.product.sizes||'');
+      const colors=csvList(STATE.product.colors||'');
+      if(sizes.length && !item.productOptions.size){ err('اختار المقاس من فضلك','Veuillez choisir la taille'); return; }
+      if(colors.length && !item.productOptions.color){ err('اختار اللون من فضلك','Veuillez choisir la couleur'); return; }
+    }
+    if(item.purchaseType==='pack_standard'){
+      const sizes=csvList(STATE.product?.sizes||'');
+      if(sizes.length && !(item.packOptions?.[0]?.size)){ err('اختار المقاس من فضلك','Veuillez choisir la taille'); return; }
+    }
+    if(item.purchaseType==='pack_custom'){
+      const sizes=csvList(STATE.product?.sizes||'');
+      if(sizes.length && !(item.packOptions?.[0]?.size)){ err('اختار المقاس من فضلك','Veuillez choisir la taille'); return; }
+      if((item.packOptions||[]).some(x=>!x.color)){ err('اختار لون كل قطعة من فضلك','Veuillez choisir la couleur de chaque pièce'); return; }
+    }
     if(purchaseOverride && item.purchaseType!==purchaseOverride){
       const radio=root.querySelector(`input[name="purchase-choice"][value="${purchaseOverride}"]`);
       if(radio){radio.checked=true; radio.dispatchEvent(new Event('change',{bubbles:true}));}
@@ -1088,6 +1192,7 @@ function renderLanding(){
     });
     document.getElementById("submit-btn").onclick = onSubmitOrder;
     initProductVideo(document);
+    initCustomerGallery(document);
     initClothingOptions(document);
     initSingleQuantity(document);
     initPurchaseSelector(document);
@@ -2035,7 +2140,7 @@ function openPreview(){
   setPreviewApproval(true);
 }
 
-function renderPreviewOverlay(settings, product){
+function renderPreviewOverlay(settings, product, preservePurchaseType){
   let overlay = document.getElementById("preview-overlay");
   if(!overlay){
     overlay = document.createElement("div");
@@ -2063,12 +2168,14 @@ function renderPreviewOverlay(settings, product){
 
   if(hasProduct){
     initProductVideo(overlay);
+    initCustomerGallery(overlay);
     initSingleQuantity(overlay);
     initClothingOptions(overlay);
     initPurchaseSelector(overlay);
+    if(preservePurchaseType){ const r=overlay.querySelector(`input[name="purchase-choice"][value="${preservePurchaseType}"]`); if(r){ r.checked=true; r.dispatchEvent(new Event('change',{bubbles:true})); } }
     initCart(overlay);
     overlay.querySelectorAll("[data-lang]").forEach(b=>{
-      b.onclick = ()=>{ PREVIEW_LANG = b.dataset.lang; renderPreviewOverlay(settings, product); };
+      b.onclick = ()=>{ const current=overlay.querySelector('input[name="purchase-choice"]:checked')?.value||''; PREVIEW_LANG = b.dataset.lang; renderPreviewOverlay(settings, product, current); };
     });
 
     const submitBtn = overlay.querySelector("#submit-btn");
